@@ -526,6 +526,20 @@ function applyFilter(){
     if(!q) return true;
     return (r.title.toLowerCase().includes(q) || r.body.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
   });
+  if(q){
+    // Rank so title matches always come before body/category-only matches.
+    // 0 = title starts with query, 1 = title contains query, 2 = only body/category matches.
+    const rank = (r) => {
+      const t = r.title.toLowerCase();
+      if(t.startsWith(q)) return 0;
+      if(t.includes(q)) return 1;
+      return 2;
+    };
+    filtered = filtered
+      .map((r, idx) => ({ r, idx, rank: rank(r) }))
+      .sort((a, b) => (a.rank - b.rank) || (a.idx - b.idx))
+      .map(x => x.r);
+  }
   renderChips();
   renderList();
   document.getElementById('resultCount').textContent = filtered.length;
