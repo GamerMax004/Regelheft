@@ -751,7 +751,6 @@ function showCurrent(){
   document.getElementById('overlayCat').textContent = r.category;
   document.getElementById('overlayTitle').textContent = r.title;
   document.getElementById('overlayText').innerHTML = formatBody(r.body);
-  document.getElementById('overlaySource').textContent = 'Aus deinem Regelheft · Seite ' + r.page;
   const diagSection = document.getElementById('diagramSection');
   const diagFrame = document.getElementById('diagramFrame');
   if(r.diagram){
