@@ -911,7 +911,7 @@ const NEWS = {
 // ============================================================
 const AI_CONFIG = {
   enabled: true,
-  proxyUrl: "https://ki-support.doctormaster82.workers.dev/"
+  proxyUrl: "https://DEIN-PROXY.onrender.com/api/ai"
 };
 (function(){
   const $ = id => document.getElementById(id);
@@ -924,7 +924,7 @@ const AI_CONFIG = {
   const hhmm = d => d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
   const logoFor = j => /^gemini/i.test(j.model || '') ? LOGO : '';
   const prettyModel = m => String(m).replace(/(^|[-\/])([a-z])/g, (_, p, c) => p + c.toUpperCase());
-  const modelLine = j => j.model ? '<div class="ai-model">Antwort generiert von <b>' + esc(prettyModel(j.model)) + '</b></div>' : '';
+  const modelLine = j => j.model ? '<div class="ai-model">Antwort generiert von <b>' + esc(prettyModel(j.model)) + '</b></div>' + (j.failed && j.failed.length ? '<div class="ai-model">Zuvor ausgefallen (DEBUG): ' + esc(j.failed.join(' | ')) + '</div>' : '') : '';
 
   function toJpeg(file, max){
     return new Promise((res, rej) => {
