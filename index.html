@@ -532,6 +532,12 @@
   .legal p, .legal li{ font-size:14.5px; line-height:1.62; color:var(--ink); margin:0 0 8px; }
   .legal ul{ padding-left:20px; margin:6px 0 8px; }
   .legal mark{ background:#fff3b0; color:#8a1c1c; padding:0 4px; border-radius:4px; font-weight:700; }
+  .main-footer{ margin-top:30px; padding:24px 18px 44px; border-top:1px solid var(--border); }
+  .mf-links{ display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .site-footer .mf-links a{ color:var(--ink-soft); font-size:13.5px; font-weight:600; text-decoration:none; padding:7px 14px; border-radius:999px; background:var(--bg-soft); border:1px solid var(--border); }
+  .site-footer .mf-links a:active{ background:var(--accent-soft); color:var(--accent); }
+  .site-footer .mf-links #discordLink{ color:#5865f2; }
+  .mf-copy{ font-size:12.5px; color:#a1a8b4; }
 </style>
 </head>
 <body>
@@ -562,7 +568,14 @@
   <div>Versuch es mit einem anderen Suchbegriff.</div>
 </div>
 
-<footer class="site-footer"><a data-legal="impressum">Impressum</a> · <a data-legal="datenschutz">Datenschutz</a><br>Copyright © Gölitzer Development</footer>
+<footer class="site-footer main-footer">
+  <div class="mf-links">
+    <a data-legal="impressum">Impressum</a>
+    <a data-legal="datenschutz">Datenschutzerklärung</a>
+    <a id="discordLink" href="https://discord.gg/MQetGYSpur" target="_blank" rel="noopener noreferrer"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>Discord</a>
+  </div>
+  <div class="mf-copy">Copyright © Gölitzer Development</div>
+</footer>
 
 <div class="news-overlay" id="newsOverlay" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
   <div class="news-card">
@@ -584,7 +597,7 @@
     <div class="ai-bar"><button class="ai-btn ghost" id="aiHistBtn">Chats (0)</button><button class="ai-btn" id="aiNewChat">+ Neuer Chat</button></div>
     <div id="aiHist" style="display:none"><div id="aiHistList"></div></div>
     <div id="aiChats"></div>
-    <div class="site-footer"><a data-legal="impressum">Impressum</a> · <a data-legal="datenschutz">Datenschutz</a><br>Copyright © Gölitzer Development</div>
+    <div class="site-footer">Copyright © Gölitzer Development</div>
   </div>
 </div>
 
@@ -604,7 +617,7 @@
       <div class="auth-err" id="authErr"></div>
       <button class="ai-btn" id="authSubmit" type="submit">Anmelden</button>
     </form>
-    <div class="site-footer"><a data-legal="impressum">Impressum</a> · <a data-legal="datenschutz">Datenschutz</a><br>Copyright © Gölitzer Development</div>
+    <div class="site-footer">Copyright © Gölitzer Development</div>
   </div>
 </div>
 
@@ -613,6 +626,7 @@
   <div class="overlay-body">
     <div class="ai-bar"><button class="ai-btn" id="dashTabOv">Übersicht</button><button class="ai-btn ghost" id="dashTabChats">Alle Chats</button></div>
     <div id="dashBody"></div>
+    <div class="site-footer">Copyright © Gölitzer Development</div>
   </div>
 </div>
 
@@ -661,7 +675,7 @@
       <button id="prevBtn">← Vorherige</button>
       <button id="nextBtn">Nächste →</button>
     </div>
-    <div class="site-footer"><a data-legal="impressum">Impressum</a> · <a data-legal="datenschutz">Datenschutz</a><br>Copyright © Gölitzer Development</div>
+    <div class="site-footer">Copyright © Gölitzer Development</div>
   </div>
 </div>
 
@@ -997,7 +1011,7 @@ const NEWS = {
 // ============================================================
 const AI_CONFIG = {
   enabled: true,
-  proxyUrl: "https://ki-support.doctormaster82.workers.dev/"
+  proxyUrl: "https://DEIN-PROXY.onrender.com/api/ai"
 };
 (function(){
   const $ = id => document.getElementById(id);
@@ -1364,6 +1378,7 @@ const LEGAL = {
   authority: "Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf",  // zuständige Aufsichtsbehörde (Bundesland des Betreibers)
   stand: "14.10.2026"
 };
+const DISCORD_URL = "https://discord.gg/MQetGYSpur";   // Einladungslink deines Discord-Servers, z. B. https://discord.gg/abcdef (leer = Link wird ausgeblendet)
 (function(){
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const v = k => LEGAL[k] ? esc(LEGAL[k]) : '<mark>[BITTE EINTRAGEN: ' + k + ']</mark>';
@@ -1382,6 +1397,7 @@ const LEGAL = {
 <p>Die Antworten der KI-Aufgabenhilfe werden automatisch von einem KI-System erzeugt. Sie können Fehler enthalten und ersetzen weder Unterricht noch Schulbuch oder Lehrkraft. Für die Richtigkeit wird keine Gewähr übernommen.</p>
 <h3>Haftung für Inhalte</h3>
 <p>Als Diensteanbieter bin ich nach den allgemeinen Gesetzen für eigene Inhalte verantwortlich. Nach den §§ 8 bis 10 DDG bin ich nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung von Informationen nach den allgemeinen Gesetzen bleiben unberührt. Bei Bekanntwerden entsprechender Rechtsverletzungen entferne ich die betreffenden Inhalte umgehend.</p>
+${hasDiscord ? '<h3>Haftung für Links</h3><p>Die Startseite enthält einen Link zu einem Discord-Server. Auf dessen Inhalte habe ich keinen Einfluss und übernehme dafür keine Gewähr. Für die Inhalte ist der jeweilige Betreiber verantwortlich.</p>' : ''}
 <h3>Urheberrecht</h3>
 <p>Die Inhalte dieses Angebots (Texte, Formeln, Grafiken, Zusammenstellung) wurden vom Betreiber erstellt und unterliegen dem deutschen Urheberrecht. Eine Vervielfältigung oder Verwendung außerhalb der gesetzlichen Schranken (z. B. privates Lernen) bedarf der vorherigen Zustimmung des Betreibers. Wer Rechte an Inhalten verletzt sieht, kann sich unter der oben genannten E-Mail-Adresse melden.</p>
 <h3>Verbraucherstreitbeilegung</h3>
@@ -1429,9 +1445,13 @@ const LEGAL = {
 <p>Die Übertragung erfolgt verschlüsselt (HTTPS). Passwörter und Anmelde-Token werden nur als Hash gespeichert. Der Zugriff auf gespeicherte Chats und die Statistik ist auf mich als Betreiber beschränkt und durch Anmeldung geschützt.</p>
 <h3>15. Erforderlichkeit der Angaben</h3>
 <p>Die Nutzung des Regelhefts ist ohne Angabe personenbezogener Daten möglich. Für das Konto und die KI-Aufgabenhilfe sind Benutzername und Passwort erforderlich, sonst kann das Konto nicht angelegt werden.</p>
-<h3>16. Änderungen</h3>
+${hasDiscord ? '<h3>16. Externer Link (Discord)</h3><p>Im Fuß der Startseite befindet sich ein Link zu meinem Discord-Server. Beim Anklicken verlässt du das Regelheft. Ab dann gelten die Datenschutzbestimmungen von Discord. Allein durch das Anzeigen des Links werden keine Daten an Discord übertragen.</p>' : ''}
+<h3>${hasDiscord ? '17' : '16'}. Änderungen</h3>
 <p>Ich passe diese Erklärung an, wenn sich das Angebot oder die Rechtslage ändert. Es gilt die jeweils hier veröffentlichte Fassung.</p>`;
 
+  const hasDiscord = /^https:\/\//.test(DISCORD_URL);
+  const dl = document.getElementById('discordLink');
+  if(hasDiscord) dl.href = DISCORD_URL; else dl.style.display = 'none';
   const openLegal = which => {
     document.getElementById('legalTitle').textContent = which === 'impressum' ? 'Impressum' : 'Datenschutzerklärung';
     const b = document.getElementById('legalBody');
