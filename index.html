@@ -1383,7 +1383,7 @@ const DISCORD_URL = "https://discord.gg/MQetGYSpur";   // Einladungslink deines 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const v = k => LEGAL[k] ? esc(LEGAL[k]) : '<mark>[BITTE EINTRAGEN: ' + k + ']</mark>';
   const addr = () => v('name') + '<br>' + v('street') + '<br>' + v('city');
-  const contact = () => 'E-Mail: ' + v('email') + (LEGAL.phone ? '<br>Telefon: ' + esc(LEGAL.phone) : '<br><mark>[BITTE EINTRAGEN: phone – oder ein anderes zweites Kontaktmittel]</mark>');
+  const contact = () => 'E-Mail: ' + v('maxgoel2010@gmail.com') + (LEGAL.phone ? '<br>Telefon: ' + esc(LEGAL.phone) : '<br><mark>[BITTE EINTRAGEN: phone – oder ein anderes zweites Kontaktmittel]</mark>');
 
   const impressum = () => `
 <h3>Angaben gemäß § 5 DDG</h3>
