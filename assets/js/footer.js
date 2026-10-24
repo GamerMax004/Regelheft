@@ -18,18 +18,12 @@ const FOOTER = {
   // Link-Spalten. wide: true = Spalte läuft auf dem Handy über die volle Breite.
   columns: [
     { title: "Regelheft", links: [
-      { label: "Alle Regeln",       href: "index.html" },
-      { label: "KI-Aufgabenhilfe",  href: "ki.html" },
-      { label: "Aktuelles",         href: "index.html?news=1" }
+      { label: "Aktuelles",         href: "index.html?news=1" },
+      { label: "Anmelden", href: "anmeldung.html", loggedIn: { label: "Mein Konto", href: "konto.html" } },       
+      { label: "KI-Aufgabenhilfe",  href: "ki.html" }
+
     ]},
-    { title: "Mehr", links: [
-      // Wechselt je nach Anmeldung zwischen „Anmelden“ und „Mein Konto“:
-      { label: "Anmelden", href: "anmeldung.html", loggedIn: { label: "Mein Konto", href: "konto.html" } },
-      { label: "Discord beitreten", href: "{discord}", external: true }
-    ]},
-    { title: "Kontakt", wide: true, links: [
-      { label: "{email}",         href: "mailto:{email}" },
-      { label: "Discord-Server",  href: "{discord}", external: true },
+    { title: "Rechtliches", wide: true, links: [
       { label: "Impressum",       href: "impressum.html" },
       { label: "Datenschutz",     href: "datenschutz.html" }
     ]}
