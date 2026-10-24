@@ -1,0 +1,9 @@
+Regelheft Mathematik – Struktur
+  index.html        Startseite (alle Regeln, Suche, Aktuelles-Popup)
+  impressum.html, datenschutz.html, anmeldung.html (Anmelden + Registrieren)
+  ki.html, dashboard.html, konto.html
+  assets/js/config.js    KI-Server, Impressum-Angaben, Discord/Instagram, Aktuelles-Popup
+  assets/js/footer.js    Inhalt des Footers (alle Seiten)
+  assets/css/footer.css  Aussehen des Footers
+  assets/js/regeln.js    die Regeln
+favicon.png und apple-touch-icon.png bleiben wie bisher im Hauptordner.
