@@ -1,75 +1,47 @@
 /* ============================================================
-   FOOTER – Aussehen
+   FOOTER – Aussehen (minimalistisch, weiß)
    Inhalt (Links, Texte, Social-Buttons) steht in assets/js/footer.js
-   Farben kannst du hier oben in den Variablen ändern.
    ============================================================ */
 .sf{
-  --sf-bg:#0E1320;
-  --sf-line:rgba(255,255,255,.10);
-  --sf-text:#E8ECF4;
-  --sf-muted:#98A2B6;
-  --sf-accent:#7C9BFF;
-  --sf-btn-bg:rgba(255,255,255,.05);
-  --sf-btn-bg-hover:rgba(255,255,255,.12);
-  position:relative; z-index:25;   /* Footer schiebt sich über die mitlaufende Kopfzeile */
-  margin-top:48px;
-  background:var(--sf-bg);
-  color:var(--sf-text);
-  font-family:var(--font);
+  --sf-line:var(--border, #e8eaee);
+  --sf-text:var(--ink, #14181f);
+  --sf-muted:#5B6472;
+  --sf-accent:var(--accent, #2F5BFF);
+  position:relative; z-index:25;            /* schiebt sich über die mitlaufende Suchleiste */
+  margin-top:48px; background:#fff; color:var(--sf-text);
+  border-top:1px solid var(--sf-line); font-family:var(--font);
 }
-.sf-inner{ max-width:1080px; margin:0 auto; padding:48px 22px 0; }
-.sf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px 24px; }
+.sf-inner{ max-width:1080px; margin:0 auto; padding:26px 20px calc(24px + env(safe-area-inset-bottom)); }
 
-/* Marke */
-.sf-brand{ grid-column:1 / -1; max-width:420px; }
-.sf-brand-name{ display:inline-block; font-size:24px; font-weight:700; letter-spacing:-.03em; line-height:1.2; color:#fff; text-decoration:none; }
-.sf-brand-name span{ color:var(--sf-accent); font-weight:500; margin-left:.3em; }
-.sf-tagline{ margin:14px 0 22px; font-size:16px; line-height:1.6; color:var(--sf-muted); }
-
-/* Social-Buttons */
-.sf-social{ display:flex; gap:12px; flex-wrap:wrap; }
-.sf-social a{
-  display:flex; align-items:center; justify-content:center;
-  width:46px; height:46px; border-radius:14px;
-  border:1px solid var(--sf-line); background:var(--sf-btn-bg);
-  color:var(--sf-text); transition:background .15s ease, border-color .15s ease, transform .15s ease;
+/* obere Zeile: Marke links, Icons + Nach-oben rechts */
+.sf-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.sf-brand-name{ font-size:18px; font-weight:700; letter-spacing:-.02em; color:var(--sf-text); text-decoration:none; }
+.sf-brand-name span{ color:var(--sf-accent); font-weight:600; margin-left:.28em; }
+.sf-tools{ display:flex; align-items:center; gap:8px; }
+.sf-social a, .sf-top-btn{
+  width:44px; height:44px; border-radius:12px; border:1px solid var(--sf-line); background:#fff;
+  color:var(--sf-muted); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition:color .15s ease, border-color .15s ease, background .15s ease;
 }
-.sf-social a:hover{ background:var(--sf-btn-bg-hover); border-color:rgba(255,255,255,.28); transform:translateY(-2px); }
-.sf-social a:active{ transform:scale(.96); }
-.sf-social svg{ width:21px; height:21px; display:block; }
+.sf-social{ display:flex; gap:8px; }
+.sf-social a:hover, .sf-top-btn:hover{ color:var(--sf-accent); border-color:var(--sf-accent); background:var(--accent-soft, #eef2ff); }
+.sf-social svg, .sf-top-btn svg{ width:20px; height:20px; display:block; }
 
-/* Link-Spalten */
-.sf-col h3{ margin:0 0 10px; font-size:15px; font-weight:600; letter-spacing:0; color:var(--sf-muted); }
-.sf-col ul{ list-style:none; margin:0; padding:0; }
-.sf-col a{
-  display:inline-block; padding:11px 0; font-size:17px; line-height:1.3;
-  color:var(--sf-text); text-decoration:none; transition:color .15s ease;
-}
-.sf-col a:hover{ color:var(--sf-accent); }
-.sf-col--wide{ grid-column:1 / -1; }
+/* Link-Zeile */
+.sf-links{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:0 22px; }
+.sf-links a{ display:inline-block; padding:12px 0; font-size:15px; color:var(--sf-text); text-decoration:none; transition:color .15s ease; }
+.sf-links a:hover{ color:var(--sf-accent); }
 
-/* Fußleiste */
+/* unten */
 .sf-bottom{
-  margin-top:40px; padding:24px 0 calc(32px + env(safe-area-inset-bottom));
-  border-top:1px solid var(--sf-line);
-  display:flex; flex-direction:column; gap:14px;
-  font-size:15px; color:var(--sf-muted);
+  margin-top:10px; padding-top:16px; border-top:1px solid var(--sf-line);
+  display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--sf-muted);
 }
-.sf-made{ display:flex; align-items:center; gap:12px; }
-.sf-flag{ width:22px; height:22px; border-radius:6px; flex:none; display:block; }
+.sf-made{ display:flex; align-items:center; gap:8px; }
+.sf-flag{ width:18px; height:18px; border-radius:5px; flex:none; display:block; }
 
-a.sf-brand-name:focus-visible, .sf-social a:focus-visible, .sf-col a:focus-visible{
-  outline:2px solid var(--sf-accent); outline-offset:3px; border-radius:8px;
-}
-
-@media (min-width:780px){
-  .sf-inner{ padding-top:64px; }
-  .sf-grid{ grid-template-columns:1.6fr 1fr 1fr 1fr; gap:40px 48px; }
-  .sf-brand{ grid-column:auto; }
-  .sf-col--wide{ grid-column:auto; }
+.sf a:focus-visible, .sf-top-btn:focus-visible{ outline:2px solid var(--sf-accent); outline-offset:3px; border-radius:8px; }
+@media (min-width:640px){
   .sf-bottom{ flex-direction:row; justify-content:space-between; align-items:center; }
 }
-@media (prefers-reduced-motion:reduce){
-  .sf-social a, .sf-col a{ transition:none; }
-  .sf-social a:hover{ transform:none; }
-}
+@media (prefers-reduced-motion:reduce){ .sf a, .sf-top-btn{ transition:none; } }

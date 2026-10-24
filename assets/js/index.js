@@ -2,6 +2,64 @@
    Startseite: Suche, Filter, Regelliste, Regel-Detail, Aktuelles-Popup
    ============================================================ */
 const RULES = window.RULES;
+document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon, +el.dataset.size || 20); });
+
+// ---- Merkliste (nur mit Konto): gespeichert wird nur die Regel-Kennung ----
+let started = false;
+const favs = new Set();
+const FAV = '__fav', REC = '__recent';
+let recent = [];        // zuletzt geöffnete Regel-Kennungen, neueste zuerst (nur mit Konto)
+const loggedIn = () => !!RH.user();
+let toastT;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000);
+}
+async function toggleFav(id){
+  if(!loggedIn()) return;
+  const on = !favs.has(id);
+  on ? favs.add(id) : favs.delete(id);
+  refreshFavUI();
+  try{ await RH.api('/api/favs', {body:{id, on}}); }
+  catch(e){
+    on ? favs.delete(id) : favs.add(id);      // zurücksetzen
+    refreshFavUI();
+    toast('Merkliste konnte nicht gespeichert werden.');
+  }
+}
+function noteRecent(id){
+  if(!loggedIn()){ if(RH.isLoading()) RH.ready.then(() => noteRecent(id)); return; }
+  recent = [id].concat(recent.filter(x => x !== id)).slice(0, 15);
+  if(activeCat === REC) favDirty = true;           // Reihenfolge erst nach dem Schließen aktualisieren
+  RH.api('/api/recent', {body:{id}}).catch(() => {});
+}
+let favDirty = false;
+function refreshFavUI(){
+  if(activeCat === FAV){
+    // Liste erst neu aufbauen, wenn das Regel-Detail zu ist (sonst verschiebt sich „Vorherige/Nächste“)
+    if(document.getElementById('overlay').classList.contains('open')) favDirty = true;
+    else applyFilter();
+  }else document.querySelectorAll('.fav-star').forEach(b => setStar(b, favs.has(b.dataset.id)));
+  updateFavBtn();
+}
+function flushFav(){ if(favDirty){ favDirty = false; applyFilter(); } }
+function updateFavBtn(){
+  const b = document.getElementById('favBtn');
+  b.classList.toggle('is-hidden', !loggedIn());
+  if(!loggedIn() || currentIndex < 0 || !filtered[currentIndex]) return;
+  const on = favs.has(filtered[currentIndex].id);
+  b.classList.toggle('on', on);
+  b.setAttribute('aria-pressed', on);
+  b.setAttribute('aria-label', on ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen');
+  b.innerHTML = icon('star', 20, on);
+}
+function setStar(b, on){
+  b.classList.toggle('on', on);
+  b.setAttribute('aria-pressed', on);
+  b.setAttribute('aria-label', on ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen');
+  b.innerHTML = icon('star', 22, on);
+}
 const categories = [];
 RULES.forEach(r => { if(!categories.includes(r.category)) categories.push(r.category); });
 
@@ -13,6 +71,8 @@ let currentIndex = -1;
 const chipsEl = document.getElementById('chips');
 function renderChips(){
   let html = `<div class="chip ${activeCat==='Alle'?'active':''}" data-cat="Alle">Alle</div>`;
+  if(loggedIn()) html += `<div class="chip ${activeCat===FAV?'active':''}" data-cat="${FAV}">${icon('star',15,activeCat===FAV)}Merkliste</div>`;
+  if(loggedIn()) html += `<div class="chip ${activeCat===REC?'active':''}" data-cat="${REC}">${icon('clock',15)}Zuletzt</div>`;
   categories.forEach(c=>{
     html += `<div class="chip ${activeCat===c?'active':''}" data-cat="${escapeAttr(c)}">${escapeHtml(c)}</div>`;
   });
@@ -41,7 +101,7 @@ function highlight(text, q){
 function applyFilter(){
   const q = query.trim().toLowerCase();
   filtered = RULES.filter(r=>{
-    const catOk = activeCat === "Alle" || r.category === activeCat;
+    const catOk = activeCat === "Alle" || (activeCat === FAV ? favs.has(r.id) : activeCat === REC ? recent.includes(r.id) : r.category === activeCat);
     if(!catOk) return false;
     if(!q) return true;
     return (r.title.toLowerCase().includes(q) || r.plain.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
@@ -60,10 +120,11 @@ function applyFilter(){
       .sort((a, b) => (a.rank - b.rank) || (a.idx - b.idx))
       .map(x => x.r);
   }
+  if(activeCat === REC && !q) filtered.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));   // neueste zuerst
   renderChips();
   renderList();
   document.getElementById('resultCount').textContent = filtered.length;
-  document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : activeCat;
+  document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : (activeCat === FAV ? 'Merkliste' : activeCat === REC ? 'Zuletzt geöffnet' : activeCat);
 }
 
 function renderList(){
@@ -71,6 +132,9 @@ function renderList(){
   const emptyEl = document.getElementById('emptyState');
   if(filtered.length === 0){
     listEl.innerHTML = '';
+    const fav = activeCat === FAV && !query.trim(), rec = activeCat === REC && !query.trim();
+    document.getElementById('emptyTitle').textContent = fav ? 'Noch nichts gemerkt' : rec ? 'Noch nichts geöffnet' : 'Keine Treffer';
+    document.getElementById('emptySub').textContent = fav ? 'Öffne eine Regel und tippe auf den Stern, um sie hier zu speichern.' : rec ? 'Regeln, die du öffnest, erscheinen hier.' : 'Versuch es mit einem anderen Suchbegriff.';
     emptyEl.style.display = 'block';
     return;
   }
@@ -81,14 +145,17 @@ function renderList(){
       <div class="row-top">
         <span class="cat-pill">${escapeHtml(r.category)}</span>
         ${r.diagram ? '<span class="diag-dot" title="mit Skizze"></span>' : ''}
+        ${loggedIn() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
       <h3>${highlight(r.title, q)}</h3>
       <p>${highlight(r.excerpt, q)}</p>
     </div>
   `).join('');
   listEl.querySelectorAll('.rule-card').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      openDetail(el.getAttribute('data-id'));
+    el.addEventListener('click', (e)=>{
+      const star = e.target.closest('.fav-star');
+      if(star){ e.stopPropagation(); toggleFav(star.dataset.id); return; }
+      openDetail(el.getAttribute('data-id'), {log:true});
     });
   });
 }
@@ -244,7 +311,7 @@ function openDetail(id, opts){
   currentIndex = idx;
   showCurrent();
   overlayEl.classList.add('open');
-  if(opts.log) RH.logEv('open', id);
+  if(opts.log){ RH.logEv('open', id); noteRecent(id); }
   if(location.hash !== '#' + id){
     if(wasOpen) history.replaceState(null, '', '#' + id);
     else { history.pushState(null, '', '#' + id); overlayPushed = true; }
@@ -255,7 +322,6 @@ function showCurrent(){
   document.getElementById('overlayCat').textContent = r.category;
   document.getElementById('overlayTitle').textContent = r.title;
   document.getElementById('overlayText').innerHTML = formatBody(r.body);
-  document.getElementById('overlaySource').textContent = 'Aus deinem Regelheft · Seite ' + r.page;
   const diagSection = document.getElementById('diagramSection');
   const diagFrame = document.getElementById('diagramFrame');
   if(r.diagram){
@@ -268,25 +334,34 @@ function showCurrent(){
   document.getElementById('prevBtn').disabled = currentIndex <= 0;
   document.getElementById('nextBtn').disabled = currentIndex >= filtered.length - 1;
   document.getElementById('overlay').scrollTop = 0;
+  updateFavBtn();
 }
 
 
+// Kam man über einen Link aus der KI-Seite (oder dem Dashboard)? Dann führt der Zurück-Pfeil dorthin zurück (zum Chat).
+const FROM = {ki:'ki.html', dashboard:'dashboard.html'};
+const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || null;
 function closeDetail(){
+  document.getElementById('toast').classList.remove('show');
   if(overlayPushed){ overlayPushed = false; history.back(); return; }
-  overlayEl.classList.remove('open');
+  if(fromTarget && !location.search.includes('news=1')){
+    if(history.length > 1) history.back(); else location.href = fromTarget;
+    return;
+  }
+  overlayEl.classList.remove('open'); flushFav();
   if(location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 window.addEventListener('popstate', () => {
   const id = ruleIdFromHash();
   if(id) openDetail(id);
-  else { overlayEl.classList.remove('open'); overlayPushed = false; }
+  else { overlayEl.classList.remove('open'); overlayPushed = false; flushFav(); }
 });
 document.getElementById('backBtn').addEventListener('click', closeDetail);
 document.getElementById('prevBtn').addEventListener('click', () => {
-  if(currentIndex > 0){ currentIndex--; showCurrent(); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
+  if(currentIndex > 0){ currentIndex--; showCurrent(); noteRecent(filtered[currentIndex].id); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
 });
 document.getElementById('nextBtn').addEventListener('click', () => {
-  if(currentIndex < filtered.length - 1){ currentIndex++; showCurrent(); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
+  if(currentIndex < filtered.length - 1){ currentIndex++; showCurrent(); noteRecent(filtered[currentIndex].id); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
 });
 
 const searchInput = document.getElementById('searchInput');
@@ -323,6 +398,45 @@ RH.onAuth((user, loading) => {
     : 'Funktion gesperrt! Melde dich an, um dieses Feature zu nutzen.';
 });
 
+// ---- Merkliste laden, sobald ein Konto angemeldet ist (ohne Konto nicht verfügbar) ----
+let favsFor = null;
+RH.onAuth(async (user) => {
+  if(!user){
+    favs.clear(); favsFor = null;
+    recent = [];
+    if(activeCat === FAV || activeCat === REC) activeCat = 'Alle';
+    if(started){ renderChips(); applyFilter(); }
+    updateFavBtn();
+    return;
+  }
+  if(favsFor === user.username) return;
+  favsFor = user.username;
+  try{ (await RH.api('/api/favs')).ids.forEach(id => favs.add(id)); }catch(e){}
+  try{ const ids = (await RH.api('/api/recent')).ids; recent = recent.concat(ids.filter(x => !recent.includes(x))).slice(0, 15); }catch(e){}
+  if(started){ renderChips(); applyFilter(); }
+  updateFavBtn();
+});
+document.getElementById('favBtn').addEventListener('click', () => { const r = filtered[currentIndex]; if(r) toggleFav(r.id); });
+
+// ---- Link zur Regel kopieren ----
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const r = filtered[currentIndex]; if(!r) return;
+  const url = location.origin + location.pathname + '#' + r.id;
+  let ok = false;
+  try{ await navigator.clipboard.writeText(url); ok = true; }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ ok = document.execCommand('copy'); }catch(_){}
+    ta.remove();
+  }
+  if(ok){
+    const b = document.getElementById('copyBtn'); b.innerHTML = icon('check', 20);
+    setTimeout(() => { b.innerHTML = icon('link', 20); }, 1500);
+    toast('Link kopiert');
+  }else toast('Kopieren nicht möglich – Adresse oben aus der Leiste nehmen.');
+});
+
 // ---- Aktuelles-Popup (Inhalt: config.js -> NEWS) ----
 const newsEl = document.getElementById('newsOverlay');
 function closeNews(){ newsEl.classList.remove('open'); document.body.style.overflow = ''; }
@@ -342,6 +456,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ---- Start ----
+started = true;
 renderChips();
 applyFilter();
 const startId = ruleIdFromHash();
@@ -351,3 +466,52 @@ let cameFromHere = false;
 try{ cameFromHere = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
 if(NEWS.enabled && (wantNews || (!cameFromHere && !startId))) openNews();
 if(wantNews) history.replaceState(null, '', location.pathname + location.hash);
+
+
+// ---- Regel als Bild teilen (Bild wird im Browser erzeugt, nichts wird hochgeladen) ----
+let h2cPromise;
+function loadH2C(){
+  if(window.html2canvas) return Promise.resolve();
+  return h2cPromise || (h2cPromise = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'assets/js/vendor/html2canvas.min.js';
+    sc.onload = res; sc.onerror = () => { h2cPromise = null; rej(new Error('load')); };
+    document.head.appendChild(sc);
+  }));
+}
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  const r = filtered[currentIndex]; if(!r) return;
+  const btn = document.getElementById('shareBtn');
+  if(btn.disabled) return;
+  btn.disabled = true; toast('Bild wird erstellt …');
+  let card;
+  try{
+    await loadH2C();
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    card = document.createElement('div');
+    card.className = 'overlay-body share-card';
+    card.innerHTML = '<span class="cat-pill">' + escapeHtml(r.category) + '</span><h2>' + escapeHtml(r.title) + '</h2><div>' + formatBody(r.body) + '</div>'
+      + (r.diagram ? '<div class="diagram-section"><div class="label">Skizze</div><div class="diagram-frame">' + r.diagram + '</div></div>' : '')
+      + '<div class="share-foot"><b>Regelheft Mathematik</b><span>' + escapeHtml(location.host || 'Regelheft') + '</span></div>';
+    document.body.appendChild(card);
+    const canvas = await html2canvas(card, {scale:2, backgroundColor:'#ffffff', logging:false, useCORS:true});
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if(!blob) throw new Error('blob');
+    const name = 'Regelheft-' + r.title.replace(/[^A-Za-z0-9ÄÖÜäöüß]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) + '.png';
+    const file = new File([blob], name, {type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:r.title}); toast('Bild geteilt'); return; }
+      catch(e){ if(e && e.name === 'AbortError'){ toast(''); document.getElementById('toast').classList.remove('show'); return; } }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('Bild gespeichert');
+  }catch(e){
+    toast('Das Bild konnte nicht erstellt werden.');
+  }finally{
+    if(card) card.remove();
+    btn.disabled = false;
+  }
+});

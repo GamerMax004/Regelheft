@@ -30,7 +30,7 @@
     });
   }
   // Regel öffnen = Startseite mit #regel-id (der Zurück-Knopf des Browsers führt wieder hierher)
-  function openRule(id){ location.href = 'index.html#' + encodeURIComponent(id); }
+  function openRule(id){ location.href = 'index.html?from=ki#' + encodeURIComponent(id); }
 
   function renderHist(){
     $('aiHistBtn').textContent = 'Chats (' + chats.length + ')';

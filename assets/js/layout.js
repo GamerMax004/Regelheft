@@ -15,7 +15,6 @@
     if(user){
       host.innerHTML = '<button class="acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false">' + USER_SVG + '<span>' + esc(user.username) + '</span></button>'
         + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b></p>'
-        + (AI_CONFIG.enabled ? '<a href="ki.html" role="menuitem">KI-Aufgabenhilfe</a>' : '')
         + (user.admin ? '<a href="dashboard.html" role="menuitem">Dashboard</a>' : '')
         + '<a href="konto.html" role="menuitem">Mein Konto</a>'
         + '<button id="acctLogout" role="menuitem">Abmelden</button></div>';
@@ -48,26 +47,30 @@
   const usable = h => h && !/^mailto:$/.test(h);
   const ext = h => /^https?:\/\//.test(h);
 
+  const UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>';
   function buildFooter(){
     const el = document.getElementById('siteFooter');
     if(!el) return;
     const social = FOOTER.social.map(s => ({...s, href: fill(s.href)})).filter(s => usable(s.href) && ICONS[s.icon]);
-    const cols = FOOTER.columns.map(c => ({...c, links: c.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label)})).filter(c => c.links.length);
+    const links = FOOTER.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label);
     const link = l => {
       const x = ext(l.href) ? ' target="_blank" rel="noopener noreferrer"' : '';
       const a = l.loggedIn ? ' data-in-href="' + esc(l.loggedIn.href) + '" data-in-label="' + esc(l.loggedIn.label) + '" data-out-href="' + esc(l.href) + '" data-out-label="' + esc(l.label) + '"' : '';
       return '<li><a href="' + esc(l.href) + '"' + x + a + '>' + esc(l.label) + '</a></li>';
     };
     el.className = 'sf';
-    el.innerHTML = '<div class="sf-inner"><div class="sf-grid">'
-      + '<div class="sf-brand"><a class="sf-brand-name" href="index.html">' + esc(FOOTER.brand[0]) + '<span>' + esc(FOOTER.brand[1]) + '</span></a>'
-      + '<p class="sf-tagline">' + esc(FOOTER.tagline) + '</p>'
+    el.innerHTML = '<div class="sf-inner">'
+      + '<div class="sf-top"><a class="sf-brand-name" href="index.html">' + esc(FOOTER.brand[0]) + '<span>' + esc(FOOTER.brand[1]) + '</span></a>'
+      + '<div class="sf-tools">'
       + (social.length ? '<div class="sf-social">' + social.map(s => '<a href="' + esc(s.href) + '"' + (ext(s.href) ? ' target="_blank" rel="noopener noreferrer"' : '') + ' aria-label="' + esc(s.label) + '" title="' + esc(s.label) + '">' + ICONS[s.icon] + '</a>').join('') + '</div>' : '')
-      + '</div>'
-      + cols.map(c => '<nav class="sf-col' + (c.wide ? ' sf-col--wide' : '') + '" aria-label="' + esc(c.title) + '"><h3>' + esc(c.title) + '</h3><ul>' + c.links.map(link).join('') + '</ul></nav>').join('')
-      + '</div><div class="sf-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(FOOTER.copyright) + '</span>'
+      + (FOOTER.backToTop ? '<button class="sf-top-btn" type="button" aria-label="Nach oben" title="Nach oben">' + UP + '</button>' : '')
+      + '</div></div>'
+      + (links.length ? '<ul class="sf-links">' + links.map(link).join('') + '</ul>' : '')
+      + '<div class="sf-bottom"><span>' + esc(FOOTER.copyright) + '</span>'
       + (FOOTER.madeIn ? '<span class="sf-made">' + FLAG + esc(FOOTER.madeIn) + '</span>' : '')
       + '</div></div>';
+    const up = el.querySelector('.sf-top-btn');
+    if(up) up.onclick = () => window.scrollTo({top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
   }
   function footerAuth(user, loading){
     document.querySelectorAll('#siteFooter [data-in-href]').forEach(a => {

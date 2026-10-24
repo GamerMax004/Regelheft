@@ -28,7 +28,8 @@
   <div class="is-hidden" id="kontoApp">
     <div class="auth-success">Angemeldet als <b id="kontoUser"></b></div>
     <div class="btn-row">
-      <a class="ai-btn" href="ki.html">Zur KI-Aufgabenhilfe</a>
+      <a class="ai-btn" href="ki.html">KI-Aufgabenhilfe</a>
+      <button class="ai-btn ghost" id="kontoClearRecent" type="button">Verlauf „Zuletzt geöffnet“ löschen</button>
       <a class="ai-btn ghost is-hidden" id="kontoDash" href="dashboard.html">Dashboard</a>
       <button class="ai-btn ghost" id="kontoLogout" type="button">Abmelden</button>
     </div>
@@ -36,7 +37,7 @@
     <div class="danger-zone">
       <h3>Konto löschen</h3>
       <p>Dein Konto, alle gespeicherten Chats und alle Anmeldungen werden unwiderruflich gelöscht.</p>
-      <button class="ai-btn ai-del" id="delStart" type="button">Konto löschen …</button>
+      <button class="ai-btn ai-del" id="delStart" type="button">Konto löschen</button>
       <div class="is-hidden" id="delBox">
         <p style="margin-top:12px">Gib zur Bestätigung dein Passwort ein.</p>
         <input class="auth-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort">

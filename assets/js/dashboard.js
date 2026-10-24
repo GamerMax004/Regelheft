@@ -6,7 +6,7 @@
   const RULES = window.RULES;
   const esc = RH.esc, api = RH.api;
   const prettyModel = m => String(m).replace(/(^|[-\/])([a-z])/g, (_, p, c) => p + c.toUpperCase());
-  const openRule = id => { location.href = 'index.html#' + encodeURIComponent(id); };
+  const openRule = id => { location.href = 'index.html?from=dashboard#' + encodeURIComponent(id); };
   // ---------- Dashboard (nur Admin) ----------
   const T = ts => new Date(ts).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
   const ruleTitle = id => { const r = RULES.find(x => x.id === id); return r ? r.title : id; };
@@ -40,7 +40,7 @@
     const box = $('dashBody'); box.innerHTML = '<div class="ai-bubble muted">Lade …</div>';
     try{
       const j = await RH.api('/api/admin/chat?id=' + encodeURIComponent(id));
-      let h = '<button class="ai-btn ghost" id="dashToList" style="margin-top:0">← Alle Chats</button><div class="ai-bubble"><div class="ai-lbl">' + esc(j.username) + ' · ' + T(j.updated_at) + '</div><b>' + esc(j.title || 'Ohne Titel') + '</b></div>';
+      let h = '<button class="ai-btn ghost" id="dashToList" style="margin-top:0"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"vertical-align:-3px;margin-right:6px\"><path d=\"M19 12H5\"/><path d=\"m12 19-7-7 7-7\"/></svg>Alle Chats</button><div class="ai-bubble"><div class="ai-lbl">' + esc(j.username) + ' · ' + T(j.updated_at) + '</div><b>' + esc(j.title || 'Ohne Titel') + '</b></div>';
       if(j.thumb) h += '<img class="ai-thumb" src="' + esc(j.thumb) + '" alt="">';
       j.messages.forEach(m => { h += '<div class="ai-bubble ' + (m.role === 'user' ? 'user' : '') + '"><div class="ai-lbl">' + (m.role === 'user' ? esc(j.username) : 'KI') + '</div><p>' + esc(m.text) + '</p></div>'; });
       (j.rule_ids || []).forEach(rid => { h += '<button class="ai-rule" data-id="' + esc(rid) + '"><b>' + esc(ruleTitle(rid)) + '</b></button>'; });

@@ -28,7 +28,7 @@ const LEGAL = {
    Leer lassen ("") = Link wird ausgeblendet. */
 const SOCIAL = {
   discord:   "https://discord.gg/MQetGYSpur",   // Einladungslink deines Discord-Servers
-  instagram: "https://teams.microsoft.com/l/message/48:notes/1792845211191?context=%7B%22contextType%22%3A%22chat%22%2C%22oid%22%3A%228%3Aorgid%3A7b1e4712-bb36-4971-88ee-27bc6826b19a%22%7D"                                  // z. B. https://instagram.com/deinname
+  instagram: ""                                  // z. B. https://instagram.com/deinname
 };
 
 /* ---------- AKTUELLES-POPUP (Startseite) ----------

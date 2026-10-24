@@ -11,6 +11,11 @@
     $('kontoUser').textContent = u.username;
     if(u.admin) $('kontoDash').classList.remove('is-hidden');
   });
+  $('kontoClearRecent').onclick = async () => {
+    const b = $('kontoClearRecent'); b.disabled = true;
+    try{ await RH.api('/api/recent', {body:{clear:true}}); b.textContent = 'Verlauf gelöscht'; }
+    catch(e){ b.textContent = 'Löschen nicht möglich'; b.disabled = false; }
+  };
   $('kontoLogout').onclick = async () => { await RH.logout(); location.href = 'index.html'; };
   $('delStart').onclick = () => { $('delStart').classList.add('is-hidden'); $('delBox').classList.remove('is-hidden'); $('delPw').value = ''; $('delErr').textContent = ''; $('delPw').focus(); };
   $('delCancel').onclick = () => { $('delBox').classList.add('is-hidden'); $('delStart').classList.remove('is-hidden'); };
