@@ -474,7 +474,7 @@ function loadH2C(){
   if(window.html2canvas) return Promise.resolve();
   return h2cPromise || (h2cPromise = new Promise((res, rej) => {
     const sc = document.createElement('script');
-    sc.src = 'assets/js/vendor/html2canvas.min.js';
+    sc.src = 'assets/js/vendor/html2canvas.min.js?v=1.4.1';
     sc.onload = res; sc.onerror = () => { h2cPromise = null; rej(new Error('load')); };
     document.head.appendChild(sc);
   }));

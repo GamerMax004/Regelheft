@@ -19,10 +19,12 @@ const RH = (function(){
     if(!configured) throw new Error('Der Server ist noch nicht eingerichtet (proxyUrl fehlt in config.js).');
     const h = {'Content-Type':'application/json'};
     if(auth.token) h.Authorization = 'Bearer ' + auth.token;
-    const r = await fetch(API + path, {method: opts.method || (opts.body ? 'POST' : 'GET'), headers:h, body: opts.body ? JSON.stringify(opts.body) : undefined});
+    let r;
+    try{ r = await fetch(API + path, {method: opts.method || (opts.body ? 'POST' : 'GET'), headers:h, body: opts.body ? JSON.stringify(opts.body) : undefined}); }
+    catch(e){ throw new Error('Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung und versuche es gleich noch einmal.'); }
     const j = await r.json().catch(() => ({}));
     if(r.status === 401 && auth.token && path !== '/api/login') setAuth(null, null);
-    if(!r.ok){ const e = new Error(j.error || ('Fehler ' + r.status)); e.status = r.status; throw e; }
+    if(!r.ok){ const e = new Error(r.status === 403 ? 'Nicht erlaubt. (Die Adresse dieser Webseite fehlt evtl. in ALLOWED_ORIGIN im Worker.)' : (j.error || ('Fehler ' + r.status))); e.status = r.status; throw e; }
     return j;
   }
   function setAuth(token, user){

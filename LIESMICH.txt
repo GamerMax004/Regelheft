@@ -7,3 +7,8 @@ Regelheft Mathematik – Struktur
   assets/css/footer.css  Aussehen des Footers
   assets/js/regeln.js    die Regeln
 favicon.png und apple-touch-icon.png bleiben wie bisher im Hauptordner.
+
+Hochladen: den GANZEN Ordner (index.html + assets/) ins Repo kopieren und alte Dateien ersetzen.
+Neue Server-Funktionen (Merkliste, Zuletzt geöffnet): worker.js in Cloudflare einfügen und deployen.
+Nach Änderungen an Dateien in assets/ die Version hinter "?v=" in den HTML-Dateien erhöhen,
+damit Browser nicht die alten Dateien aus dem Zwischenspeicher laden.
