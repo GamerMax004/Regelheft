@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>KI-Aufgabenhilfe – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/footer.css">
+<link rel="stylesheet" href="assets/css/seiten.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft Mathematik</h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page ai-page">
+  <h2 class="page-title">KI-Aufgabenhilfe</h2>
+  <p class="page-lead is-loading" id="kiLoading">Lade …</p>
+  <div id="kiApp" class="is-hidden">
+    <p class="ai-note">Die Antworten stammen von einer KI und können Fehler enthalten. Fotografiere nur die Aufgabe, keine Personen und keine persönlichen Daten. Die Inhalte werden zur Verarbeitung an Google oder Groq gesendet. <a href="datenschutz.html">Datenschutz</a></p>
+    <div class="ai-bar"><button class="ai-btn ghost" id="aiHistBtn">Chats (0)</button><button class="ai-btn" id="aiNewChat">+ Neuer Chat</button></div>
+    <div id="aiHist" style="display:none"><div id="aiHistList"></div></div>
+    <div id="aiChats"></div>
+  </div>
+</div>
+</main>
+
+<template id="aiTpl">
+  <div class="ai-chat">
+    <h3 class="ai-title">Neuer Chat</h3>
+    <div class="ai-setup">
+      <p class="ai-sub">Fotografiere deine Aufgabe oder schreib sie auf. Die KI schlägt dir passende Regeln aus dem Regelheft vor. Ist die Aufgabe unklar, stellt sie dir eine Rückfrage.</p>
+      <input type="file" class="ai-file" accept="image/*" hidden>
+      <button class="ai-pick">Foto aufnehmen oder auswählen</button>
+      <div class="ai-preview"><img class="ai-prev-img" alt="Vorschau"><button class="ai-remove">Entfernen</button></div>
+      <textarea class="ai-text" rows="2" placeholder="Notiz zur Aufgabe (optional, z. B. „Aufgabe 3b“)"></textarea>
+      <button class="ai-btn ai-go" disabled>Passende Regeln finden</button>
+    </div>
+    <div class="ai-thread"></div>
+    <button class="ai-btn ai-del" style="display:none">Chat löschen</button>
+  </div>
+</template>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/footer.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/regeln.js"></script>
+<script src="assets/js/ki.js"></script>
+</body>
+</html>

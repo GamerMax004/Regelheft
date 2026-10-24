@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Dashboard – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/footer.css">
+<link rel="stylesheet" href="assets/css/seiten.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft Mathematik</h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page">
+  <h2 class="page-title">Dashboard</h2>
+  <p class="page-lead" id="dashLoading">Lade …</p>
+  <div class="page-note is-hidden" id="dashDenied"><b>Kein Zugriff.</b> Das Dashboard ist nur für den Betreiber sichtbar.</div>
+  <div class="is-hidden" id="dashApp">
+    <div class="ai-bar"><button class="ai-btn" id="dashTabOv">Übersicht</button><button class="ai-btn ghost" id="dashTabChats">Alle Chats</button></div>
+    <div id="dashBody"></div>
+  </div>
+</div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/footer.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/regeln.js"></script>
+<script src="assets/js/dashboard.js"></script>
+</body>
+</html>

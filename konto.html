@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Mein Konto – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/footer.css">
+<link rel="stylesheet" href="assets/css/seiten.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft Mathematik</h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page page--narrow">
+  <h2 class="page-title">Mein Konto</h2>
+  <p class="page-lead" id="kontoLoading">Lade …</p>
+  <div class="is-hidden" id="kontoApp">
+    <div class="auth-success">Angemeldet als <b id="kontoUser"></b></div>
+    <div class="btn-row">
+      <a class="ai-btn" href="ki.html">Zur KI-Aufgabenhilfe</a>
+      <a class="ai-btn ghost is-hidden" id="kontoDash" href="dashboard.html">Dashboard</a>
+      <button class="ai-btn ghost" id="kontoLogout" type="button">Abmelden</button>
+    </div>
+
+    <div class="danger-zone">
+      <h3>Konto löschen</h3>
+      <p>Dein Konto, alle gespeicherten Chats und alle Anmeldungen werden unwiderruflich gelöscht.</p>
+      <button class="ai-btn ai-del" id="delStart" type="button">Konto löschen …</button>
+      <div class="is-hidden" id="delBox">
+        <p style="margin-top:12px">Gib zur Bestätigung dein Passwort ein.</p>
+        <input class="auth-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort">
+        <div class="auth-err" id="delErr" role="alert"></div>
+        <button class="ai-btn ai-del" id="delGo" type="button" style="background:#b91c1c;color:#fff;border-color:#b91c1c">Endgültig löschen</button>
+        <button class="ai-btn ghost" id="delCancel" type="button">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/footer.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/konto.js"></script>
+</body>
+</html>

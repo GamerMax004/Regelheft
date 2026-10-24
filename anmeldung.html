@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Anmelden & Registrieren – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<link rel="stylesheet" href="assets/css/fonts.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/footer.css">
+<link rel="stylesheet" href="assets/css/seiten.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft Mathematik</h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page page--narrow">
+  <h2 class="page-title" id="authTitle">Anmelden</h2>
+  <p class="page-lead">Mit einem Konto kannst du die KI-Aufgabenhilfe nutzen. Das Regelheft selbst bleibt für alle offen.</p>
+
+  <div class="auth-card" id="authCard">
+    <div class="auth-tabs" role="tablist"><button type="button" id="authTabLogin" class="on" role="tab">Anmelden</button><button type="button" id="authTabReg" role="tab">Registrieren</button></div>
+    <form id="authForm" novalidate>
+      <input class="auth-in" id="authUser" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" maxlength="30">
+      <input class="auth-in" id="authPw" type="password" placeholder="Passwort (mind. 8 Zeichen)" autocomplete="current-password" maxlength="100">
+      <div id="authRegOnly" style="display:none">
+        <label class="auth-chk"><input type="checkbox" id="authAge"><span>Ich bin mindestens 16 Jahre alt oder habe die Erlaubnis meiner Erziehungsberechtigten.</span></label>
+        <label class="auth-chk"><input type="checkbox" id="authConsent"><span>Ich habe die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen. Ich weiß, dass meine Chats mit der KI (inklusive einer kleinen Vorschau meiner Fotos) gespeichert werden, vom Betreiber eingesehen werden können und zur Verarbeitung an einen KI-Anbieter (Google oder Groq) gesendet werden.</span></label>
+      </div>
+      <div class="auth-err" id="authErr" role="alert"></div>
+      <button class="ai-btn" id="authSubmit" type="submit">Anmelden</button>
+    </form>
+  </div>
+
+  <div class="auth-card is-hidden" id="authDone">
+    <div class="auth-success">Du bist angemeldet als <b id="authDoneUser"></b>.</div>
+    <div class="btn-row">
+      <a class="ai-btn" href="ki.html">Zur KI-Aufgabenhilfe</a>
+      <a class="ai-btn ghost" href="index.html">Zum Regelheft</a>
+      <a class="ai-btn ghost" href="konto.html">Mein Konto</a>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/footer.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/anmeldung.js"></script>
+</body>
+</html>
