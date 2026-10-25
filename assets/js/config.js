@@ -27,8 +27,8 @@ const LEGAL = {
 /* ---------- Social-Links (erscheinen im Footer) ----------
    Leer lassen ("") = Link wird ausgeblendet. */
 const SOCIAL = {
-  discord:   "https://discord.gg/MQetGYSpur",
-  instagram: "https://regelheft.onrender.com/index.html#r0"
+  discord:   "https://discord.gg/MQetGYSpur",   // Einladungslink deines Discord-Servers
+  instagram: ""                                  // z. B. https://instagram.com/deinname
 };
 
 /* ---------- AKTUELLES-POPUP (Startseite) ----------

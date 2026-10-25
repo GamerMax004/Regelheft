@@ -6,8 +6,35 @@
   const esc = RH.esc;
   const page = (location.pathname.split('/').pop() || 'index.html');
 
+  /* ---------- Hell/Dunkel-Umschalter (neben dem Konto-Knopf) ---------- */
+  const root = document.documentElement;
+  const themeNow = () => root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  function applyTheme(t, save){
+    root.setAttribute('data-theme', t);
+    const m = document.querySelector('meta[name="theme-color"]');
+    if(m) m.setAttribute('content', t === 'dark' ? '#0F1218' : '#ffffff');
+    if(save){ try{ localStorage.setItem('regelheft-theme', t); }catch(e){} }
+    const b = document.getElementById('themeBtn');
+    if(b){
+      b.innerHTML = icon(t === 'dark' ? 'sun' : 'moon', 19);
+      b.setAttribute('aria-label', t === 'dark' ? 'Zum hellen Design wechseln' : 'Zum dunklen Design wechseln');
+      b.title = t === 'dark' ? 'Helles Design' : 'Dunkles Design';
+    }
+  }
   /* ---------- Konto-Knopf ---------- */
   const host = document.querySelector('[data-account]');
+  if(host){
+    const wrap = document.createElement('div'); wrap.className = 'top-actions';
+    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'theme-btn'; tb.id = 'themeBtn';
+    tb.onclick = () => applyTheme(themeNow() === 'dark' ? 'light' : 'dark', true);
+    host.parentNode.insertBefore(wrap, host); wrap.appendChild(tb); wrap.appendChild(host);
+    applyTheme(themeNow(), false);
+    // Ohne eigene Auswahl dem Gerät folgen (z. B. wenn abends auf Dunkel umgestellt wird)
+    if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      let saved = null; try{ saved = localStorage.getItem('regelheft-theme'); }catch(_){}
+      if(!saved) applyTheme(e.matches ? 'dark' : 'light', false);
+    });
+  }
   const USER_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6z"/></svg>';
   function renderAccount(user, loading){
     if(!host) return;

@@ -5,10 +5,10 @@
 .sf{
   --sf-line:var(--border, #e8eaee);
   --sf-text:var(--ink, #14181f);
-  --sf-muted:#5B6472;
-  --sf-accent:var(--accent, #2F5BFF);
+  --sf-muted:var(--muted);
+  --sf-accent:var(--accent-fg, #2F5BFF);
   position:relative; z-index:25;            /* schiebt sich über die mitlaufende Suchleiste */
-  margin-top:48px; background:#fff; color:var(--sf-text);
+  margin-top:48px; background:var(--bg); color:var(--sf-text);
   border-top:1px solid var(--sf-line); font-family:var(--font);
 }
 .sf-inner{ max-width:1080px; margin:0 auto; padding:26px 20px calc(24px + env(safe-area-inset-bottom)); }
@@ -19,7 +19,7 @@
 .sf-brand-name span{ color:var(--sf-accent); font-weight:600; margin-left:.28em; }
 .sf-tools{ display:flex; align-items:center; gap:8px; }
 .sf-social a, .sf-top-btn{
-  width:44px; height:44px; border-radius:12px; border:1px solid var(--sf-line); background:#fff;
+  width:44px; height:44px; border-radius:12px; border:1px solid var(--sf-line); background:var(--bg);
   color:var(--sf-muted); display:flex; align-items:center; justify-content:center; cursor:pointer;
   transition:color .15s ease, border-color .15s ease, background .15s ease;
 }

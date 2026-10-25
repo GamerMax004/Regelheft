@@ -144,7 +144,6 @@ function renderList(){
     <div class="rule-card" data-id="${r.id}" style="animation-delay:${Math.min(idx*18,240)}ms">
       <div class="row-top">
         <span class="cat-pill">${escapeHtml(r.category)}</span>
-        ${r.diagram ? '<span class="diag-dot" title="mit Skizze"></span>' : ''}
         ${loggedIn() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
       <h3>${highlight(r.title, q)}</h3>
@@ -387,12 +386,22 @@ clearBtn.addEventListener('click', () => {
 const SPARK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>';
 const LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9zm3 4a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z"/></svg>';
 const aiBtn = document.getElementById('aiOpen');
-if(!AI_CONFIG.enabled) aiBtn.style.display = 'none';
+const aiSq = document.getElementById('aiSq');       // quadratischer KI-Knopf, erscheint nur wenn die Suchleiste oben angepinnt ist
+if(!AI_CONFIG.enabled){ aiBtn.style.display = 'none'; aiSq.style.display = 'none'; }
+(function(){
+  const sb = document.getElementById('searchbar'), sentinel = document.getElementById('searchSentinel');
+  if(!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(([e]) => sb.classList.toggle('stuck', !e.isIntersecting && e.boundingClientRect.top < 0), {threshold:0}).observe(sentinel);
+})();
 RH.onAuth((user, loading) => {
   const open = !!user || (loading && RH.hasToken());
   aiBtn.href = open ? 'ki.html' : 'anmeldung.html?next=ki.html';
   aiBtn.classList.toggle('locked', !open);
   document.getElementById('aiOpenIcon').innerHTML = open ? SPARK : LOCK;
+  aiSq.href = aiBtn.href; aiSq.classList.toggle('locked', !open);
+  document.getElementById('aiSqIcon').innerHTML = open ? SPARK : LOCK;
+  aiSq.setAttribute('aria-label', open ? 'KI-Aufgabenhilfe' : 'KI-Aufgabenhilfe (gesperrt – bitte anmelden)');
+  aiSq.title = open ? 'KI-Aufgabenhilfe' : 'Gesperrt – bitte anmelden';
   document.getElementById('aiOpenSub').textContent = open
     ? 'Lade ein Foto deiner Aufgabe hoch und finde die passenden Regeln!'
     : 'Funktion gesperrt! Melde dich an, um dieses Feature zu nutzen.';

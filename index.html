@@ -9,10 +9,14 @@
 <meta name="apple-mobile-web-app-title" content="Regelheft">
 <meta name="author" content="Gölitzer Development">
 <meta name="copyright" content="Copyright © Gölitzer Development">
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261024c">
-<link rel="stylesheet" href="assets/css/style.css?v=20261024c">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261024c">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261024c">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<script src="assets/js/theme-init.js?v=20261024e"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261024e">
+<link rel="stylesheet" href="assets/css/style.css?v=20261024e">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261024e">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261024e">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261024e">
 </head>
 <body>
 
@@ -23,7 +27,9 @@
 </header>
 
 <main>
-<div class="searchbar">
+<div id="searchSentinel" class="search-sentinel"></div>
+<div class="searchbar" id="searchbar">
+  <a class="ai-sq" id="aiSq" href="ki.html" aria-label="KI-Aufgabenhilfe" title="KI-Aufgabenhilfe"><span id="aiSqIcon" style="display:flex"></span></a>
   <div class="searchwrap">
     <span class="icon">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20L16.5 16.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -86,12 +92,12 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261024c"></script>
-<script src="assets/js/footer.js?v=20261024c"></script>
-<script src="assets/js/core.js?v=20261024c"></script>
-<script src="assets/js/layout.js?v=20261024c"></script>
-<script src="assets/js/icons.js?v=20261024c"></script>
-<script src="assets/js/regeln.js?v=20261024c"></script>
-<script src="assets/js/index.js?v=20261024c"></script>
+<script src="assets/js/config.js?v=20261024e"></script>
+<script src="assets/js/footer.js?v=20261024e"></script>
+<script src="assets/js/core.js?v=20261024e"></script>
+<script src="assets/js/icons.js?v=20261024e"></script>
+<script src="assets/js/layout.js?v=20261024e"></script>
+<script src="assets/js/regeln.js?v=20261024e"></script>
+<script src="assets/js/index.js?v=20261024e"></script>
 </body>
 </html>
