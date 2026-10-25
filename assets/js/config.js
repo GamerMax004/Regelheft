@@ -27,8 +27,8 @@ const LEGAL = {
 /* ---------- Social-Links (erscheinen im Footer) ----------
    Leer lassen ("") = Link wird ausgeblendet. */
 const SOCIAL = {
-  discord:   "https://discord.gg/MQetGYSpur",   // Einladungslink deines Discord-Servers
-  instagram: ""                                  // z. B. https://instagram.com/deinname
+  discord:   "https://discord.gg/MQetGYSpur",
+  instagram: "https://www.instagram.com/goel.itzer?dlrf=cGNzNjh3ZGZ4djQ3&utm_source=qr"
 };
 
 /* ---------- AKTUELLES-POPUP (Startseite) ----------
