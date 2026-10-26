@@ -35,12 +35,12 @@
       if(!saved) applyTheme(e.matches ? 'dark' : 'light', false);
     });
   }
-  const USER_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6z"/></svg>';
   function renderAccount(user, loading){
     if(!host) return;
     host.className = 'acct';
     if(user){
-      host.innerHTML = '<button class="acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false">' + USER_SVG + '<span>' + esc(user.username) + '</span></button>'
+      const ini = esc((user.username || '?').trim().charAt(0).toUpperCase());
+      host.innerHTML = '<button class="acct-avatar" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü">' + ini + '</button>'
         + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b></p>'
         + (user.admin ? '<a href="dashboard.html" role="menuitem">Dashboard</a>' : '')
         + '<a href="konto.html" role="menuitem">Mein Konto</a>'
@@ -52,10 +52,10 @@
         if(page !== 'index.html' && page !== '') location.href = 'index.html';
       };
     }else if(loading){
-      host.innerHTML = '<a class="acct-btn" href="konto.html">' + USER_SVG + '<span>Konto</span></a>';
+      host.innerHTML = '<a class="acct-avatar" href="konto.html" aria-label="Konto">' + icon('user', 18) + '</a>';
     }else{
       const next = (page === 'index.html' || page === 'anmeldung.html') ? '' : '?next=' + encodeURIComponent(page);
-      host.innerHTML = '<a class="acct-btn" href="anmeldung.html' + next + '">' + USER_SVG + '<span>Anmelden</span></a>';
+      host.innerHTML = '<a class="acct-link" href="anmeldung.html' + next + '">Anmelden</a>';
     }
   }
   document.addEventListener('click', e => {
@@ -79,7 +79,9 @@
     const el = document.getElementById('siteFooter');
     if(!el) return;
     const social = FOOTER.social.map(s => ({...s, href: fill(s.href)})).filter(s => usable(s.href) && ICONS[s.icon]);
-    const links = FOOTER.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label);
+    const f = RH.cfg().features;
+    const links = FOOTER.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label
+      && !(l.href === 'ki.html' && f.ai === false) && !(l.href === 'ueben.html' && f.practice === false));
     const link = l => {
       const x = ext(l.href) ? ' target="_blank" rel="noopener noreferrer"' : '';
       const a = l.loggedIn ? ' data-in-href="' + esc(l.loggedIn.href) + '" data-in-label="' + esc(l.loggedIn.label) + '" data-out-href="' + esc(l.href) + '" data-out-label="' + esc(l.label) + '"' : '';
@@ -107,6 +109,31 @@
     });
   }
 
+  /* ---------- Mitteilung / Wartungshinweis (aus dem Dashboard) ---------- */
+  let noticeDismissed = false;
+  function renderNotice(cfg){
+    const old = document.getElementById('siteNotice'); if(old) old.remove();
+    const items = [];
+    if(cfg.maintenance.enabled) items.push({type:'warn', text:cfg.maintenance.message || 'Wartungsarbeiten', link:'', linkText:'', key:'m'});
+    if(cfg.announcement.enabled && cfg.announcement.text) items.push({type:cfg.announcement.type, text:cfg.announcement.text, link:cfg.announcement.link, linkText:cfg.announcement.linkText, key:'a'});
+    if(!items.length || noticeDismissed) return;
+    const el = document.createElement('div'); el.id = 'siteNotice'; el.className = 'notices'; el.setAttribute('role', 'status');
+    el.innerHTML = items.map(n => '<div class="notice notice--' + esc(n.type) + '"><span class="notice-text">' + esc(n.text)
+      + (n.link ? ' <a href="' + esc(n.link) + '"' + (/^https?:/.test(n.link) ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' + esc(n.linkText || 'Mehr') + '</a>' : '') + '</span>'
+      + '<button type="button" class="notice-x" aria-label="Schließen" data-k="' + n.key + '">' + icon('x', 16) + '</button></div>').join('');
+    el.querySelectorAll('.notice-x').forEach(b => b.onclick = () => { noticeDismissed = true; el.remove(); });
+    const hdr = document.querySelector('header.top');
+    if(hdr) hdr.insertAdjacentElement('afterend', el); else document.body.prepend(el);
+  }
+
   buildFooter();
   RH.onAuth((u, l) => { renderAccount(u, l); footerAuth(u, l); });
+  RH.onConfig(cfg => {
+    renderNotice(cfg);
+    // Dunkelmodus abgeschaltet: Umschalter ausblenden, hell erzwingen
+    const tb = document.getElementById('themeBtn');
+    if(tb) tb.style.display = cfg.features.darkmode === false ? 'none' : '';
+    if(cfg.features.darkmode === false) applyTheme('light', false);
+    buildFooter(); footerAuth(RH.user(), RH.isLoading());
+  });
 })();

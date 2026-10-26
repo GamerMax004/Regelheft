@@ -7,9 +7,11 @@ document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.
 // ---- Merkliste (nur mit Konto): gespeichert wird nur die Regel-Kennung ----
 let started = false;
 const favs = new Set();
-const FAV = '__fav', REC = '__recent';
+const FAV = '__fav', REC = '__recent', NOTE = '__notes';
+const notes = {};       // Notizen pro Regel (nur mit Konto)
 let recent = [];        // zuletzt geöffnete Regel-Kennungen, neueste zuerst (nur mit Konto)
 const loggedIn = () => !!RH.user();
+const canFav = () => loggedIn() && RH.feat('favorites'), canRecent = () => loggedIn() && RH.feat('recent'), canNote = () => loggedIn() && RH.feat('notes');
 let toastT;
 function toast(msg){
   const t = document.getElementById('toast');
@@ -17,7 +19,7 @@ function toast(msg){
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000);
 }
 async function toggleFav(id){
-  if(!loggedIn()) return;
+  if(!canFav()) return;
   const on = !favs.has(id);
   on ? favs.add(id) : favs.delete(id);
   refreshFavUI();
@@ -29,6 +31,7 @@ async function toggleFav(id){
   }
 }
 function noteRecent(id){
+  if(!RH.feat('recent')) return;
   if(!loggedIn()){ if(RH.isLoading()) RH.ready.then(() => noteRecent(id)); return; }
   recent = [id].concat(recent.filter(x => x !== id)).slice(0, 15);
   if(activeCat === REC) favDirty = true;           // Reihenfolge erst nach dem Schließen aktualisieren
@@ -43,11 +46,43 @@ function refreshFavUI(){
   }else document.querySelectorAll('.fav-star').forEach(b => setStar(b, favs.has(b.dataset.id)));
   updateFavBtn();
 }
-function flushFav(){ if(favDirty){ favDirty = false; applyFilter(); } }
+function flushFav(){ flushNote(); if(favDirty){ favDirty = false; applyFilter(); } }
+
+// ---- Notizen zur Regel (nur mit Konto, speichert automatisch) ----
+const noteBox = document.getElementById('noteBox'), noteText = document.getElementById('noteText'), noteStatus = document.getElementById('noteStatus');
+let notePending = null, noteTimer;
+function updateNoteUI(){
+  const r = filtered[currentIndex];
+  noteBox.classList.toggle('is-hidden', !canNote() || !r);
+  if(!canNote() || !r) return;
+  noteText.value = notes[r.id] || '';
+  noteStatus.textContent = '';
+}
+async function sendNote(id, text){
+  noteStatus.textContent = 'Speichert …';
+  try{ await RH.api('/api/notes', {body:{id, text}}); noteStatus.textContent = 'Gespeichert'; }
+  catch(e){ noteStatus.textContent = e.message || 'Nicht gespeichert'; }
+}
+function flushNote(){
+  clearTimeout(noteTimer);
+  if(!notePending) return;
+  const p = notePending; notePending = null;
+  const t = p.text.trim();
+  if(t) notes[p.id] = t; else delete notes[p.id];
+  favDirty = true;                                  // Liste nach dem Schließen neu aufbauen (Notiz-Vorschau)
+  sendNote(p.id, p.text);
+}
+noteText.addEventListener('input', () => {
+  const r = filtered[currentIndex]; if(!r) return;
+  notePending = {id:r.id, text:noteText.value};
+  noteStatus.textContent = '…';
+  clearTimeout(noteTimer); noteTimer = setTimeout(flushNote, 900);
+});
+noteText.addEventListener('blur', flushNote);
 function updateFavBtn(){
   const b = document.getElementById('favBtn');
-  b.classList.toggle('is-hidden', !loggedIn());
-  if(!loggedIn() || currentIndex < 0 || !filtered[currentIndex]) return;
+  b.classList.toggle('is-hidden', !canFav());
+  if(!canFav() || currentIndex < 0 || !filtered[currentIndex]) return;
   const on = favs.has(filtered[currentIndex].id);
   b.classList.toggle('on', on);
   b.setAttribute('aria-pressed', on);
@@ -71,8 +106,9 @@ let currentIndex = -1;
 const chipsEl = document.getElementById('chips');
 function renderChips(){
   let html = `<div class="chip ${activeCat==='Alle'?'active':''}" data-cat="Alle">Alle</div>`;
-  if(loggedIn()) html += `<div class="chip ${activeCat===FAV?'active':''}" data-cat="${FAV}">${icon('star',15,activeCat===FAV)}Merkliste</div>`;
-  if(loggedIn()) html += `<div class="chip ${activeCat===REC?'active':''}" data-cat="${REC}">${icon('clock',15)}Zuletzt</div>`;
+  if(canFav()) html += `<div class="chip ${activeCat===FAV?'active':''}" data-cat="${FAV}">${icon('star',15,activeCat===FAV)}Merkliste</div>`;
+  if(canRecent()) html += `<div class="chip ${activeCat===REC?'active':''}" data-cat="${REC}">${icon('clock',15)}Zuletzt</div>`;
+  if(canNote()) html += `<div class="chip ${activeCat===NOTE?'active':''}" data-cat="${NOTE}">${icon('pencil',15)}Notizen</div>`;
   categories.forEach(c=>{
     html += `<div class="chip ${activeCat===c?'active':''}" data-cat="${escapeAttr(c)}">${escapeHtml(c)}</div>`;
   });
@@ -85,7 +121,6 @@ function renderChips(){
   });
 }
 
-const escapeHtml = RH.esc;
 const escapeAttr = RH.esc;
 
 function highlight(text, q){
@@ -101,7 +136,7 @@ function highlight(text, q){
 function applyFilter(){
   const q = query.trim().toLowerCase();
   filtered = RULES.filter(r=>{
-    const catOk = activeCat === "Alle" || (activeCat === FAV ? favs.has(r.id) : activeCat === REC ? recent.includes(r.id) : r.category === activeCat);
+    const catOk = activeCat === "Alle" || (activeCat === FAV ? favs.has(r.id) : activeCat === REC ? recent.includes(r.id) : activeCat === NOTE ? !!notes[r.id] : r.category === activeCat);
     if(!catOk) return false;
     if(!q) return true;
     return (r.title.toLowerCase().includes(q) || r.plain.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
@@ -124,7 +159,7 @@ function applyFilter(){
   renderChips();
   renderList();
   document.getElementById('resultCount').textContent = filtered.length;
-  document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : (activeCat === FAV ? 'Merkliste' : activeCat === REC ? 'Zuletzt geöffnet' : activeCat);
+  document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : (activeCat === FAV ? 'Merkliste' : activeCat === REC ? 'Zuletzt geöffnet' : activeCat === NOTE ? 'Notizen' : activeCat);
 }
 
 function renderList(){
@@ -132,9 +167,9 @@ function renderList(){
   const emptyEl = document.getElementById('emptyState');
   if(filtered.length === 0){
     listEl.innerHTML = '';
-    const fav = activeCat === FAV && !query.trim(), rec = activeCat === REC && !query.trim();
-    document.getElementById('emptyTitle').textContent = fav ? 'Noch nichts gemerkt' : rec ? 'Noch nichts geöffnet' : 'Keine Treffer';
-    document.getElementById('emptySub').textContent = fav ? 'Öffne eine Regel und tippe auf den Stern, um sie hier zu speichern.' : rec ? 'Regeln, die du öffnest, erscheinen hier.' : 'Versuch es mit einem anderen Suchbegriff.';
+    const fav = activeCat === FAV && !query.trim(), rec = activeCat === REC && !query.trim(), nt = activeCat === NOTE && !query.trim();
+    document.getElementById('emptyTitle').textContent = fav ? 'Noch nichts gemerkt' : rec ? 'Noch nichts geöffnet' : nt ? 'Noch keine Notizen' : 'Keine Treffer';
+    document.getElementById('emptySub').textContent = fav ? 'Öffne eine Regel und tippe auf den Stern, um sie hier zu speichern.' : rec ? 'Regeln, die du öffnest, erscheinen hier.' : nt ? 'Öffne eine Regel und schreibe unten deine Notiz dazu.' : 'Versuch es mit einem anderen Suchbegriff.';
     emptyEl.style.display = 'block';
     return;
   }
@@ -144,10 +179,11 @@ function renderList(){
     <div class="rule-card" data-id="${r.id}" style="animation-delay:${Math.min(idx*18,240)}ms">
       <div class="row-top">
         <span class="cat-pill">${escapeHtml(r.category)}</span>
-        ${loggedIn() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
+        ${canFav() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
       <h3>${highlight(r.title, q)}</h3>
       <p>${highlight(r.excerpt, q)}</p>
+      ${notes[r.id] ? '<div class="card-note">' + icon('pencil', 14) + '<span>' + escapeHtml(notes[r.id].replace(/\s+/g, ' ').slice(0, 90)) + '</span></div>' : ''}
     </div>
   `).join('');
   listEl.querySelectorAll('.rule-card').forEach(el=>{
@@ -160,135 +196,6 @@ function renderList(){
 }
 
 // ---- Math renderer (explicit syntax): {a/b} Bruch, √(..) √[n](..) Wurzel, ^(..) hoch, _(..) tief, ~(..) Periode ----
-const SUP_MAP = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁺':'+','⁻':'−'};
-const CLOSERS = {'{':'}','(':')','[':']'};
-function matchClose(s, i){
-  const open = s[i], close = CLOSERS[open];
-  let d = 0;
-  for(let k=i;k<s.length;k++){
-    if(s[k]===open) d++;
-    else if(s[k]===close){ d--; if(d===0) return k; }
-  }
-  return -1;
-}
-function topSlash(s){
-  let d = 0;
-  for(let k=0;k<s.length;k++){
-    const c = s[k];
-    if(c==='('||c==='{'||c==='[') d++;
-    else if(c===')'||c==='}'||c===']') d--;
-    else if(c==='/' && d===0) return [s.slice(0,k), s.slice(k+1)];
-  }
-  return null;
-}
-function isLetter(ch){ return /[A-Za-zÄÖÜäöüßα-ωΑ-Ω]/.test(ch||''); }
-function isMinus(s,i){
-  const p = i===0 ? ' ' : s[i-1], n = s[i+1] || ' ';
-  if(p===' ' && n===' ') return true;
-  const prevOp = i===0 || /[\s(\[{=+·*\/;,:|⇒⇔→<>≤≥≠±^_]/.test(p);
-  if(prevOp) return /[0-9A-Za-zα-ωΑ-Ω({√∞.]/.test(n);
-  if(/[0-9({√∞]/.test(n)) return true;
-  return isLetter(n) && !isLetter(s[i+2]) && !(isLetter(p) && isLetter(s[i-2]));
-}
-function parseMath(s){
-  let out = '', i = 0;
-  while(i < s.length){
-    const c = s[i];
-    if(c==='{'){
-      const j = matchClose(s,i);
-      if(j<0){ out += '{'; i++; continue; }
-      const inner = s.slice(i+1,j), sp = topSlash(inner);
-      if(sp) out += '<span class="frac"><span class="num">'+parseMath(sp[0].trim())+'</span><span class="den">'+parseMath(sp[1].trim())+'</span></span>';
-      else out += '{'+parseMath(inner)+'}';
-      i = j+1; continue;
-    }
-    if(c==='√'){
-      i++; let idx = '';
-      if(s[i]==='['){ const j = matchClose(s,i); idx = s.slice(i+1,j); i = j+1; }
-      let rad;
-      if(s[i]==='('){ const j = matchClose(s,i); rad = s.slice(i+1,j); i = j+1; }
-      else { const m = /^[A-Za-z0-9²³πΔ]+/.exec(s.slice(i)); rad = m?m[0]:''; i += rad.length; }
-      out += '<span class="sqrt">'+(idx?'<sup class="idx">'+parseMath(idx)+'</sup>':'')+'<span class="rad">√</span><span class="radicand">'+parseMath(rad)+'</span></span>';
-      continue;
-    }
-    if(c==='~' && s[i+1]==='('){
-      const j = matchClose(s,i+1);
-      out += '<span class="per">'+parseMath(s.slice(i+2,j))+'</span>'; i = j+1; continue;
-    }
-    if(c==='^' || c==='_'){
-      let inner;
-      if(s[i+1]==='('){ const j = matchClose(s,i+1); inner = s.slice(i+2,j); i = j+1; }
-      else {
-        const m = /^[-+]?[A-Za-z0-9]+/.exec(s.slice(i+1));
-        if(m){ inner = m[0]; i += 1+inner.length; } else { out += c; i++; continue; }
-      }
-      out += (c==='^'?'<sup>':'<sub>')+parseMath(inner)+(c==='^'?'</sup>':'</sub>');
-      continue;
-    }
-    if(SUP_MAP[c]!==undefined){
-      let run = '';
-      while(i<s.length && SUP_MAP[s[i]]!==undefined){ run += SUP_MAP[s[i]]; i++; }
-      out += '<sup>'+run+'</sup>'; continue;
-    }
-    if(c==='-' && isMinus(s,i)){ out += '−'; i++; continue; }
-    out += c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':c;
-    i++;
-  }
-  return out;
-}
-function inline(s){
-  // **fett** + Mathe
-  return s.split('**').map((seg,k)=> k%2 ? '<b>'+parseMath(seg)+'</b>' : parseMath(seg)).join('');
-}
-function renderTable(spec){
-  const rows = spec.split(' ;; ').map(r=>r.split('§'));
-  let h = '<div class="tbl-wrap"><table class="tbl">';
-  rows.forEach((cells,ri)=>{
-    h += '<tr>' + cells.map(c=>{
-      const t = c.replace(/\u200e/g,'').trim();
-      return (ri===0?'<th>':'<td>') + inline(t) + (ri===0?'</th>':'</td>');
-    }).join('') + '</tr>';
-  });
-  return h + '</table></div>';
-}
-function formatBody(body){
-  const lines = body.split('\n').map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim().length>0);
-  let html = '', i = 0;
-  while(i < lines.length){
-    const L = lines[i];
-    if(L.startsWith('$ ')){
-      let items = '';
-      while(i<lines.length && lines[i].startsWith('$ ')){
-        const raw = lines[i].slice(2);
-        const parts = raw.split(' ‖ ');
-        items += '<div class="fl"><span class="fl-expr">'+inline(parts[0])+'</span>'+(parts[1]?'<span class="fl-note">'+inline(parts.slice(1).join(' ‖ '))+'</span>':'')+'</div>';
-        i++;
-      }
-      html += '<div class="formula-block">'+items+'</div>';
-    } else if(L.startsWith('% ')){
-      let pre = '';
-      while(i<lines.length && lines[i].startsWith('% ')){ pre += escapeHtml(lines[i].slice(2))+'\n'; i++; }
-      html += '<pre class="pre">'+pre.trimEnd()+'</pre>';
-    } else if(L.startsWith('- ')){
-      let items = '';
-      while(i<lines.length && lines[i].startsWith('- ')){ items += '<li>'+inline(lines[i].slice(2))+'</li>'; i++; }
-      html += '<ul class="bullet-list">'+items+'</ul>';
-    } else if(L.startsWith('! ')){
-      html += '<div class="callout">'+inline(L.slice(2))+'</div>'; i++;
-    } else if(L.startsWith('## ')){
-      html += '<h4 class="subhead">'+inline(L.slice(3))+'</h4>'; i++;
-    } else if(L.startsWith('T: ')){
-      html += renderTable(L.slice(3)); i++;
-    } else {
-      const m = /^(\d)\)\s+(.*)$/.exec(L);
-      if(m) html += '<p class="step"><span class="n">'+m[1]+'</span><span>'+inline(m[2])+'</span></p>';
-      else html += '<p class="prose-line">'+inline(L)+'</p>';
-      i++;
-    }
-  }
-  return html;
-}
-
 
 // ---- Regel-Detail (als Overlay; die Adresse bekommt #regel-id, damit man Regeln verlinken kann) ----
 const overlayEl = document.getElementById('overlay');
@@ -317,6 +224,7 @@ function openDetail(id, opts){
   }
 }
 function showCurrent(){
+  flushNote();
   const r = filtered[currentIndex];
   document.getElementById('overlayCat').textContent = r.category;
   document.getElementById('overlayTitle').textContent = r.title;
@@ -334,11 +242,12 @@ function showCurrent(){
   document.getElementById('nextBtn').disabled = currentIndex >= filtered.length - 1;
   document.getElementById('overlay').scrollTop = 0;
   updateFavBtn();
+  updateNoteUI();
 }
 
 
 // Kam man über einen Link aus der KI-Seite (oder dem Dashboard)? Dann führt der Zurück-Pfeil dorthin zurück (zum Chat).
-const FROM = {ki:'ki.html', dashboard:'dashboard.html'};
+const FROM = {ki:'ki.html', dashboard:'dashboard.html', ueben:'ueben.html'};
 const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || null;
 function closeDetail(){
   document.getElementById('toast').classList.remove('show');
@@ -383,28 +292,27 @@ clearBtn.addEventListener('click', () => {
 });
 
 // ---- KI-Knopf: Link zur KI-Seite (ohne Konto: gesperrt, führt zur Anmeldung) ----
-const SPARK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>';
-const LOCK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 1 1 6 0v3H9zm3 4a2 2 0 0 1 1 3.7V19h-2v-1.3A2 2 0 0 1 12 14z"/></svg>';
-const aiBtn = document.getElementById('aiOpen');
-const aiSq = document.getElementById('aiSq');       // quadratischer KI-Knopf, erscheint nur wenn die Suchleiste oben angepinnt ist
-if(!AI_CONFIG.enabled){ aiBtn.style.display = 'none'; aiSq.style.display = 'none'; }
-(function(){
-  const sb = document.getElementById('searchbar'), sentinel = document.getElementById('searchSentinel');
-  if(!('IntersectionObserver' in window)) return;
-  new IntersectionObserver(([e]) => sb.classList.toggle('stuck', !e.isIntersecting && e.boundingClientRect.top < 0), {threshold:0}).observe(sentinel);
-})();
+// ---- KI-Knopf neben der Suche (ohne Konto: gesperrt, führt zur Anmeldung) ----
+const aiSq = document.getElementById('aiSq');
+const practiceSq = document.getElementById('practiceSq'), shareBtn = document.getElementById('shareBtn');
+function applyFeatureUI(){
+  aiSq.style.display = (AI_CONFIG.enabled && RH.feat('ai')) ? '' : 'none';
+  practiceSq.style.display = RH.feat('practice') ? '' : 'none';
+  shareBtn.style.display = RH.feat('share') ? '' : 'none';
+  if(!RH.feat('favorites') && activeCat === FAV) activeCat = 'Alle';
+  if(!RH.feat('recent') && activeCat === REC) activeCat = 'Alle';
+  if(!RH.feat('notes') && activeCat === NOTE) activeCat = 'Alle';
+  if(started){ renderChips(); applyFilter(); }
+  updateFavBtn(); updateNoteUI();
+}
+RH.onConfig(applyFeatureUI);
 RH.onAuth((user, loading) => {
   const open = !!user || (loading && RH.hasToken());
-  aiBtn.href = open ? 'ki.html' : 'anmeldung.html?next=ki.html';
-  aiBtn.classList.toggle('locked', !open);
-  document.getElementById('aiOpenIcon').innerHTML = open ? SPARK : LOCK;
-  aiSq.href = aiBtn.href; aiSq.classList.toggle('locked', !open);
-  document.getElementById('aiSqIcon').innerHTML = open ? SPARK : LOCK;
+  aiSq.href = open ? 'ki.html' : 'anmeldung.html?next=ki.html';
+  aiSq.classList.toggle('locked', !open);
+  document.getElementById('aiSqIcon').innerHTML = icon(open ? 'sparkles' : 'lock', 22);
   aiSq.setAttribute('aria-label', open ? 'KI-Aufgabenhilfe' : 'KI-Aufgabenhilfe (gesperrt – bitte anmelden)');
   aiSq.title = open ? 'KI-Aufgabenhilfe' : 'Gesperrt – bitte anmelden';
-  document.getElementById('aiOpenSub').textContent = open
-    ? 'Lade ein Foto deiner Aufgabe hoch und finde die passenden Regeln!'
-    : 'Funktion gesperrt! Melde dich an, um dieses Feature zu nutzen.';
 });
 
 // ---- Merkliste laden, sobald ein Konto angemeldet ist (ohne Konto nicht verfügbar) ----
@@ -413,17 +321,19 @@ RH.onAuth(async (user) => {
   if(!user){
     favs.clear(); favsFor = null;
     recent = [];
-    if(activeCat === FAV || activeCat === REC) activeCat = 'Alle';
+    Object.keys(notes).forEach(k => delete notes[k]);
+    if(activeCat === FAV || activeCat === REC || activeCat === NOTE) activeCat = 'Alle';
     if(started){ renderChips(); applyFilter(); }
-    updateFavBtn();
+    updateFavBtn(); updateNoteUI();
     return;
   }
   if(favsFor === user.username) return;
   favsFor = user.username;
   try{ (await RH.api('/api/favs')).ids.forEach(id => favs.add(id)); }catch(e){}
+  try{ Object.assign(notes, (await RH.api('/api/notes')).notes || {}); }catch(e){}
   try{ const ids = (await RH.api('/api/recent')).ids; recent = recent.concat(ids.filter(x => !recent.includes(x))).slice(0, 15); }catch(e){}
   if(started){ renderChips(); applyFilter(); }
-  updateFavBtn();
+  updateFavBtn(); updateNoteUI();
 });
 document.getElementById('favBtn').addEventListener('click', () => { const r = filtered[currentIndex]; if(r) toggleFav(r.id); });
 
@@ -450,10 +360,11 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
 const newsEl = document.getElementById('newsOverlay');
 function closeNews(){ newsEl.classList.remove('open'); document.body.style.overflow = ''; }
 function openNews(){
-  document.getElementById('newsTitle').textContent = NEWS.title;
-  document.getElementById('newsDate').textContent = NEWS.date;
+  const NEWS_ = RH.cfg().news;
+  document.getElementById('newsTitle').textContent = NEWS_.title;
+  document.getElementById('newsDate').textContent = NEWS_.date;
   const ul = document.getElementById('newsList'); ul.innerHTML = '';
-  NEWS.items.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+  NEWS_.items.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
   newsEl.classList.add('open'); document.body.style.overflow = 'hidden';
 }
 document.getElementById('newsClose').addEventListener('click', closeNews);
@@ -473,7 +384,7 @@ if(startId) openDetail(startId, {log:true});
 const wantNews = new URLSearchParams(location.search).get('news') === '1';
 let cameFromHere = false;
 try{ cameFromHere = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
-if(NEWS.enabled && (wantNews || (!cameFromHere && !startId))) openNews();
+RH.configReady.then(() => { const n = RH.cfg().news; if(n && n.enabled && n.items.length && (wantNews || (!cameFromHere && !startId))) openNews(); });
 if(wantNews) history.replaceState(null, '', location.pathname + location.hash);
 
 

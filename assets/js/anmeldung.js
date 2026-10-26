@@ -21,6 +21,14 @@
   $('authTabLogin').onclick = () => setMode('login');
   $('authTabReg').onclick = () => setMode('register');
   setMode(mode);
+  RH.onConfig(cfg => {
+    const open = cfg.features.registration !== false;
+    $('authTabReg').style.display = open ? '' : 'none';
+    if(!open && mode === 'register') setMode('login');
+    let n = document.getElementById('regClosed');
+    if(!open && !n){ n = document.createElement('p'); n.id = 'regClosed'; n.className = 'page-note'; n.textContent = 'Die Registrierung ist gerade geschlossen. Wer schon ein Konto hat, kann sich anmelden.'; $('authCard').before(n); }
+    if(open && n) n.remove();
+  });
 
   $('authForm').onsubmit = async e => {
     e.preventDefault();

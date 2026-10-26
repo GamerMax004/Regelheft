@@ -12,3 +12,10 @@ Hochladen: den GANZEN Ordner (index.html + assets/) ins Repo kopieren und alte D
 Neue Server-Funktionen (Merkliste, Zuletzt geöffnet): worker.js in Cloudflare einfügen und deployen.
 Nach Änderungen an Dateien in assets/ die Version hinter "?v=" in den HTML-Dateien erhöhen,
 damit Browser nicht die alten Dateien aus dem Zwischenspeicher laden.
+
+Neu: ueben.html (Karteikarten), Notizen zu Regeln. Dafür die neue worker.js in Cloudflare deployen
+(Tabellen "notes" und "cards" legt der Worker beim ersten Aufruf selbst an).
+
+ScherAI: im Cloudflare-Worker das Secret SCHER_API_KEY anlegen (Wert = dein echter Key, beginnt mit "sk-scher-").
+Der Key gehört NUR dorthin, nie in die Webseite. Danach worker.js neu deployen.
+Im Dashboard unter "Einstellungen": Mitteilung, Wartungsmodus, Popup "Neu", Funktionen an/aus, KI-Reihenfolge, Footer-Links.

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Üben – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<script src="assets/js/theme-init.js?v=20261026b"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/style.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/header.css?v=20261026b">
+<link rel="stylesheet" href="assets/css/ueben.css?v=20261026b">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft<span> Mathematik</span></h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page practice">
+  <h2 class="page-title">Üben</h2>
+  <p class="page-lead">Karteikarten zu allen Regeln: erst überlegen, dann umdrehen.</p>
+
+  <div class="page-note is-hidden" id="pOff"><b>Der Übungsmodus ist gerade deaktiviert.</b> <a class="link" href="index.html">Zurück zum Regelheft</a></div>
+
+  <section id="pSetup">
+    <div class="p-label">Womit möchtest du üben?</div>
+    <div class="p-chips" id="pSource" role="radiogroup" aria-label="Kartenstapel"></div>
+    <div class="p-label">Wie viele Karten?</div>
+    <div class="p-chips" id="pCount" role="radiogroup" aria-label="Anzahl"></div>
+    <button class="ai-btn" id="pStart" type="button">Los geht’s</button>
+    <div class="p-stats is-hidden" id="pStats"></div>
+  </section>
+
+  <section id="pRun" class="is-hidden">
+    <div class="p-top"><button class="p-quit" id="pQuit" type="button">Beenden</button><div class="p-progress"><i id="pBar"></i></div><span class="p-num" id="pNum"></span></div>
+    <div class="p-card" id="pCard" role="button" tabindex="0" aria-label="Karte umdrehen">
+      <div class="p-front" id="pFront"><span class="cat-pill" id="pCat"></span><h3 id="pTitle"></h3><div class="p-hint">Tippen zum Umdrehen</div></div>
+      <div class="p-back is-hidden" id="pBack">
+        <h3 id="pTitle2"></h3>
+        <div class="overlay-body p-body" id="pBody"></div>
+        <div class="diagram-section is-hidden" id="pDiagSec"><div class="label">Skizze</div><div class="diagram-frame" id="pDiag"></div></div>
+        <a class="link p-open" id="pOpen" href="index.html">Im Regelheft öffnen</a>
+      </div>
+    </div>
+    <div class="p-actions is-hidden" id="pActions">
+      <button class="p-btn again" id="pAgain" type="button"><span data-icon="rotate" data-size="20"></span>Nochmal</button>
+      <button class="p-btn know" id="pKnow" type="button"><span data-icon="check" data-size="20"></span>Gewusst</button>
+    </div>
+  </section>
+
+  <section id="pDone" class="is-hidden">
+    <div class="p-done">
+      <div class="p-big" id="pDoneBig"></div>
+      <p class="page-lead" id="pDoneSub"></p>
+      <div class="btn-row">
+        <button class="ai-btn" id="pRepeat" type="button">Verpasste wiederholen</button>
+        <button class="ai-btn ghost" id="pNew" type="button">Neue Runde</button>
+        <a class="ai-btn ghost" href="index.html">Zum Regelheft</a>
+      </div>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js?v=20261026b"></script>
+<script src="assets/js/footer.js?v=20261026b"></script>
+<script src="assets/js/core.js?v=20261026b"></script>
+<script src="assets/js/icons.js?v=20261026b"></script>
+<script src="assets/js/layout.js?v=20261026b"></script>
+<script src="assets/js/regeln.js?v=20261026b"></script>
+<script src="assets/js/format.js?v=20261026b"></script>
+<script src="assets/js/ueben.js?v=20261026b"></script>
+</body>
+</html>

@@ -25,13 +25,15 @@ const LEGAL = {
 };
 
 /* ---------- Social-Links (erscheinen im Footer) ----------
-   Leer lassen ("") = Link wird ausgeblendet. */
+   Leer lassen ("") = Link wird ausgeblendet.
+   Das sind die STANDARD-Werte. Im Dashboard (Einstellungen) kannst du sie ohne Code ändern. */
 const SOCIAL = {
-  discord:   "https://discord.gg/MQetGYSpur",
-  instagram: "https://www.instagram.com/goel.itzer?dlrf=cGNzNjh3ZGZ4djQ3&utm_source=qr"
+  discord:   "https://discord.gg/MQetGYSpur",   // Einladungslink deines Discord-Servers
+  instagram: ""                                  // z. B. https://instagram.com/deinname
 };
 
 /* ---------- AKTUELLES-POPUP (Startseite) ----------
+   Das sind die STANDARD-Werte. Im Dashboard (Einstellungen) kannst du Text und Schalter ohne Code ändern.
    • enabled: true = Popup erscheint beim Öffnen der Startseite, false = aus
    • items:   eine Zeile pro Punkt
    Über den Footer-Link „Aktuelles“ kann man es jederzeit erneut öffnen. */

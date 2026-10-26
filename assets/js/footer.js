@@ -17,6 +17,7 @@ const FOOTER = {
   // Link-Zeile (mit Umbruch auf dem Handy)
   links: [
     { label: "KI-Aufgabenhilfe", href: "ki.html" },
+    { label: "Üben",             href: "ueben.html" },
     { label: "Impressum",        href: "impressum.html" },
     { label: "Datenschutz",      href: "datenschutz.html" }
     // Weitere Links: { label: "Aktuelles", href: "index.html?news=1" }  ·  Mit Anmelde-Wechsel:

@@ -204,6 +204,13 @@
   // Ohne Konto -> zur Anmeldung. Mit Konto -> gespeicherte Chats laden, ggf. den per #-Link angegebenen öffnen.
   RH.ready.then(async () => {
     if(!RH.user()){ RH.toLogin('ki.html'); return; }
+    await RH.configReady;
+    const c = RH.cfg(), admin = !!RH.user().admin;
+    if(!admin && (!c.features.ai || c.maintenance.enabled)){
+      $('kiLoading').classList.remove('is-hidden');
+      $('kiLoading').textContent = c.maintenance.enabled ? (c.maintenance.message || 'Wartungsarbeiten. Bitte später wieder vorbeischauen.') : 'Die KI-Aufgabenhilfe ist gerade deaktiviert.';
+      return;
+    }
     $('kiLoading').classList.add('is-hidden');
     $('kiApp').classList.remove('is-hidden');
     await loadHistory();

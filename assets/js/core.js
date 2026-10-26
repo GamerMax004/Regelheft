@@ -9,6 +9,32 @@ const RH = (function(){
   try{ auth.token = localStorage.getItem('regelheft-token'); }catch(e){}
   let loading = !!(auth.token && configured);
   const subs = [];
+  // ---- Einstellungen aus dem Dashboard (Mitteilung, Funktionen an/aus, Neues …). Standardwerte stehen in config.js ----
+  const cfg = {
+    maintenance: {enabled:false, message:''},
+    announcement: {enabled:false, text:'', type:'info', link:'', linkText:''},
+    news: NEWS,
+    features: {ai:true, registration:true, favorites:true, recent:true, notes:true, practice:true, share:true, darkmode:true, stats:true},
+    social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram}
+  };
+  const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram};
+  const cfgSubs = [];
+  const onConfig = fn => { cfgSubs.push(fn); fn(cfg); };
+  function applyConfig(j){
+    if(!j || typeof j !== 'object') return;
+    if(j.maintenance) Object.assign(cfg.maintenance, j.maintenance);
+    if(j.announcement) Object.assign(cfg.announcement, j.announcement);
+    if(j.features) Object.assign(cfg.features, j.features);
+    cfg.news = j.news || defaults.news;
+    const so = j.social || {};
+    cfg.social.discord = so.discord == null ? defaults.discord : so.discord;
+    cfg.social.instagram = so.instagram == null ? defaults.instagram : so.instagram;
+    SOCIAL.discord = cfg.social.discord; SOCIAL.instagram = cfg.social.instagram;
+    cfgSubs.slice().forEach(f => f(cfg));
+  }
+  const configReady = configured
+    ? Promise.race([fetch(API + '/api/config').then(r => r.json()), new Promise((_, rej) => setTimeout(rej, 3500))]).then(applyConfig).catch(() => {})
+    : Promise.resolve();
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const emit = () => subs.slice().forEach(f => f(auth.user, loading));
@@ -50,6 +76,6 @@ const RH = (function(){
   function safeNext(n){ return /^[a-z0-9_-]+\.html(#[\w-]+)?$/i.test(n || '') ? n : 'index.html'; }
   function toLogin(next){ location.replace('anmeldung.html?next=' + encodeURIComponent(next)); }
 
-  return {api, setAuth, logout, onAuth, ready, esc, logEv, safeNext, toLogin, configured,
+  return {api, setAuth, logout, onAuth, ready, esc, logEv, safeNext, toLogin, configured, onConfig, configReady, cfg: () => cfg, feat: k => cfg.features[k] !== false, defaults,
           user: () => auth.user, hasToken: () => !!auth.token, isLoading: () => loading};
 })();
