@@ -11,7 +11,8 @@ const FAV = '__fav', REC = '__recent', NOTE = '__notes';
 const notes = {};       // Notizen pro Regel (nur mit Konto)
 let recent = [];        // zuletzt geöffnete Regel-Kennungen, neueste zuerst (nur mit Konto)
 const loggedIn = () => !!RH.user();
-const canFav = () => loggedIn() && RH.feat('favorites'), canRecent = () => loggedIn() && RH.feat('recent'), canNote = () => loggedIn() && RH.feat('notes');
+const canFav = () => loggedIn() && RH.feat('favorites'), canRecent = () => loggedIn() && RH.feat('recent'), canNote = () => loggedIn() && RH.feat('notes') && RH.hasAccess('notes');
+const noteLocked = () => loggedIn() && RH.feat('notes') && !RH.hasAccess('notes');
 let toastT;
 function toast(msg){
   const t = document.getElementById('toast');
@@ -53,6 +54,7 @@ const noteBox = document.getElementById('noteBox'), noteText = document.getEleme
 let notePending = null, noteTimer;
 function updateNoteUI(){
   const r = filtered[currentIndex];
+  document.getElementById('noteLock').classList.toggle('is-hidden', !noteLocked() || !r);
   noteBox.classList.toggle('is-hidden', !canNote() || !r);
   if(!canNote() || !r) return;
   noteText.value = notes[r.id] || '';
@@ -295,9 +297,20 @@ clearBtn.addEventListener('click', () => {
 // ---- KI-Knopf neben der Suche (ohne Konto: gesperrt, führt zur Anmeldung) ----
 const aiSq = document.getElementById('aiSq');
 const practiceSq = document.getElementById('practiceSq'), shareBtn = document.getElementById('shareBtn');
+function updatePractice(){
+  const gated = RH.needsPro('practice'), locked = gated && !RH.isPro();
+  const hidden = !RH.feat('practice') || (gated && !RH.user());       // ohne Bezahl-Version: ohne Konto gar nicht sichtbar
+  practiceSq.style.display = hidden ? 'none' : '';
+  practiceSq.href = locked ? 'pro.html' : 'ueben.html';
+  practiceSq.classList.toggle('has-crown', locked);
+  document.getElementById('practiceCrown').classList.toggle('is-hidden', !locked);
+  practiceSq.title = locked ? 'Üben (mit Pro)' : 'Üben mit Karteikarten';
+  practiceSq.setAttribute('aria-label', locked ? 'Üben mit Karteikarten (mit Pro)' : 'Üben mit Karteikarten');
+}
+RH.onAuth(() => updatePractice());
 function applyFeatureUI(){
   aiSq.style.display = (AI_CONFIG.enabled && RH.feat('ai')) ? '' : 'none';
-  practiceSq.style.display = RH.feat('practice') ? '' : 'none';
+  updatePractice();
   shareBtn.style.display = RH.feat('share') ? '' : 'none';
   if(!RH.feat('favorites') && activeCat === FAV) activeCat = 'Alle';
   if(!RH.feat('recent') && activeCat === REC) activeCat = 'Alle';

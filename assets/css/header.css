@@ -127,3 +127,72 @@ select.auth-in{ appearance:auto; }
 .set-save{ flex-direction:column; align-items:stretch; gap:6px; }
 .set-save .ai-btn{ width:100%; }
 #setMsg:empty{ display:none; }
+
+/* ============================================================
+   Pro-Krone, Dialoge, Pro-/Konto-Seiten
+   ============================================================ */
+.acct-avatar{ position:relative; }
+.acct-crown{ position:absolute; right:-4px; top:-6px; width:18px; height:18px; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center; color:#F5A400; box-shadow:0 0 0 1.5px var(--border); }
+.acct-crown svg{ stroke:#B97800; fill:#F5A400; }
+.pro-tag{ display:inline-flex; align-items:center; gap:4px; margin-left:8px; padding:2px 8px; border-radius:99px; background:#FFF1C9; color:#8A5A00; font-size:12px; font-weight:700; }
+.pro-tag svg{ fill:#F5A400; stroke:#B97800; }
+.menu-pro{ display:flex !important; align-items:center; gap:10px; }
+.crown-ic{ display:flex; color:#B97800; } .crown-ic svg{ fill:#F5A400; stroke:#B97800; }
+.sq-crown{ position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%; background:#FFF1C9; border:1.5px solid var(--surface); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(120,80,0,.25); }
+.sq-crown svg{ width:13px; height:13px; fill:#F5A400; stroke:#B97800; }
+.sq-btn{ position:relative; overflow:visible; }
+.sq-btn.has-crown .sq-ic{ opacity:.92; }
+
+.dlg-back{ position:fixed; inset:0; z-index:400; background:rgba(10,14,25,.58); display:flex; align-items:center; justify-content:center; padding:18px; }
+.dlg{ width:100%; max-width:420px; background:var(--surface); color:var(--ink); border-radius:24px; padding:24px 22px 18px; box-shadow:0 30px 80px rgba(0,0,0,.35); }
+.dlg h3{ font-size:20px; letter-spacing:-.02em; margin:0 0 8px; }
+.dlg-lead{ font-size:14.5px; line-height:1.55; color:var(--ink-soft); margin:0 0 14px; }
+.dlg .auth-in{ margin-bottom:10px; }
+.dlg .ai-btn{ margin-top:6px; }
+.dlg-links{ display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:8px; }
+.dlg-link{ border:none; background:none; padding:10px 0; min-height:44px; font:inherit; font-size:14px; font-weight:600; color:var(--accent-fg); cursor:pointer; }
+.dlg-link:last-child{ color:var(--muted); margin-left:auto; }
+
+/* Footer: "Nach oben" unten rechts statt neben den Social-Icons */
+.sf-tools{ gap:8px; }
+.sf-bottom{ align-items:flex-start; }
+.sf-top-btn{ width:auto; height:40px; padding:0 16px; gap:8px; border-radius:999px; font:inherit; font-size:14px; font-weight:600; margin-top:4px; }
+.sf-top-btn svg{ width:18px; height:18px; }
+@media (min-width:640px){ .sf-bottom{ align-items:center; } .sf-top-btn{ margin-top:0; } }
+
+/* Google-Knopf, Trenner, Pro-Seite */
+.g-btn{ display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:50px; margin-top:12px; padding:0 18px; border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; font-weight:600; text-decoration:none; cursor:pointer; }
+.g-btn:hover{ border-color:var(--accent); }
+.g-btn svg{ width:20px; height:20px; flex:none; }
+.or-sep{ display:flex; align-items:center; gap:12px; margin:16px 0 4px; font-size:13px; color:var(--muted); }
+.or-sep::before, .or-sep::after{ content:''; flex:1; height:1px; background:var(--border); }
+.plans{ display:grid; gap:12px; margin:18px 0; }
+.plan{ position:relative; display:block; padding:16px 16px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md); background:var(--surface); cursor:pointer; }
+.plan input{ position:absolute; opacity:0; }
+.plan.on{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.plan-name{ font-size:16px; font-weight:700; color:var(--ink); }
+.plan-price{ margin-top:4px; font-size:28px; font-weight:700; letter-spacing:-.03em; color:var(--ink); }
+.plan-price small{ font-size:14px; font-weight:500; color:var(--muted); letter-spacing:0; }
+.plan-sub{ margin-top:2px; font-size:13px; color:var(--muted); }
+.plan-badge{ position:absolute; top:-10px; right:14px; background:#FFD84D; color:#0E1530; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; }
+.pro-list{ list-style:none; margin:14px 0; padding:0; display:grid; gap:10px; }
+.pro-list li{ display:flex; gap:12px; align-items:flex-start; font-size:15px; line-height:1.45; color:var(--ink); }
+.pro-list li svg{ flex:none; margin-top:2px; color:var(--accent-fg); }
+.pro-hero{ display:flex; align-items:center; gap:10px; }
+.pro-hero .crown-big{ width:44px; height:44px; border-radius:14px; background:#FFF1C9; display:flex; align-items:center; justify-content:center; }
+.pro-hero .crown-big svg{ width:26px; height:26px; fill:#F5A400; stroke:#B97800; }
+.fine{ font-size:12.5px; line-height:1.55; color:var(--muted); margin-top:10px; }
+.fine a{ color:inherit; text-decoration:underline; }
+.status-line{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--ink-soft); }
+.badge-ok, .badge-warn{ display:inline-flex; padding:2px 10px; border-radius:99px; font-size:12px; font-weight:700; }
+.badge-ok{ background:var(--teal-soft); color:var(--teal); } .badge-warn{ background:var(--star-bg); color:var(--star); }
+.note-lock{ display:flex; align-items:center; gap:12px; margin-top:22px; padding:14px 16px; border:1px dashed var(--border); border-radius:var(--radius-md); background:var(--bg-soft); color:var(--ink); text-decoration:none; font-size:14px; line-height:1.45; }
+.note-lock .crown-ic svg{ width:22px; height:22px; }
+.ki-quota{ margin:0 0 12px; font-size:13.5px; color:var(--ink-soft); }
+.ki-quota b{ color:var(--ink); }
+.ki-quota a{ color:var(--accent-fg); font-weight:600; }
+.card-sec{ margin-top:18px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); }
+.card-sec h3{ font-size:16px; margin:0 0 8px; letter-spacing:-.01em; }
+
+.sys-list{ list-style:none; margin:6px 0 10px; padding:0; display:grid; gap:4px; font-size:13.5px; }
+.sys-list .ok{ color:var(--teal); } .sys-list .bad{ color:var(--danger); }

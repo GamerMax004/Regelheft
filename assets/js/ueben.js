@@ -114,6 +114,14 @@
   $('pNew').onclick = () => { $('pDone').classList.add('is-hidden'); $('pSetup').classList.remove('is-hidden'); renderSetup(); window.scrollTo(0, 0); };
 
   /* ---------- Start: Lernstand und Merkliste laden ---------- */
+  function proGate(){
+    if(!RH.needsPro('practice') || RH.hasAccess('practice')) return false;
+    ['pSetup','pRun','pDone'].forEach(i => $(i).classList.add('is-hidden')); $('pPro').classList.remove('is-hidden');
+    $('pProText').textContent = logged() ? 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro.' : 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro. Melde dich an, um Pro zu holen.';
+    $('pProBtns').innerHTML = (logged() ? '' : '<a class="ai-btn ghost" href="anmeldung.html?next=ueben.html">Anmelden</a>') + '<a class="ai-btn" href="pro.html">Pro ansehen</a>';
+    return true;
+  }
+  Promise.all([RH.configReady, RH.ready]).then(proGate);
   RH.configReady.then(() => {
     if(RH.feat('practice')) return;
     ['pSetup','pRun','pDone'].forEach(i => $(i).classList.add('is-hidden')); $('pOff').classList.remove('is-hidden');

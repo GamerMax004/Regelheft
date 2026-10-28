@@ -11,13 +11,13 @@
 <meta name="copyright" content="Copyright © Gölitzer Development">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261026b"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/style.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/header.css?v=20261026b">
+<script src="assets/js/theme-init.js?v=20261027c"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/header.css?v=20261027c">
 </head>
 <body>
 
@@ -34,21 +34,44 @@
     <div class="auth-tabs" role="tablist"><button type="button" id="authTabLogin" class="on" role="tab">Anmelden</button><button type="button" id="authTabReg" role="tab">Registrieren</button></div>
     <form id="authForm" novalidate>
       <input class="auth-in" id="authUser" placeholder="Benutzername" autocomplete="username" autocapitalize="none" autocorrect="off" maxlength="30">
+      <input class="auth-in is-hidden" id="authMail" type="email" placeholder="E-Mail-Adresse" autocomplete="email" inputmode="email" maxlength="120">
       <input class="auth-in" id="authPw" type="password" placeholder="Passwort (mind. 8 Zeichen)" autocomplete="current-password" maxlength="100">
       <div id="authRegOnly" style="display:none">
         <label class="auth-chk"><input type="checkbox" id="authAge"><span>Ich bin mindestens 16 Jahre alt oder habe die Erlaubnis meiner Erziehungsberechtigten.</span></label>
-        <label class="auth-chk"><input type="checkbox" id="authConsent"><span>Ich habe die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen. Ich weiß, dass meine Chats mit der KI (inklusive einer kleinen Vorschau meiner Fotos) gespeichert werden, vom Betreiber eingesehen werden können und zur Verarbeitung an einen KI-Anbieter (Google oder Groq) gesendet werden.</span></label>
+        <label class="auth-chk"><input type="checkbox" id="authConsent"><span>Ich habe die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen. Ich weiß, dass meine Chats mit der KI (inklusive einer kleinen Vorschau meiner Fotos) gespeichert werden, vom Betreiber eingesehen werden können und zur Verarbeitung an einen KI-Anbieter (z. B. ScherAI, Google oder Groq) gesendet werden.</span></label>
       </div>
       <div class="auth-err" id="authErr" role="alert"></div>
       <button class="ai-btn" id="authSubmit" type="submit">Anmelden</button>
     </form>
+    <div id="googleWrap" class="is-hidden">
+      <div class="or-sep">oder</div>
+      <a class="g-btn" id="googleBtn" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.53 5.53 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.56-5.17 3.56-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.88-3c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.28v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.28a12 12 0 0 0 0 10.78l4.01-3.1z"/><path fill="#EA4335" d="M12 4.77c1.76 0 3.34.6 4.58 1.79l3.44-3.44A11.5 11.5 0 0 0 12 0 12 12 0 0 0 1.28 6.61l4.01 3.1C6.23 6.88 8.88 4.77 12 4.77z"/></svg><span id="googleTxt">Mit Google anmelden</span></a>
+    </div>
+  </div>
+
+  <div class="auth-card is-hidden" id="authVerify">
+    <h3 style="margin:0 0 8px;font-size:20px;letter-spacing:-.02em">E-Mail bestätigen</h3>
+    <p class="dlg-lead" id="vLead"></p>
+    <input class="auth-in" id="vCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code">
+    <div class="auth-err" id="vErr" role="alert"></div>
+    <button class="ai-btn" id="vGo" type="button">Bestätigen</button>
+    <div class="dlg-links"><button class="dlg-link" id="vResend" type="button">Code erneut senden</button></div>
+  </div>
+
+  <div class="auth-card is-hidden" id="authGConsent">
+    <h3 style="margin:0 0 8px;font-size:20px;letter-spacing:-.02em">Fast geschafft</h3>
+    <p class="dlg-lead" id="gLead"></p>
+    <label class="auth-chk"><input type="checkbox" id="gAge"><span>Ich bin mindestens 16 Jahre alt oder habe die Erlaubnis meiner Erziehungsberechtigten.</span></label>
+    <label class="auth-chk"><input type="checkbox" id="gConsent"><span>Ich habe die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen und weiß, dass meine Chats mit der KI gespeichert und zur Verarbeitung an einen KI-Anbieter gesendet werden.</span></label>
+    <div class="auth-err" id="gErr" role="alert"></div>
+    <button class="ai-btn" id="gGo" type="button">Konto erstellen</button>
   </div>
 
   <div class="auth-card is-hidden" id="authDone">
     <div class="auth-success">Du bist angemeldet als <b id="authDoneUser"></b>.</div>
     <div class="btn-row">
-      <a class="ai-btn" href="ki.html">KI-Aufgabenhilfe</a>
-      <a class="ai-btn ghost" href="index.html">Zum Regelheft</a>
+      <a class="ai-btn" href="index.html">Zum Regelheft</a>
+      <a class="ai-btn ghost" href="ki.html">KI-Aufgabenhilfe</a>
       <a class="ai-btn ghost" href="konto.html">Mein Konto</a>
     </div>
   </div>
@@ -57,11 +80,11 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261026b"></script>
-<script src="assets/js/footer.js?v=20261026b"></script>
-<script src="assets/js/core.js?v=20261026b"></script>
-<script src="assets/js/icons.js?v=20261026b"></script>
-<script src="assets/js/layout.js?v=20261026b"></script>
-<script src="assets/js/anmeldung.js?v=20261026b"></script>
+<script src="assets/js/config.js?v=20261027c"></script>
+<script src="assets/js/footer.js?v=20261027c"></script>
+<script src="assets/js/core.js?v=20261027c"></script>
+<script src="assets/js/icons.js?v=20261027c"></script>
+<script src="assets/js/layout.js?v=20261027c"></script>
+<script src="assets/js/anmeldung.js?v=20261027c"></script>
 </body>
 </html>

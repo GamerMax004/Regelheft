@@ -15,7 +15,9 @@ const RH = (function(){
     announcement: {enabled:false, text:'', type:'info', link:'', linkText:''},
     news: NEWS,
     features: {ai:true, registration:true, favorites:true, recent:true, notes:true, practice:true, share:true, darkmode:true, stats:true},
-    social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram}
+    social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram},
+    billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, yearly:true, kleinunternehmer:true, note:''},
+    auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false}
   };
   const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram};
   const cfgSubs = [];
@@ -25,6 +27,8 @@ const RH = (function(){
     if(j.maintenance) Object.assign(cfg.maintenance, j.maintenance);
     if(j.announcement) Object.assign(cfg.announcement, j.announcement);
     if(j.features) Object.assign(cfg.features, j.features);
+    if(j.billing){ Object.assign(cfg.billing, j.billing); if(j.billing.proFeatures) cfg.billing.proFeatures = Object.assign({practice:true, notes:true}, j.billing.proFeatures); }
+    if(j.auth) Object.assign(cfg.auth, j.auth);
     cfg.news = j.news || defaults.news;
     const so = j.social || {};
     cfg.social.discord = so.discord == null ? defaults.discord : so.discord;
@@ -50,7 +54,7 @@ const RH = (function(){
     catch(e){ throw new Error('Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung und versuche es gleich noch einmal.'); }
     const j = await r.json().catch(() => ({}));
     if(r.status === 401 && auth.token && path !== '/api/login') setAuth(null, null);
-    if(!r.ok){ const e = new Error(r.status === 403 ? 'Nicht erlaubt. (Die Adresse dieser Webseite fehlt evtl. in ALLOWED_ORIGIN im Worker.)' : (j.error || ('Fehler ' + r.status))); e.status = r.status; throw e; }
+    if(!r.ok){ const e = new Error(r.status === 403 ? 'Nicht erlaubt. (Die Adresse dieser Webseite fehlt evtl. in ALLOWED_ORIGIN im Worker.)' : (j.error || ('Fehler ' + r.status))); e.status = r.status; e.code = j.code; e.data = j; throw e; }
     return j;
   }
   function setAuth(token, user){
@@ -76,6 +80,10 @@ const RH = (function(){
   function safeNext(n){ return /^[a-z0-9_-]+\.html(#[\w-]+)?$/i.test(n || '') ? n : 'index.html'; }
   function toLogin(next){ location.replace('anmeldung.html?next=' + encodeURIComponent(next)); }
 
-  return {api, setAuth, logout, onAuth, ready, esc, logEv, safeNext, toLogin, configured, onConfig, configReady, cfg: () => cfg, feat: k => cfg.features[k] !== false, defaults,
+  const isPro = () => !!(auth.user && auth.user.pro);
+  const needsPro = f => !!cfg.billing.enabled && cfg.billing.proFeatures[f] !== false;
+  async function refreshUser(){ const j = await api('/api/me'); setAuth(auth.token, j.user); return j.user; }
+  return {isPro, needsPro, hasAccess: f => !needsPro(f) || isPro(), refreshUser, apiBase: API, token: () => auth.token,
+          api, setAuth, logout, onAuth, ready, esc, logEv, safeNext, toLogin, configured, onConfig, configReady, cfg: () => cfg, feat: k => cfg.features[k] !== false, defaults,
           user: () => auth.user, hasToken: () => !!auth.token, isLoading: () => loading};
 })();

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Regelheft Pro</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Copyright © Gölitzer Development">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<script src="assets/js/theme-init.js?v=20261027c"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/header.css?v=20261027c">
+</head>
+<body>
+
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft<span> Mathematik</span></h1></a><div data-account></div></div>
+</header>
+
+<main>
+<div class="page">
+  <div class="pro-hero"><span class="crown-big" data-icon="crown" data-size="26"></span><h2 class="page-title" style="margin:0">Regelheft Pro</h2></div>
+  <p class="page-lead" style="margin-top:10px">Mehr Lernen mit Karteikarten, eigenen Notizen und unbegrenzter KI-Hilfe. Fair und für Schüler gemacht.</p>
+  <div class="page-note is-hidden" id="proOff"><b>Pro ist gerade nicht verfügbar.</b> <a class="link" href="index.html">Zurück zum Regelheft</a></div>
+
+  <div id="proMain">
+    <ul class="pro-list" id="proList"></ul>
+
+    <div class="card-sec is-hidden" id="proActive"><h3>Du hast Pro</h3><div class="status-line" id="proActiveLine"></div><div class="btn-row"><a class="ai-btn" href="index.html">Zum Regelheft</a><a class="ai-btn ghost" href="konto.html">Abo verwalten</a></div></div>
+    <div class="card-sec is-hidden" id="proWait"><h3>Danke!</h3><p class="page-lead" style="margin:6px 0 0">Deine Zahlung ist eingegangen. Pro wird gerade freigeschaltet …</p></div>
+
+    <div id="proBuy">
+      <div class="plans" id="plans" role="radiogroup" aria-label="Tarif"></div>
+      <div class="page-note is-hidden" id="proLogin">Bitte melde dich an, um Pro zu holen.<div class="btn-row"><a class="ai-btn" href="anmeldung.html?next=pro.html">Anmelden</a><a class="ai-btn ghost" href="anmeldung.html?next=pro.html#registrieren">Registrieren</a></div></div>
+      <div id="proForm">
+        <label class="auth-chk"><input type="checkbox" id="c18"><span>Ich bin mindestens 18 Jahre alt oder habe die Zustimmung meiner Erziehungsberechtigten zu diesem Kauf.</span></label>
+        <label class="auth-chk"><input type="checkbox" id="cWaiver"><span>Ich verlange ausdrücklich, dass sofort mit der Ausführung des Vertrags begonnen wird. Mir ist bekannt, dass ich mein Widerrufsrecht verliere, sobald der Vertrag vollständig erfüllt ist, und dass ich bei einem Widerruf vorher Wertersatz für die bis dahin erbrachte Leistung zahlen muss.</span></label>
+        <div class="auth-err" id="proErr" role="alert"></div>
+        <button class="ai-btn" id="proGo" type="button">Zahlungspflichtig bestellen</button>
+        <p class="fine" id="proFine"></p>
+      </div>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js?v=20261027c"></script>
+<script src="assets/js/footer.js?v=20261027c"></script>
+<script src="assets/js/core.js?v=20261027c"></script>
+<script src="assets/js/icons.js?v=20261027c"></script>
+<script src="assets/js/layout.js?v=20261027c"></script>
+<script src="assets/js/pro.js?v=20261027c"></script>
+</body>
+</html>

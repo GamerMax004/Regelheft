@@ -40,10 +40,12 @@
     host.className = 'acct';
     if(user){
       const ini = esc((user.username || '?').trim().charAt(0).toUpperCase());
-      host.innerHTML = '<button class="acct-avatar" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü">' + ini + '</button>'
-        + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b></p>'
+      const bill = RH.cfg().billing.enabled;
+      host.innerHTML = '<button class="acct-avatar" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü">' + ini + (user.pro && bill ? '<span class="acct-crown">' + icon('crown', 11, true) + '</span>' : '') + '</button>'
+        + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b>' + (user.pro && bill ? '<span class="pro-tag">' + icon('crown', 12, true) + 'Pro</span>' : '') + '</p>'
         + (user.admin ? '<a href="dashboard.html" role="menuitem">Dashboard</a>' : '')
         + '<a href="konto.html" role="menuitem">Mein Konto</a>'
+        + (bill && !user.pro ? '<a href="pro.html" role="menuitem" class="menu-pro"><span class="crown-ic">' + icon('crown', 16, true) + '</span>Pro holen</a>' : '')
         + '<button id="acctLogout" role="menuitem">Abmelden</button></div>';
       const btn = host.querySelector('#acctBtn'), menu = host.querySelector('#acctMenu');
       btn.onclick = e => { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); };
@@ -81,7 +83,8 @@
     const social = FOOTER.social.map(s => ({...s, href: fill(s.href)})).filter(s => usable(s.href) && ICONS[s.icon]);
     const f = RH.cfg().features;
     const links = FOOTER.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label
-      && !(l.href === 'ki.html' && f.ai === false) && !(l.href === 'ueben.html' && f.practice === false));
+      && !(l.href === 'ki.html' && f.ai === false) && !(l.href === 'ueben.html' && f.practice === false)
+      && !(l.billing && !RH.cfg().billing.enabled));
     const link = l => {
       const x = ext(l.href) ? ' target="_blank" rel="noopener noreferrer"' : '';
       const a = l.loggedIn ? ' data-in-href="' + esc(l.loggedIn.href) + '" data-in-label="' + esc(l.loggedIn.label) + '" data-out-href="' + esc(l.href) + '" data-out-label="' + esc(l.label) + '"' : '';
@@ -92,11 +95,11 @@
       + '<div class="sf-top"><a class="sf-brand-name" href="index.html">' + esc(FOOTER.brand[0]) + '<span>' + esc(FOOTER.brand[1]) + '</span></a>'
       + '<div class="sf-tools">'
       + (social.length ? '<div class="sf-social">' + social.map(s => '<a href="' + esc(s.href) + '"' + (ext(s.href) ? ' target="_blank" rel="noopener noreferrer"' : '') + ' aria-label="' + esc(s.label) + '" title="' + esc(s.label) + '">' + ICONS[s.icon] + '</a>').join('') + '</div>' : '')
-      + (FOOTER.backToTop ? '<button class="sf-top-btn" type="button" aria-label="Nach oben" title="Nach oben">' + UP + '</button>' : '')
       + '</div></div>'
       + (links.length ? '<ul class="sf-links">' + links.map(link).join('') + '</ul>' : '')
       + '<div class="sf-bottom"><span>' + esc(FOOTER.copyright) + '</span>'
       + (FOOTER.madeIn ? '<span class="sf-made">' + FLAG + esc(FOOTER.madeIn) + '</span>' : '')
+      + (FOOTER.backToTop ? '<button class="sf-top-btn" type="button" aria-label="Nach oben" title="Nach oben"><span>Nach oben</span>' + UP + '</button>' : '')
       + '</div></div>';
     const up = el.querySelector('.sf-top-btn');
     if(up) up.onclick = () => window.scrollTo({top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
@@ -107,6 +110,64 @@
       a.href = inn ? a.dataset.inHref : a.dataset.outHref;
       a.textContent = inn ? a.dataset.inLabel : a.dataset.outLabel;
     });
+  }
+
+  /* ---------- E-Mail-Abfrage / Bestätigung (blockiert, bis die Adresse stimmt) ---------- */
+  const EXEMPT = ['impressum.html', 'datenschutz.html', 'agb.html', 'widerruf.html', 'anmeldung.html'];
+  let dlgEl = null, dlgStep = 'email', dlgOpts = {};
+  function closeDlg(){ if(dlgEl){ dlgEl.remove(); dlgEl = null; document.body.style.overflow = ''; } }
+  function openEmailDialog(opts){
+    opts = opts || {}; dlgOpts = opts; if(dlgEl) return;
+    const u = RH.user(); if(!u) return;
+    const c = RH.cfg();
+    dlgStep = 'email';
+    dlgEl = document.createElement('div'); dlgEl.className = 'dlg-back'; dlgEl.id = 'emailDlg';
+    dlgEl.innerHTML = '<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="emTitle"><h3 id="emTitle"></h3><p class="dlg-lead" id="emLead"></p>'
+      + '<input class="auth-in" id="emInput" type="email" autocomplete="email" inputmode="email" maxlength="120" placeholder="deine@email.de">'
+      + '<input class="auth-in is-hidden" id="emCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-stelliger Code">'
+      + '<div class="auth-err" id="emErr" role="alert"></div>'
+      + '<button class="ai-btn" id="emGo" type="button">Weiter</button>'
+      + '<div class="dlg-links"><button class="dlg-link is-hidden" id="emResend" type="button">Code erneut senden</button><button class="dlg-link is-hidden" id="emBack" type="button">Andere E-Mail</button>'
+      + '<button class="dlg-link" id="emOut" type="button">' + (opts.dismissible ? 'Abbrechen' : 'Abmelden') + '</button></div></div>';
+    document.body.appendChild(dlgEl); document.body.style.overflow = 'hidden';
+    const $ = id => dlgEl.querySelector('#' + id);
+    const render = () => {
+      const code = dlgStep === 'code';
+      $('emTitle').textContent = code ? 'Code eingeben' : (c.auth.verifyActive ? 'E-Mail-Adresse bestätigen' : 'E-Mail-Adresse angeben');
+      $('emLead').textContent = code ? 'Wir haben dir einen 6-stelligen Code an ' + $('emInput').value.trim() + ' geschickt. Er ist 15 Minuten gültig.'
+        : (c.auth.verifyActive ? 'Bitte gib deine E-Mail-Adresse an und bestätige sie mit einem Code. Sie wird für Kontosicherheit und Rechnungen gebraucht.' : 'Bitte gib deine E-Mail-Adresse an. Sie wird für Kontosicherheit und Rechnungen gebraucht.');
+      $('emInput').classList.toggle('is-hidden', code); $('emCode').classList.toggle('is-hidden', !code);
+      $('emResend').classList.toggle('is-hidden', !code); $('emBack').classList.toggle('is-hidden', !code);
+      $('emGo').textContent = code ? 'Bestätigen' : (c.auth.verifyActive ? 'Code senden' : 'Speichern');
+      $('emErr').textContent = '';
+      setTimeout(() => (code ? $('emCode') : $('emInput')).focus(), 30);
+    };
+    $('emInput').value = u.email || '';
+    const send = async () => {
+      const r = await RH.api('/api/email/start', {body:{email: $('emInput').value.trim()}});
+      if(r.noMail || r.already){ await RH.refreshUser(); closeDlg(); return false; }
+      return true;
+    };
+    $('emGo').onclick = async () => {
+      const b = $('emGo'); b.disabled = true; $('emErr').textContent = '';
+      try{
+        if(dlgStep === 'email'){ if(await send()){ dlgStep = 'code'; render(); } }
+        else { await RH.api('/api/email/verify', {body:{code: $('emCode').value.trim()}}); await RH.refreshUser(); closeDlg(); }
+      }catch(e){ $('emErr').textContent = e.message; }
+      b.disabled = false;
+    };
+    $('emResend').onclick = async () => { try{ await RH.api('/api/email/start', {body:{email: $('emInput').value.trim()}}); $('emErr').textContent = 'Neuer Code gesendet.'; }catch(e){ $('emErr').textContent = e.message; } };
+    $('emBack').onclick = () => { dlgStep = 'email'; render(); };
+    $('emOut').onclick = async () => { if(opts.dismissible){ closeDlg(); return; } await RH.logout(); closeDlg(); if(page !== 'index.html') location.href = 'index.html'; };
+    [$('emInput'), $('emCode')].forEach(i => i.addEventListener('keydown', e => { if(e.key === 'Enter') $('emGo').click(); }));
+    render();
+  }
+  RH.openEmailDialog = openEmailDialog;
+  function maybePrompt(){
+    const u = RH.user(), c = RH.cfg();
+    if(!u || RH.isLoading() || EXEMPT.includes(page) || dlgEl) return;
+    const need = c.auth.requireEmail && (!u.email || (c.auth.verifyActive && !u.emailVerified));
+    if(need) openEmailDialog({});
   }
 
   /* ---------- Mitteilung / Wartungshinweis (aus dem Dashboard) ---------- */
@@ -127,9 +188,11 @@
   }
 
   buildFooter();
-  RH.onAuth((u, l) => { renderAccount(u, l); footerAuth(u, l); });
+  RH.onAuth((u, l) => { renderAccount(u, l); footerAuth(u, l); setTimeout(maybePrompt, 0); });
   RH.onConfig(cfg => {
     renderNotice(cfg);
+    renderAccount(RH.user(), RH.isLoading());
+    maybePrompt();
     // Dunkelmodus abgeschaltet: Umschalter ausblenden, hell erzwingen
     const tb = document.getElementById('themeBtn');
     if(tb) tb.style.display = cfg.features.darkmode === false ? 'none' : '';

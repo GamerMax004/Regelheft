@@ -12,13 +12,13 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261026b"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/style.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261026b">
-<link rel="stylesheet" href="assets/css/header.css?v=20261026b">
+<script src="assets/js/theme-init.js?v=20261027c"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/style.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261027c">
+<link rel="stylesheet" href="assets/css/header.css?v=20261027c">
 </head>
 <body>
 
@@ -39,6 +39,19 @@
       <button class="ai-btn ghost" id="kontoLogout" type="button">Abmelden</button>
     </div>
 
+    <div class="card-sec" id="kEmail"><h3>E-Mail-Adresse</h3>
+      <div class="status-line"><span id="kMail"></span><span id="kMailBadge" class="badge-ok is-hidden"></span></div>
+      <div class="btn-row"><button class="ai-btn ghost" id="kMailBtn" type="button">E-Mail angeben</button></div>
+    </div>
+
+    <div class="card-sec is-hidden" id="kPro"><h3><span class="crown-ic" data-icon="crown" data-size="18" style="display:inline-flex;vertical-align:-3px;margin-right:6px"></span>Regelheft Pro</h3>
+      <div class="status-line" id="kProLine"></div>
+      <div class="btn-row" id="kProBtns"></div>
+      <div class="page-note is-hidden" id="kCancelBox"><b>Pro wirklich kündigen?</b><br><span id="kCancelTxt"></span>
+        <div class="btn-row"><button class="ai-btn ai-del" id="kCancelYes" type="button">Ja, jetzt kündigen</button><button class="ai-btn ghost" id="kCancelNo" type="button">Abbrechen</button></div>
+        <div class="auth-err" id="kProErr" role="alert"></div></div>
+    </div>
+
     <div class="danger-zone">
       <h3>Konto löschen</h3>
       <p>Dein Konto, alle gespeicherten Chats und alle Anmeldungen werden unwiderruflich gelöscht.</p>
@@ -57,11 +70,11 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261026b"></script>
-<script src="assets/js/footer.js?v=20261026b"></script>
-<script src="assets/js/core.js?v=20261026b"></script>
-<script src="assets/js/icons.js?v=20261026b"></script>
-<script src="assets/js/layout.js?v=20261026b"></script>
-<script src="assets/js/konto.js?v=20261026b"></script>
+<script src="assets/js/config.js?v=20261027c"></script>
+<script src="assets/js/footer.js?v=20261027c"></script>
+<script src="assets/js/core.js?v=20261027c"></script>
+<script src="assets/js/icons.js?v=20261027c"></script>
+<script src="assets/js/layout.js?v=20261027c"></script>
+<script src="assets/js/konto.js?v=20261027c"></script>
 </body>
 </html>

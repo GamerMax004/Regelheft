@@ -57,7 +57,10 @@
     const box = $('dashBody');
     let data;
     try{ data = await RH.api('/api/admin/settings'); }catch(e){ box.innerHTML = '<div class="ai-bubble err">' + esc(e.message) + '</div>'; return; }
-    const S = data.settings, K = data.keys;
+    const S = data.settings, K = data.keys, SYS = data.system || {}, ST = data.stats || {};
+    S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {});
+    S.auth = Object.assign({requireEmail:true, requireVerified:true, google:true}, S.auth || {});
+    const tick = (ok, label) => '<li class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✓ ' : '✗ ') + esc(label) + '</li>';
     const news = S.news || RH.defaults.news;
     let order = S.ai.order.slice();
     const social = {discord: S.social.discord == null ? RH.defaults.discord : S.social.discord, instagram: S.social.instagram == null ? RH.defaults.instagram : S.social.instagram};
@@ -78,6 +81,20 @@
       + area('nw_items', 'Punkte (eine Zeile pro Punkt, höchstens 8)', (news.items || []).join('\n'), '', 6) + '</section>'
       + '<section class="set-card"><h3>Funktionen</h3><p class="set-help">Abgeschaltete Funktionen verschwinden auf der Webseite und werden auch vom Server gesperrt.</p>'
       + Object.keys(FEATURE_LABELS).map(k => sw('ft_' + k, S.features[k] !== false, FEATURE_LABELS[k][0], FEATURE_LABELS[k][1])).join('') + '</section>'
+      + '<section class="set-card"><h3>Bezahlung (Pro)</h3><p class="set-help">Aus = Bezahlung ist nirgends auffindbar und alle Funktionen sind frei (wie bisher). An = Üben/Notizen nur mit Pro, KI mit Tageslimit. Die Bezahlung wird erst aktiv, wenn Stripe vollständig eingerichtet ist.</p>'
+      + '<ul class="sys-list">' + tick(SYS.stripe && SYS.stripe.secret, 'Stripe-Key (STRIPE_SECRET_KEY)') + tick(SYS.stripe && SYS.stripe.webhook, 'Webhook-Secret (STRIPE_WEBHOOK_SECRET)') + tick(SYS.stripe && SYS.stripe.priceMonth, 'Preis Monat (STRIPE_PRICE_MONTH)') + tick(SYS.stripe && SYS.stripe.priceYear, 'Preis Jahr (STRIPE_PRICE_YEAR, optional)') + tick(SYS.stripe && SYS.stripe.siteUrl, 'Webseiten-Adresse (SITE_URL)') + '</ul>'
+      + sw('bl_on', S.billing.enabled, 'Bezahlung aktiv', SYS.stripe && SYS.stripe.ready ? 'Stripe ist bereit' : 'Stripe ist noch nicht vollständig eingerichtet (Einstellung wird gespeichert, wirkt aber erst danach)')
+      + sw('bl_prac', S.billing.proFeatures.practice, 'Üben nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
+      + fld('bl_free', 'Kostenlose KI-Chats pro Tag (0 = KI nur mit Pro)', S.billing.freeAiPerDay, '3', 'number')
+      + sw('bl_year', S.billing.yearly, 'Jahrestarif anbieten', 'Braucht STRIPE_PRICE_YEAR') + sw('bl_ku', S.billing.kleinunternehmer, 'Kleinunternehmer (§ 19 UStG)', 'Zeigt „keine Umsatzsteuer“ statt „inkl. USt“') + sw('bl_promo', S.billing.promo, 'Gutscheincodes erlauben')
+      + area('bl_note_t', 'Zusatzhinweis auf der Pro-Seite (optional)', S.billing.note, '', 2) + '</section>'
+      + '<section class="set-card"><h3>Konten und Anmeldung</h3><p class="set-help">' + (ST.users != null ? ST.users + ' Konten · ' + ST.verified + ' bestätigte E-Mails · ' + ST.proActive + ' mit Pro' : '') + '</p>'
+      + '<ul class="sys-list">' + tick(SYS.mail && SYS.mail.ready, 'E-Mail-Versand' + (SYS.mail && SYS.mail.provider ? ' (' + SYS.mail.provider + ')' : ' (RESEND_API_KEY oder BREVO_API_KEY + MAIL_FROM)')) + tick(SYS.google && SYS.google.ready, 'Google-Login (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET)') + '</ul>'
+      + sw('au_mail', S.auth.requireEmail, 'E-Mail-Adresse verlangen', 'Bei der Registrierung und von bestehenden Konten') + sw('au_ver', S.auth.requireVerified, 'E-Mail mit Code bestätigen lassen', 'Wirkt nur, wenn der E-Mail-Versand eingerichtet ist') + sw('au_g', S.auth.google, 'Anmeldung mit Google anbieten')
+      + '</section>'
+      + '<section class="set-card"><h3>Pro schenken / entziehen</h3><p class="set-help">Zum Testen oder als Dankeschön. Wirkt sofort.</p>'
+      + fld('gr_user', 'Benutzername', '', 'z. B. lena_m') + fld('gr_days', 'Tage', 30, '30', 'number')
+      + '<div class="btn-row" style="flex-direction:row"><button class="ai-btn" id="grGive" type="button" style="margin:0">Pro schenken</button><button class="ai-btn ghost" id="grTake" type="button" style="margin:0">Pro entziehen</button></div><div class="auth-err" id="grMsg" role="status" style="margin-top:8px"></div></section>'
       + '<section class="set-card"><h3>KI</h3><p class="set-help">Reihenfolge: Der erste aktive Anbieter mit Key antwortet, bei Fehlern kommt der nächste dran. Die Keys stehen als Secrets im Cloudflare-Worker (nie hier).</p>'
       + '<div id="provList">' + provHtml() + '</div>'
       + fld('ai_rate', 'Anfragen pro Nutzer und Zeitfenster', S.ai.rateLimit, '20', 'number')
@@ -92,6 +109,12 @@
       keep(); const i = +b.dataset.i, j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]];
       $('provList').innerHTML = provHtml();
     };
+    const grant = async revoke => {
+      const m = $('grMsg'); m.style.color = ''; m.textContent = '…';
+      try{ const j = await RH.api('/api/admin/pro', {body:{username: $('gr_user').value.trim(), days: +$('gr_days').value || 0, revoke}}); m.textContent = revoke ? 'Pro entzogen.' : 'Pro geschenkt bis ' + new Date(j.until).toLocaleDateString('de-DE') + '.'; }
+      catch(e){ m.textContent = e.message; }
+    };
+    $('grGive').onclick = () => grant(false); $('grTake').onclick = () => grant(true);
     $('setSave').onclick = async () => {
       keep();
       const g = id => $(id).value, c = id => $(id).checked;
@@ -102,7 +125,9 @@
         news: {enabled: c('nw_on'), date: g('nw_date'), title: g('nw_title'), items},
         features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, c('ft_' + k)])),
         ai: {order, enabled: Object.fromEntries(order.map(p => [p, $('prov_' + p).checked])), rateLimit: +g('ai_rate') || 20, extra: g('ai_extra')},
-        social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()}
+        social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
+        billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
+        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}
       };
       const m = $('setMsg'); m.textContent = 'Speichert …'; $('setSave').disabled = true;
       try{ await RH.api('/api/admin/settings', {body:{settings:payload}}); m.textContent = 'Gespeichert. Gilt auf der Webseite innerhalb von etwa 20 Sekunden.'; }

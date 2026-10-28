@@ -16,12 +16,12 @@ const FOOTER = {
 
   // Link-Zeile (mit Umbruch auf dem Handy)
   links: [
-    { label: "KI-Aufgabenhilfe", href: "ki.html" },
-    { label: "Üben",             href: "ueben.html" },
     { label: "Impressum",        href: "impressum.html" },
-    { label: "Datenschutz",      href: "datenschutz.html" }
-    // Weitere Links: { label: "Aktuelles", href: "index.html?news=1" }  ·  Mit Anmelde-Wechsel:
-    // { label: "Anmelden", href: "anmeldung.html", loggedIn: { label: "Mein Konto", href: "konto.html" } }
+    { label: "Datenschutz",      href: "datenschutz.html" },
+    // Nur sichtbar, wenn die Bezahlung im Dashboard eingeschaltet ist (rechtlich nötig):
+    { label: "AGB",              href: "agb.html",     billing: true },
+    { label: "Widerruf",         href: "widerruf.html", billing: true }
+    // Weitere Links: { label: "Üben", href: "ueben.html" }  ·  { label: "Aktuelles", href: "index.html?news=1" }
   ],
 
   backToTop: true,                             // Knopf „Nach oben“

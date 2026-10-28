@@ -173,16 +173,26 @@
     try{
       if(AI_CONFIG.proxyUrl.includes('DEIN-PROXY')) throw new Error('Die KI ist noch nicht eingerichtet (proxyUrl fehlt im Code).');
       const j = await api('/api/ai', {body:{image:c.image, thumb:c.thumb, chatId:c.cid, messages:c.msgs, rules:RULES.map(x => ({id:x.id, title:x.title, category:x.category, hint:(x.plain || x.excerpt || '').replace(/\s+/g,' ').slice(0,100)}))}});
-      wait.remove(); show(c, j);
+      wait.remove(); show(c, j); setQuota(j.quota);
     }catch(e){
       wait.remove();
       if(e.status === 401){ RH.toLogin('ki.html'); return; }
+      if(e.code === 'limit'){ if(e.data && e.data.quota) setQuota(e.data.quota); c.add(esc(e.message) + '<br><a class="ai-btn" href="pro.html">Pro ansehen</a>', 'err'); c.busy = false; c.upd(); renderHist(); return; }
+      if(e.code === 'verify_required'){ const d0 = c.add(esc(e.message) + '<br><button class="ai-btn">E-Mail bestätigen</button>', 'err'); d0.querySelector('button').onclick = () => RH.openEmailDialog({dismissible:true}); c.busy = false; c.upd(); renderHist(); return; }
       const d = c.add(esc(e.message || 'Unbekannter Fehler') + '<br><button class="ai-btn ghost">Erneut versuchen</button>', 'err');
       d.querySelector('button').onclick = () => { d.remove(); run(c); };
     }
     c.busy = false; c.upd(); renderHist();
   }
 
+
+  function setQuota(q){
+    const el = $('kiQuota'); if(!el) return;
+    if(!q || !RH.cfg().billing.enabled){ el.innerHTML = ''; return; }
+    const left = Math.max(0, q.limit - q.used);
+    el.innerHTML = 'Heute noch <b>' + left + ' von ' + q.limit + '</b> KI-Chats frei. <a href="pro.html">Unbegrenzt mit Pro</a>';
+  }
+  RH.ready.then(async () => { if(RH.user() && RH.cfg().billing.enabled && !RH.isPro()){ try{ const st = await api('/api/billing/status'); if(st.quota) setQuota(st.quota); }catch(e){} } });
 
   // Foto/Vorschau verkleinern
   function shrink(src, max, q){
