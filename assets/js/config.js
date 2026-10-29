@@ -15,13 +15,17 @@ const AI_CONFIG = {
    Beide Seiten werden aus diesen Angaben erzeugt.
    Nicht ausgefüllte Felder erscheinen gelb markiert als [BITTE EINTRAGEN]. */
 const LEGAL = {
-  name:   "Maximilian Gölitzer",   // Vor- und Nachname (Pflicht, Klarname)
-  street: "Wacholderschleife 13",   // Straße und Hausnummer (Pflicht, ladungsfähige Anschrift, kein Postfach)
-  city:   "51597 Morsbach",   // PLZ und Ort (Pflicht)
+  brand:   "Gölitzer Development",   // Marke / Name des Angebots (Copyright liegt hier)
+  company: "Scherer Integration Excellence",   // Anbieter und Vertragspartner (Rechnungsstellung, Zahlungsabwicklung)
+  rep:     "Luca Scherer",   // vertreten durch
+  street:  "Steinenbühlstrasse 24A",   // Straße und Hausnummer des Anbieters
+  city:    "5417 Untersiggenthal",   // PLZ und Ort des Anbieters
+  country: "Schweiz",   // Land des Anbieters
+  euRep:   "",   // optional: Vertreter in der EU nach Art. 27 DSGVO (Name und Anschrift); leer = wird nicht angezeigt
   email:  "maxgoel2010@gmail.com",   // E-Mail-Adresse (Pflicht)
   phone:  "015203191145",   // Telefonnummer (neben der E-Mail ist ein zweites schnelles Kontaktmittel nötig, z. B. Telefon)
-  authority: "Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf",  // zuständige Aufsichtsbehörde (Bundesland des Betreibers)
-  stand: "15.10.2026"
+  authority: "Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen, Kavalleriestraße 2–4, 40213 Düsseldorf",  // Beispiel für eine Aufsichtsbehörde in Deutschland
+  stand: "29.10.2026"
 };
 
 /* ---------- Social-Links (erscheinen im Footer) ----------
