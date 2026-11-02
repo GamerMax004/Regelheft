@@ -58,7 +58,7 @@
     let data;
     try{ data = await RH.api('/api/admin/settings'); }catch(e){ box.innerHTML = '<div class="ai-bubble err">' + esc(e.message) + '</div>'; return; }
     const S = data.settings, K = data.keys, SYS = data.system || {}, ST = data.stats || {};
-    S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {});
+    S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {}); S.billing.plusFeatures = Object.assign({practice:false, notes:true}, S.billing.plusFeatures || {});
     S.auth = Object.assign({requireEmail:true, requireVerified:true, google:true}, S.auth || {});
     const tick = (ok, label) => '<li class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✓ ' : '✗ ') + esc(label) + '</li>';
     const news = S.news || RH.defaults.news;
@@ -81,11 +81,13 @@
       + area('nw_items', 'Punkte (eine Zeile pro Punkt, höchstens 8)', (news.items || []).join('\n'), '', 6) + '</section>'
       + '<section class="set-card"><h3>Funktionen</h3><p class="set-help">Abgeschaltete Funktionen verschwinden auf der Webseite und werden auch vom Server gesperrt.</p>'
       + Object.keys(FEATURE_LABELS).map(k => sw('ft_' + k, S.features[k] !== false, FEATURE_LABELS[k][0], FEATURE_LABELS[k][1])).join('') + '</section>'
-      + '<section class="set-card"><h3>Bezahlung (Pro)</h3><p class="set-help">Aus = Bezahlung ist nirgends auffindbar und alle Funktionen sind frei (wie bisher). An = Üben/Notizen nur mit Pro, KI mit Tageslimit. Die Bezahlung wird erst aktiv, wenn Stripe vollständig eingerichtet ist.</p>'
-      + '<ul class="sys-list">' + tick(SYS.stripe && SYS.stripe.secret, 'Stripe-Key (STRIPE_SECRET_KEY)') + tick(SYS.stripe && SYS.stripe.webhook, 'Webhook-Secret (STRIPE_WEBHOOK_SECRET)') + tick(SYS.stripe && SYS.stripe.priceMonth, 'Preis Monat (STRIPE_PRICE_MONTH)') + tick(SYS.stripe && SYS.stripe.priceYear, 'Preis Jahr (STRIPE_PRICE_YEAR, optional)') + tick(SYS.stripe && SYS.stripe.siteUrl, 'Webseiten-Adresse (SITE_URL)') + '</ul>'
+      + '<section class="set-card"><h3>Bezahlung (Plus und Pro)</h3><p class="set-help">Aus = Bezahlung ist nirgends auffindbar und alle Funktionen sind frei (wie bisher). An = Üben/Notizen nur mit Pro, KI mit Tageslimit. Die Bezahlung wird erst aktiv, wenn Stripe vollständig eingerichtet ist.</p>'
+      + '<ul class="sys-list">' + tick(SYS.stripe && SYS.stripe.secret, 'Stripe-Key (STRIPE_SECRET_KEY)') + tick(SYS.stripe && SYS.stripe.webhook, 'Webhook-Secret (STRIPE_WEBHOOK_SECRET)') + tick(SYS.stripe && SYS.stripe.priceMonth, 'Preis Monat (STRIPE_PRICE_MONTH)') + tick(SYS.stripe && SYS.stripe.priceYear, 'Preis Jahr (STRIPE_PRICE_YEAR, optional)') + tick(SYS.stripe && SYS.stripe.plusMonth, 'Plus Monat (STRIPE_PLUS_PRICE_MONTH, optional)') + tick(SYS.stripe && SYS.stripe.plusYear, 'Plus Jahr (STRIPE_PLUS_PRICE_YEAR, optional)') + tick(SYS.stripe && SYS.stripe.siteUrl, 'Webseiten-Adresse (SITE_URL)') + '</ul>'
       + sw('bl_on', S.billing.enabled, 'Bezahlung aktiv', SYS.stripe && SYS.stripe.ready ? 'Stripe ist bereit' : 'Stripe ist noch nicht vollständig eingerichtet (Einstellung wird gespeichert, wirkt aber erst danach)')
       + sw('bl_prac', S.billing.proFeatures.practice, 'Üben nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
       + fld('bl_free', 'Kostenlose KI-Chats pro Tag (0 = KI nur mit Pro)', S.billing.freeAiPerDay, '3', 'number')
+      + fld('bl_plus_ai', 'Plus: KI-Chats pro Tag (Plus gibt es, sobald ein Plus-Preis eingetragen ist)', S.billing.plusAiPerDay, '15', 'number')
+      + sw('bl_plus_prac', S.billing.plusFeatures.practice, 'Üben auch mit Plus', 'Aus = Üben nur mit Pro') + sw('bl_plus_note', S.billing.plusFeatures.notes, 'Notizen auch mit Plus', 'Aus = Notizen nur mit Pro')
       + sw('bl_year', S.billing.yearly, 'Jahrestarif anbieten', 'Braucht STRIPE_PRICE_YEAR') + sw('bl_ku', S.billing.kleinunternehmer, 'Kleinunternehmer (§ 19 UStG)', 'Zeigt „keine Umsatzsteuer“ statt „inkl. USt“') + sw('bl_promo', S.billing.promo, 'Gutscheincodes erlauben')
       + area('bl_note_t', 'Zusatzhinweis auf der Pro-Seite (optional)', S.billing.note, '', 2) + '</section>'
       + '<section class="set-card"><h3>Konten und Anmeldung</h3><p class="set-help">' + (ST.users != null ? ST.users + ' Konten · ' + ST.verified + ' bestätigte E-Mails · ' + ST.proActive + ' mit Pro' : '') + '</p>'
@@ -126,7 +128,7 @@
         features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, c('ft_' + k)])),
         ai: {order, enabled: Object.fromEntries(order.map(p => [p, $('prov_' + p).checked])), rateLimit: +g('ai_rate') || 20, extra: g('ai_extra')},
         social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
-        billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
+        billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, plusAiPerDay: +g('bl_plus_ai') || 0, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
         auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}
       };
       const m = $('setMsg'); m.textContent = 'Speichert …'; $('setSave').disabled = true;

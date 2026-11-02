@@ -5,6 +5,9 @@
   try{ t = localStorage.getItem('regelheft-theme'); }catch(e){}
   if(t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', t);
+  /* Heft-Look (Karopapier): standardmäßig an, abschaltbar über den Knopf in der Kopfzeile (localStorage "regelheft-heft") */
+  var h = 'on'; try{ if(localStorage.getItem('regelheft-heft') === 'off') h = 'off'; }catch(e){}
+  document.documentElement.setAttribute('data-heft', h);
   var m = document.querySelector('meta[name="theme-color"]');
   if(m) m.setAttribute('content', t === 'dark' ? '#0F1218' : '#ffffff');
 })();

@@ -298,7 +298,7 @@ clearBtn.addEventListener('click', () => {
 const aiSq = document.getElementById('aiSq');
 const practiceSq = document.getElementById('practiceSq'), shareBtn = document.getElementById('shareBtn');
 function updatePractice(){
-  const gated = RH.needsPro('practice'), locked = gated && !RH.isPro();
+  const gated = RH.needsPro('practice'), locked = gated && !RH.hasAccess('practice');
   const hidden = !RH.feat('practice') || (gated && !RH.user());       // ohne Bezahl-Version: ohne Konto gar nicht sichtbar
   practiceSq.style.display = hidden ? 'none' : '';
   practiceSq.href = locked ? 'pro.html' : 'ueben.html';

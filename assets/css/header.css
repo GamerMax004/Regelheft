@@ -196,3 +196,10 @@ select.auth-in{ appearance:auto; }
 
 .sys-list{ list-style:none; margin:6px 0 10px; padding:0; display:grid; gap:4px; font-size:13.5px; }
 .sys-list .ok{ color:var(--teal); } .sys-list .bad{ color:var(--danger); }
+
+/* Plus/Pro: Überschriften in Listen und Tarif-Gruppen */
+.pro-list li.tier-h{ display:block; margin-top:6px; font-size:16px; font-weight:700; }
+.pro-list li.tier-h small{ font-weight:500; color:var(--muted); font-size:13px; }
+.pro-list li.no{ color:var(--muted); }
+.pro-list li.no svg{ color:var(--muted); }
+.plan-group{ margin:8px 0 -4px; font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }

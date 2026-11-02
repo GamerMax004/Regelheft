@@ -21,13 +21,29 @@
       b.title = t === 'dark' ? 'Helles Design' : 'Dunkles Design';
     }
   }
+  /* ---------- Heft-Look an/aus (Karopapier) ---------- */
+  const heftNow = () => root.getAttribute('data-heft') === 'off' ? 'off' : 'on';
+  function applyHeft(h, save){
+    root.setAttribute('data-heft', h);
+    if(save){ try{ localStorage.setItem('regelheft-heft', h); }catch(e){} }
+    const b = document.getElementById('heftBtn');
+    if(b){
+      b.innerHTML = icon('book', 19);
+      b.setAttribute('aria-pressed', h === 'on' ? 'true' : 'false');
+      b.setAttribute('aria-label', h === 'on' ? 'Heft-Look ausschalten' : 'Heft-Look einschalten');
+      b.title = h === 'on' ? 'Heft-Look aus' : 'Heft-Look an';
+    }
+  }
   /* ---------- Konto-Knopf ---------- */
   const host = document.querySelector('[data-account]');
   if(host){
     const wrap = document.createElement('div'); wrap.className = 'top-actions';
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'theme-btn'; tb.id = 'themeBtn';
     tb.onclick = () => applyTheme(themeNow() === 'dark' ? 'light' : 'dark', true);
-    host.parentNode.insertBefore(wrap, host); wrap.appendChild(tb); wrap.appendChild(host);
+    const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'heft-btn'; hb.id = 'heftBtn';
+    hb.onclick = () => applyHeft(heftNow() === 'on' ? 'off' : 'on', true);
+    host.parentNode.insertBefore(wrap, host); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
+    applyHeft(heftNow(), false);
     applyTheme(themeNow(), false);
     // Ohne eigene Auswahl dem Gerät folgen (z. B. wenn abends auf Dunkel umgestellt wird)
     if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
@@ -42,10 +58,10 @@
       const ini = esc((user.username || '?').trim().charAt(0).toUpperCase());
       const bill = RH.cfg().billing.enabled;
       host.innerHTML = '<button class="acct-avatar" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü">' + ini + (user.pro && bill ? '<span class="acct-crown">' + icon('crown', 11, true) + '</span>' : '') + '</button>'
-        + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b>' + (user.pro && bill ? '<span class="pro-tag">' + icon('crown', 12, true) + 'Pro</span>' : '') + '</p>'
+        + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b>' + (user.pro && bill ? '<span class="pro-tag">' + icon('crown', 12, true) + 'Pro</span>' : (user.plus && bill ? '<span class="pro-tag">Plus</span>' : '')) + '</p>'
         + (user.admin ? '<a href="dashboard.html" role="menuitem">Dashboard</a>' : '')
         + '<a href="konto.html" role="menuitem">Mein Konto</a>'
-        + (bill && !user.pro ? '<a href="pro.html" role="menuitem" class="menu-pro"><span class="crown-ic">' + icon('crown', 16, true) + '</span>Pro holen</a>' : '')
+        + (bill && !user.pro ? '<a href="pro.html" role="menuitem" class="menu-pro"><span class="crown-ic">' + icon('crown', 16, true) + '</span>' + (user.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>' : '')
         + '<button id="acctLogout" role="menuitem">Abmelden</button></div>';
       const btn = host.querySelector('#acctBtn'), menu = host.querySelector('#acctMenu');
       btn.onclick = e => { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); };

@@ -16,7 +16,7 @@ const RH = (function(){
     news: NEWS,
     features: {ai:true, registration:true, favorites:true, recent:true, notes:true, practice:true, share:true, darkmode:true, stats:true},
     social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram},
-    billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, yearly:true, kleinunternehmer:true, note:''},
+    billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, plusAvailable:false, yearly:true, kleinunternehmer:true, note:''},
     auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false}
   };
   const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram};
@@ -27,7 +27,7 @@ const RH = (function(){
     if(j.maintenance) Object.assign(cfg.maintenance, j.maintenance);
     if(j.announcement) Object.assign(cfg.announcement, j.announcement);
     if(j.features) Object.assign(cfg.features, j.features);
-    if(j.billing){ Object.assign(cfg.billing, j.billing); if(j.billing.proFeatures) cfg.billing.proFeatures = Object.assign({practice:true, notes:true}, j.billing.proFeatures); }
+    if(j.billing){ Object.assign(cfg.billing, j.billing); if(j.billing.proFeatures) cfg.billing.proFeatures = Object.assign({practice:true, notes:true}, j.billing.proFeatures); if(j.billing.plusFeatures) cfg.billing.plusFeatures = Object.assign({practice:false, notes:true}, j.billing.plusFeatures); }
     if(j.auth) Object.assign(cfg.auth, j.auth);
     cfg.news = j.news || defaults.news;
     const so = j.social || {};
@@ -81,9 +81,10 @@ const RH = (function(){
   function toLogin(next){ location.replace('anmeldung.html?next=' + encodeURIComponent(next)); }
 
   const isPro = () => !!(auth.user && auth.user.pro);
+  const isPlus = () => !!(auth.user && auth.user.plus && !auth.user.pro);
   const needsPro = f => !!cfg.billing.enabled && cfg.billing.proFeatures[f] !== false;
   async function refreshUser(){ const j = await api('/api/me'); setAuth(auth.token, j.user); return j.user; }
-  return {isPro, needsPro, hasAccess: f => !needsPro(f) || isPro(), refreshUser, apiBase: API, token: () => auth.token,
+  return {isPro, isPlus, needsPro, hasAccess: f => !needsPro(f) || isPro() || (isPlus() && cfg.billing.plusFeatures[f] === true), refreshUser, apiBase: API, token: () => auth.token,
           api, setAuth, logout, onAuth, ready, esc, logEv, safeNext, toLogin, configured, onConfig, configReady, cfg: () => cfg, feat: k => cfg.features[k] !== false, defaults,
           user: () => auth.user, hasToken: () => !!auth.token, isLoading: () => loading};
 })();

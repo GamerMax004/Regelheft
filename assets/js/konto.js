@@ -19,19 +19,21 @@
     let st = {}; try{ st = await RH.api('/api/billing/status'); }catch(e){}
     const btns = [];
     if(u.admin){ $('kProLine').textContent = 'Als Betreiber hast du alle Funktionen.'; }
-    else if(st.pro){
-      $('kProLine').innerHTML = '<span class="badge-ok">Pro aktiv</span><span>' + (st.cancelAtEnd ? 'gekündigt, endet am ' : (st.grant ? 'geschenkt bis ' : 'verlängert sich am ')) + (st.until ? dt(st.until) : '') + '</span>';
+    else if(st.pro || st.plus){
+      const tn = st.pro ? 'Pro' : 'Plus';
+      $('kProLine').innerHTML = '<span class="badge-ok">' + tn + ' aktiv</span><span>' + (st.cancelAtEnd ? 'gekündigt, endet am ' : (st.grant ? 'geschenkt bis ' : 'verlängert sich am ')) + (st.until ? dt(st.until) : '') + '</span>' + (st.plus && st.quota ? '<span>Heute ' + st.quota.used + ' von ' + st.quota.limit + ' KI-Chats genutzt.</span>' : '');
+      if(st.plus) btns.push('<a class="ai-btn" href="pro.html">Auf Pro wechseln</a>');
       if(st.hasSub && !st.cancelAtEnd) btns.push('<button class="ai-btn ghost" id="kCancel" type="button">Abo kündigen</button>');
       if(st.hasSub && st.cancelAtEnd) btns.push('<button class="ai-btn" id="kResume" type="button">Kündigung zurücknehmen</button>');
       if(st.canManage) btns.push('<button class="ai-btn ghost" id="kPortal" type="button">Zahlung und Rechnungen verwalten</button>');
     }else{
       $('kProLine').textContent = 'Du nutzt die kostenlose Version.' + (st.quota ? ' Heute ' + st.quota.used + ' von ' + st.quota.limit + ' KI-Chats genutzt.' : '');
-      btns.push('<a class="ai-btn" href="pro.html">Pro holen</a>');
+      btns.push('<a class="ai-btn" href="pro.html">' + (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen') + '</a>');
       if(st.canManage) btns.push('<button class="ai-btn ghost" id="kPortal" type="button">Rechnungen ansehen</button>');
     }
     $('kProBtns').innerHTML = btns.join('');
     const pe = t => { $('kProErr').textContent = t; };
-    if($('kCancel')) $('kCancel').onclick = () => { $('kCancelTxt').textContent = 'Du kannst Pro noch bis zum ' + dt(st.until) + ' nutzen, danach endet das Abo. Wir schicken dir eine Bestätigung per E-Mail.'; $('kCancelBox').classList.remove('is-hidden'); };
+    if($('kCancel')) $('kCancel').onclick = () => { $('kCancelTxt').textContent = 'Du kannst ' + tn + ' noch bis zum ' + dt(st.until) + ' nutzen, danach endet das Abo. Wir schicken dir eine Bestätigung per E-Mail.'; $('kCancelBox').classList.remove('is-hidden'); };
     $('kCancelNo').onclick = () => $('kCancelBox').classList.add('is-hidden');
     $('kCancelYes').onclick = async () => { $('kCancelYes').disabled = true; try{ await RH.api('/api/billing/cancel', {body:{confirm:true}}); await RH.refreshUser(); $('kCancelBox').classList.add('is-hidden'); renderAccount(); }catch(e){ pe(e.message); } $('kCancelYes').disabled = false; };
     if($('kResume')) $('kResume').onclick = async () => { try{ await RH.api('/api/billing/resume', {body:{}}); await RH.refreshUser(); renderAccount(); }catch(e){ alert(e.message); } };
