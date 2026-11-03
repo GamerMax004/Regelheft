@@ -20,7 +20,8 @@
 <link rel="stylesheet" href="assets/css/theme.css?v=20261101a">
 <link rel="stylesheet" href="assets/css/header.css?v=20261101a">
 <link rel="stylesheet" href="assets/css/heft-font.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261101a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261102a">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261102a">
 </head>
 <body>
 
@@ -29,29 +30,40 @@
 </header>
 
 <main>
-<div class="page page--narrow">
+<div class="page page--konto">
   <h2 class="page-title">Mein Konto</h2>
   <p class="page-lead" id="kontoLoading">Lade …</p>
   <div class="is-hidden" id="kontoApp">
-    <div class="auth-success">Angemeldet als <b id="kontoUser"></b></div>
-    <div class="btn-row">
-      <a class="ai-btn" href="ki.html">KI-Aufgabenhilfe</a>
-      <button class="ai-btn ghost" id="kontoClearRecent" type="button">Verlauf „Zuletzt geöffnet“ löschen</button>
-      <a class="ai-btn ghost is-hidden" id="kontoDash" href="dashboard.html">Dashboard</a>
-      <button class="ai-btn ghost" id="kontoLogout" type="button">Abmelden</button>
+    <div class="k-hero">
+      <span class="k-av" id="kontoAv" aria-hidden="true">?</span>
+      <div class="k-hero-tx"><span class="k-sub">Angemeldet als</span><b class="k-name" id="kontoUser"></b></div>
+      <div class="k-hero-act">
+        <a class="k-link is-hidden" id="kontoDash" href="dashboard.html">Dashboard</a>
+        <button class="k-link" id="kontoLogout" type="button">Abmelden</button>
+      </div>
     </div>
 
-    <div class="card-sec" id="kEmail"><h3>E-Mail-Adresse</h3>
-      <div class="status-line"><span id="kMail"></span><span id="kMailBadge" class="badge-ok is-hidden"></span></div>
-      <div class="btn-row"><button class="ai-btn ghost" id="kMailBtn" type="button">E-Mail angeben</button></div>
-    </div>
+    <div class="k-grid">
+      <div class="card-sec" id="kEmail"><h3>E-Mail-Adresse</h3>
+        <div class="status-line"><span id="kMail"></span><span id="kMailBadge" class="badge-ok is-hidden"></span></div>
+        <div class="btn-row"><button class="ai-btn ghost" id="kMailBtn" type="button">E-Mail angeben</button></div>
+      </div>
 
-    <div class="card-sec is-hidden" id="kPro"><h3><span class="crown-ic" data-icon="crown" data-size="18" style="display:inline-flex;vertical-align:-3px;margin-right:6px"></span>Regelheft Pro</h3>
-      <div class="status-line" id="kProLine"></div>
-      <div class="btn-row" id="kProBtns"></div>
-      <div class="page-note is-hidden" id="kCancelBox"><b>Pro wirklich kündigen?</b><br><span id="kCancelTxt"></span>
-        <div class="btn-row"><button class="ai-btn ai-del" id="kCancelYes" type="button">Ja, jetzt kündigen</button><button class="ai-btn ghost" id="kCancelNo" type="button">Abbrechen</button></div>
-        <div class="auth-err" id="kProErr" role="alert"></div></div>
+      <div class="card-sec is-hidden" id="kPro"><h3><span class="crown-ic" data-icon="crown" data-size="18" style="display:inline-flex;vertical-align:-3px;margin-right:6px"></span>Mein Abo</h3>
+        <div class="status-line" id="kProLine"></div>
+        <div class="btn-row" id="kProBtns"></div>
+        <div class="page-note is-hidden" id="kCancelBox"><b>Abo wirklich kündigen?</b><br><span id="kCancelTxt"></span>
+          <div class="btn-row"><button class="ai-btn ai-del" id="kCancelYes" type="button">Ja, jetzt kündigen</button><button class="ai-btn ghost" id="kCancelNo" type="button">Abbrechen</button></div>
+          <div class="auth-err" id="kProErr" role="alert"></div></div>
+      </div>
+
+      <div class="card-sec" id="kQuick"><h3>Schnellzugriff</h3>
+        <div class="btn-row">
+          <a class="ai-btn" href="ki.html">KI-Aufgabenhilfe</a>
+          <a class="ai-btn ghost" href="ueben.html">Üben mit Karteikarten</a>
+          <button class="ai-btn ghost" id="kontoClearRecent" type="button">Verlauf „Zuletzt geöffnet“ löschen</button>
+        </div>
+      </div>
     </div>
 
     <div class="danger-zone">
@@ -62,8 +74,8 @@
         <p style="margin-top:12px">Gib zur Bestätigung dein Passwort ein.</p>
         <input class="auth-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort">
         <div class="auth-err" id="delErr" role="alert"></div>
-        <button class="ai-btn ai-del" id="delGo" type="button" style="background:#b91c1c;color:#fff;border-color:#b91c1c">Endgültig löschen</button>
-        <button class="ai-btn ghost" id="delCancel" type="button">Abbrechen</button>
+        <div class="btn-row"><button class="ai-btn ai-del" id="delGo" type="button" style="background:#b91c1c;color:#fff;border-color:#b91c1c">Endgültig löschen</button>
+        <button class="ai-btn ghost" id="delCancel" type="button">Abbrechen</button></div>
       </div>
     </div>
   </div>

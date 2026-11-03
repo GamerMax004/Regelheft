@@ -68,9 +68,9 @@
 
 /* Beim Antippen der Suche: die Knöpfe links und rechts blenden aus, die Suchleiste wird breiter */
 .sq-btn{ overflow:hidden; transition:width .22s ease, margin .22s ease, opacity .15s ease, border-color .15s ease, background .15s ease; }
-.searchbar:focus-within .sq-btn{ width:0; min-width:0; padding:0; border-width:0; opacity:0; pointer-events:none; }
-.searchbar:focus-within #aiSq{ margin-right:-8px; }
-.searchbar:focus-within #practiceSq{ margin-left:-8px; }
+/* Nur auf dem Handy klappen die Knöpfe beim Tippen ein (mehr Platz für die Suche). Am Laptop/PC bleiben sie IMMER klickbar. */
+@media (max-width:719px){ .searchbar:focus-within .sq-btn{ width:0; min-width:0; padding:0; border-width:0; opacity:0; pointer-events:none; } }
+@media (max-width:719px){ .searchbar:focus-within #aiSq{ margin-right:-8px; } .searchbar:focus-within #practiceSq{ margin-left:-8px; } }
 @media (prefers-reduced-motion:reduce){ .sq-btn{ transition:none; } }
 
 /* ============================================================

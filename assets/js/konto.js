@@ -47,6 +47,7 @@
     $('kontoLoading').classList.add('is-hidden');
     $('kontoApp').classList.remove('is-hidden');
     $('kontoUser').textContent = u.username;
+    $('kontoAv').textContent = (u.username || '?').trim().charAt(0).toUpperCase();
     if(u.admin) $('kontoDash').classList.remove('is-hidden');
   });
   $('kontoClearRecent').onclick = async () => {

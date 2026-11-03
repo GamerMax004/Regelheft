@@ -20,7 +20,8 @@
 <link rel="stylesheet" href="assets/css/theme.css?v=20261101a">
 <link rel="stylesheet" href="assets/css/header.css?v=20261101a">
 <link rel="stylesheet" href="assets/css/heft-font.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261101a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261102a">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261102a">
 </head>
 <body>
 
@@ -29,12 +30,12 @@
 </header>
 
 <main>
-<div class="page">
+<div class="page page--wide">
   <h2 class="page-title">Dashboard</h2>
   <p class="page-lead" id="dashLoading">Lade …</p>
   <div class="page-note is-hidden" id="dashDenied"><b>Kein Zugriff.</b> Das Dashboard ist nur für den Betreiber sichtbar.</div>
   <div class="is-hidden" id="dashApp">
-    <div class="ai-bar"><button class="ai-btn" id="dashTabOv">Übersicht</button><button class="ai-btn ghost" id="dashTabChats">Alle Chats</button><button class="ai-btn ghost" id="dashTabSet">Einstellungen</button></div>
+    <div class="ai-bar dash-tabs" role="tablist"><button class="ai-btn" id="dashTabOv">Übersicht</button><button class="ai-btn ghost" id="dashTabChats">Alle Chats</button><button class="ai-btn ghost" id="dashTabSet">Einstellungen</button></div>
     <div id="dashBody"></div>
   </div>
 </div>

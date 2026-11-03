@@ -21,7 +21,7 @@ Der Key gehört NUR dorthin, nie in die Webseite. Danach worker.js neu deployen.
 Im Dashboard unter "Einstellungen": Mitteilung, Wartungsmodus, Popup "Neu", Funktionen an/aus, KI-Reihenfolge, Footer-Links.
 
 === Bezahlung, E-Mail-Code, Google-Login: Einrichtung (alles im Cloudflare-Worker unter Settings > Variables/Secrets) ===
-Stripe:   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH, (optional) STRIPE_PRICE_YEAR, SITE_URL (z. B. https://regelheft.onrender.com)
+Stripe:   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH, (optional) STRIPE_PRICE_YEAR, SITE_URL (https://regelheft.goelitzer-development.de)
           Webhook-URL in Stripe: https://<dein-worker>.workers.dev/api/billing/webhook
           Events: checkout.session.completed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
           In Stripe das Kundenportal aktivieren (Einstellungen > Billing > Customer portal).
@@ -30,3 +30,18 @@ Google:   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET; Weiterleitungs-URI in der Goog
           https://<dein-worker>.workers.dev/api/auth/google/callback
 Danach im Dashboard > Einstellungen > "Bezahlung (Pro)" den Schalter einschalten. Erst im Stripe-TESTMODUS ausprobieren.
 AGB und Widerrufsbelehrung sind Mustertexte: bitte rechtlich prüfen lassen, bevor echtes Geld fließt.
+
+
+------------------------------------------------------------
+UMZUG AUF DIE NEUE DOMAIN: regelheft.goelitzer-development.de
+------------------------------------------------------------
+1. Neue Domain beim Hosting der Webseite eintragen (Render: Settings > Custom Domains) und beim Domain-Anbieter den angezeigten CNAME-Eintrag setzen.
+2. Im Worker (Cloudflare) ändern:
+   SITE_URL        = https://regelheft.goelitzer-development.de
+   ALLOWED_ORIGIN  = https://regelheft.goelitzer-development.de  (die alte Adresse kann mit Komma dahinter bleiben, bis alle umgezogen sind)
+   MAIL_FROM       = Regelheft <noreply@goelitzer-development.de>   (die Domain muss in Resend verifiziert sein)
+3. Google-Login: Die Weiterleitungs-URI (…workers.dev/api/auth/google/callback) bleibt gleich, solange der Worker gleich bleibt. Nichts ändern.
+4. Stripe: Webhook-URL bleibt gleich (Worker). Success-/Abbruch-Adressen entstehen aus SITE_URL, also nur SITE_URL ändern.
+5. Die Datei umzug/index.html (mit heft-font.css daneben) auf die ALTE Adresse legen, als index.html (und, wenn möglich, auch als 404-Seite),
+   damit auch alte Links weitergeleitet werden. Sie schickt Besucher nach 10 Sekunden automatisch auf die neue Adresse (mit Abbrechen-Knopf).
+6. Angemeldete Nutzer müssen sich auf der neuen Adresse einmal neu anmelden (die Anmeldung wird im Browser pro Adresse gespeichert).
