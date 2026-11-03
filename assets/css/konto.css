@@ -46,7 +46,7 @@
 .dash-stat span{ display:block; margin-top:4px; font-size:13px; color:var(--muted); }
 
 /* ---------- Einstellungen: Karten im Raster, Speichern-Leiste schwebt unten ---------- */
-.set-wrap{ display:grid; grid-template-columns:1fr; gap:16px; align-items:start; padding-bottom:110px; }
+.set-wrap{ display:grid; grid-template-columns:1fr; gap:16px; align-items:start; padding-bottom:8px; }
 @media (min-width:900px){ .set-wrap{ grid-template-columns:1fr 1fr; } }
 .set-card{ margin:0; min-width:0; }
 .set-card h3{ padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid var(--border); }
@@ -55,9 +55,9 @@
 .set-card .auth-in, .set-card select.auth-in{ width:100%; box-sizing:border-box; }
 .sw-row{ min-height:52px; }
 .sw-tx b{ font-weight:600; }
-.set-save{ left:50%; right:auto; transform:translateX(-50%); width:calc(100% - 24px); max-width:1080px; bottom:12px; padding:10px 14px; border:1px solid var(--border); border-radius:18px; box-shadow:0 8px 28px rgba(15,23,42,.14); }
-.set-save .ai-btn{ min-width:160px; }
-@media (max-width:560px){ .set-save{ bottom:8px; width:calc(100% - 16px); } }
+.set-save{ position:static; left:auto; right:auto; bottom:auto; transform:none; width:auto; max-width:none; margin:4px 0 0; padding:0; border:none; box-shadow:none; background:transparent; display:flex; justify-content:flex-end; }
+.set-save .ai-btn{ min-width:220px; }
+@media (max-width:560px){ .set-save .ai-btn{ width:100%; } }
 
 /* ---------- Heft-Look ---------- */
 html[data-heft="on"] .k-hero, html[data-heft="on"] .dash-stat, html[data-heft="on"] .set-card, html[data-heft="on"] .card-sec{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--grid-strong); box-shadow:none; }
@@ -94,10 +94,8 @@ html[data-heft="on"] .auth-in, html[data-heft="on"] .set-ta, html[data-heft="on"
 html[data-heft="on"] .auth-in:focus, html[data-heft="on"] .set-ta:focus{ outline:none; border-color:var(--pen-green); box-shadow:none; }
 html[data-heft="on"] .prov-n{ background:transparent; border:1.5px solid var(--pen); color:var(--pen); font-weight:400; font-size:16px; }
 html[data-heft="on"] .prov-mv{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); }
-html[data-heft="on"] .set-save{ background:var(--paper); border:1.5px solid var(--pen); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
 html[data-heft="on"] .set-save, html[data-heft="on"] .set-save *{ font-family:var(--font); }
 html[data-heft="on"] .page-title{ font-size:36px; font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:2px; text-underline-offset:7px; display:inline-block; }
 html[data-heft="on"] .page-lead, html[data-heft="on"] .page-note{ font-size:19px; color:var(--pen-soft); }
 html[data-heft="on"] .page-note{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--grid-strong); color:var(--pen); }
 html[data-heft="on"] .auth-err{ color:var(--pen-red); font-size:17px; }
-@media (min-width:700px){ .set-save .ai-btn{ width:auto; min-width:220px; margin-left:auto; } }

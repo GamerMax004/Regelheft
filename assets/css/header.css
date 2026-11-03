@@ -203,3 +203,13 @@ select.auth-in{ appearance:auto; }
 .pro-list li.no{ color:var(--muted); }
 .pro-list li.no svg{ color:var(--muted); }
 .plan-group{ margin:8px 0 -4px; font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+
+/* Suchleiste wächst beim Antippen/Tippen:
+   - Handy: die Knöpfe klappen ein, die Suche nimmt die volle Breite (siehe oben).
+   - Laptop/PC: die Knöpfe bleiben an Ort und Stelle und werden nur zu kleinen Symbolen (ohne Beschriftung).
+     So wird die Suche deutlich breiter, aber KI-Hilfe und Üben lassen sich IMMER anklicken (kein Springen mehr). */
+@media (min-width:720px){
+  .sq-btn{ transition:border-color .15s ease, background .15s ease; }
+  .searchbar:focus-within .sq-btn{ width:48px; min-width:48px; padding:0; }
+  .searchbar:focus-within .sq-tx{ display:none; }
+}
