@@ -21,7 +21,7 @@ Der Key gehört NUR dorthin, nie in die Webseite. Danach worker.js neu deployen.
 Im Dashboard unter "Einstellungen": Mitteilung, Wartungsmodus, Popup "Neu", Funktionen an/aus, KI-Reihenfolge, Footer-Links.
 
 === Bezahlung, E-Mail-Code, Google-Login: Einrichtung (alles im Cloudflare-Worker unter Settings > Variables/Secrets) ===
-Stripe:   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH, (optional) STRIPE_PRICE_YEAR, SITE_URL (https://regelheft.goelitzer-development.de)
+Stripe:   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRO_PRICE_MONTH, (optional) STRIPE_PRO_PRICE_YEAR (alte Namen STRIPE_PRICE_* gehen weiterhin), SITE_URL (https://regelheft.goelitzer-development.de)
           Webhook-URL in Stripe: https://<dein-worker>.workers.dev/api/billing/webhook
           Events: checkout.session.completed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
           In Stripe das Kundenportal aktivieren (Einstellungen > Billing > Customer portal).
