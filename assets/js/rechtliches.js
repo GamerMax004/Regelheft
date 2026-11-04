@@ -84,7 +84,7 @@ ${CFG().billing.enabled ? `<h3>6c. Abo (${CFG().billing.plusAvailable ? 'Plus un
 <h3>12. Deine Rechte</h3>
 <p>Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch gegen Verarbeitungen auf Grundlage berechtigter Interessen (Art. 21 DSGVO). Schreibe dazu eine E-Mail an die oben genannte Adresse. Konto und Chats kannst du auch selbst löschen. Außerdem hast du das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren, zum Beispiel bei: ${v('authority')}. Zuständig für den Anbieter in der Schweiz ist der Eidgenössische Datenschutz- und Öffentlichkeitsbeauftragte (EDÖB), Feldeggweg 1, 3003 Bern.</p>
 <h3>13. Mindestalter und Jugendliche</h3>
-<p>Ein Konto kannst du ab 16 Jahren anlegen. Jüngere Nutzerinnen und Nutzer brauchen die Zustimmung ihrer Erziehungsberechtigten. Das Regelheft selbst kann jeder ohne Konto nutzen.${CFG().billing.enabled ? ' Der Kauf von ${PN()} ist nur Volljährigen oder mit Zustimmung der Erziehungsberechtigten gestattet.' : ''}</p>
+<p>Ein Konto kannst du ab 16 Jahren anlegen. Jüngere Nutzerinnen und Nutzer brauchen die Zustimmung ihrer Erziehungsberechtigten. Das Regelheft selbst kann jeder ohne Konto nutzen.${CFG().billing.enabled ? ' ${PN()} richtet sich ausdrücklich auch an Schülerinnen und Schüler und kann auch von Minderjährigen gekauft werden, die mit eigenen Mitteln (z. B. Taschengeld) oder mit Zustimmung ihrer Erziehungsberechtigten bezahlen.' : ''}</p>
 <h3>14. Datensicherheit</h3>
 <p>Die Übertragung erfolgt verschlüsselt (HTTPS). Passwörter und Anmelde-Token werden nur als Hash gespeichert. Der Zugriff auf gespeicherte Chats und die Statistik ist auf mich als Betreiber beschränkt und durch Anmeldung geschützt.</p>
 <h3>15. Erforderlichkeit der Angaben</h3>
@@ -108,7 +108,7 @@ ${hasExt ? '<h3>16. Externe Links (' + extNames + ')</h3><p>Im Fußbereich der S
 <h3>6. Widerrufsrecht</h3>
 <p>Als Verbraucher hast du ein gesetzliches Widerrufsrecht. Einzelheiten stehen in der <a href="widerruf.html">Widerrufsbelehrung</a>.</p>
 <h3>7. Minderjährige</h3>
-<p>Der Kauf von ${PN()} ist nur Volljährigen oder mit Zustimmung der gesetzlichen Vertreter erlaubt. Mit der Bestellung bestätigst du das.</p>
+<p>${PN()} richtet sich auch an Schülerinnen und Schüler. Minderjährige können ${PN()} kaufen, wenn sie mit eigenen Mitteln (z. B. Taschengeld) oder mit Zustimmung ihrer gesetzlichen Vertreter bezahlen. Mit der Bestellung bestätigst du das.</p>
 <h3>8. Nutzungsrechte und Pflichten</h3>
 <p>Du erhältst ein einfaches, nicht übertragbares Recht, ${PN()} für eigene Lernzwecke zu nutzen. Konten und Zugänge dürfen nicht weitergegeben werden. Inhalte des Regelhefts dürfen nicht systematisch kopiert oder weiterverkauft werden.</p>
 <h3>9. Verfügbarkeit</h3>
