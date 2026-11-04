@@ -12,16 +12,17 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261101a"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/style.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/header.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft-font.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261103b">
-<link rel="stylesheet" href="assets/css/konto.css?v=20261103b">
+<script src="assets/js/theme-init.js?v=20261103c"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/style.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/header.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/heft-font.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/ui.css?v=20261103c">
 </head>
 <body>
 
@@ -30,12 +31,12 @@
 </header>
 
 <main>
-<div class="page page--wide">
-  <h2 class="page-title">Dashboard</h2>
-  <p class="page-lead" id="dashLoading">Lade …</p>
-  <div class="page-note is-hidden" id="dashDenied"><b>Kein Zugriff.</b> Das Dashboard ist nur für den Betreiber sichtbar.</div>
-  <div class="is-hidden" id="dashApp">
-    <div class="ai-bar dash-tabs" role="tablist"><button class="ai-btn" id="dashTabOv">Übersicht</button><button class="ai-btn ghost" id="dashTabChats">Alle Chats</button><button class="ai-btn ghost" id="dashTabSet">Einstellungen</button></div>
+<div class="page page--wide u-root">
+  <div class="u-head"><h2 class="page-title" style="margin:0">Dashboard</h2><span class="u-badge u-hidden" id="dashRole"></span></div>
+  <p class="u-empty" id="dashLoading">Lade …</p>
+  <div class="u-card u-hidden" id="dashDenied"><div class="u-card-h">Kein Zugriff</div><div class="u-sub">Das Dashboard ist nur für den Betreiber und sein Team sichtbar.</div></div>
+  <div class="u-hidden" id="dashApp">
+    <div class="u-tabs" id="dashTabs" role="tablist"></div>
     <div id="dashBody"></div>
   </div>
 </div>
@@ -43,12 +44,12 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261101a"></script>
-<script src="assets/js/footer.js?v=20261101a"></script>
-<script src="assets/js/core.js?v=20261101a"></script>
-<script src="assets/js/icons.js?v=20261101a"></script>
-<script src="assets/js/layout.js?v=20261101a"></script>
-<script src="assets/js/regeln.js?v=20261101a"></script>
-<script src="assets/js/dashboard.js?v=20261101a"></script>
+<script src="assets/js/config.js?v=20261103c"></script>
+<script src="assets/js/footer.js?v=20261103c"></script>
+<script src="assets/js/core.js?v=20261103c"></script>
+<script src="assets/js/icons.js?v=20261103c"></script>
+<script src="assets/js/layout.js?v=20261103c"></script>
+<script src="assets/js/regeln.js?v=20261103c"></script>
+<script src="assets/js/dashboard.js?v=20261103c"></script>
 </body>
 </html>

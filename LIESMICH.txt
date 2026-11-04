@@ -45,3 +45,16 @@ UMZUG AUF DIE NEUE DOMAIN: regelheft.goelitzer-development.de
 5. Die Datei umzug/index.html (mit heft-font.css daneben) auf die ALTE Adresse legen, als index.html (und, wenn möglich, auch als 404-Seite),
    damit auch alte Links weitergeleitet werden. Sie schickt Besucher nach 10 Sekunden automatisch auf die neue Adresse (mit Abbrechen-Knopf).
 6. Angemeldete Nutzer müssen sich auf der neuen Adresse einmal neu anmelden (die Anmeldung wird im Browser pro Adresse gespeichert).
+
+
+------------------------------------------------------------
+NEU (3.11.2026): Dashboard, Team-Zugriff, Plus/Pro schenken
+------------------------------------------------------------
+- worker.js NEU deployen (Cloudflare). Die Spalte "grant_plan" legt der Worker selbst an.
+- Dashboard: Tabs Übersicht / Nutzer / Chats / Team / Einstellungen. Keys und Anbindungen erscheinen nur, wenn
+  in Einstellungen der Schalter "Technische Angaben anzeigen" an ist.
+- Nutzer-Tab: Nutzer suchen, antippen, Pro oder Plus für 7/30/90/365 Tage schenken oder das Geschenk beenden.
+- Team-Tab (nur Besitzer = ADMIN_USER): Benutzernamen hinzufügen. Team sieht Übersicht, Nutzer, Chats und kann
+  schenken, aber keine Einstellungen ändern.
+- Registrierung schickt keine Code-Mail mehr; der Code kommt nur über "Code senden" im Dialog danach.
+- Firmenname überall: Scherer Development Excellence.

@@ -12,16 +12,17 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261101a"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/style.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/header.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft-font.css?v=20261101a">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261103b">
-<link rel="stylesheet" href="assets/css/konto.css?v=20261103b">
+<script src="assets/js/theme-init.js?v=20261103c"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/style.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/header.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/heft-font.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261103c">
+<link rel="stylesheet" href="assets/css/ui.css?v=20261103c">
 </head>
 <body>
 
@@ -30,52 +31,54 @@
 </header>
 
 <main>
-<div class="page page--konto">
+<div class="page page--konto u-root">
   <h2 class="page-title">Mein Konto</h2>
-  <p class="page-lead" id="kontoLoading">Lade …</p>
-  <div class="is-hidden" id="kontoApp">
-    <div class="k-hero">
-      <span class="k-av" id="kontoAv" aria-hidden="true">?</span>
-      <div class="k-hero-tx"><span class="k-sub">Angemeldet als</span><b class="k-name" id="kontoUser"></b></div>
-      <div class="k-hero-act">
-        <a class="k-link is-hidden" id="kontoDash" href="dashboard.html">Dashboard</a>
-        <button class="k-link" id="kontoLogout" type="button">Abmelden</button>
+  <p class="u-empty" id="kontoLoading">Lade …</p>
+  <div class="u-hidden" id="kontoApp">
+
+    <div class="u-hero">
+      <span class="u-av" id="kontoAv" aria-hidden="true">?</span>
+      <div class="u-hero-tx"><b id="kontoUser"></b><div class="u-row-flex" id="kontoBadges"></div></div>
+      <div class="u-row-flex">
+        <a class="u-btn ghost sm u-hidden" id="kontoDash" href="dashboard.html"><span data-icon="dashboard" data-size="16" style="display:inline-flex"></span>Dashboard</a>
+        <button class="u-btn ghost sm" id="kontoLogout" type="button"><span data-icon="logout" data-size="16" style="display:inline-flex"></span>Abmelden</button>
       </div>
     </div>
 
-    <div class="k-grid">
-      <div class="card-sec" id="kEmail"><h3>E-Mail-Adresse</h3>
-        <div class="status-line"><span id="kMail"></span><span id="kMailBadge" class="badge-ok is-hidden"></span></div>
-        <div class="btn-row"><button class="ai-btn ghost" id="kMailBtn" type="button">E-Mail angeben</button></div>
+    <div class="u-card u-hidden" id="kPro">
+      <div class="u-card-h"><span data-icon="crown" data-size="18" style="display:inline-flex"></span>Tarif</div>
+      <div class="u-plan"><span class="u-plan-ic" id="kPlanIc"></span><div class="u-plan-tx"><b id="kPlanName"></b><span class="u-sub" id="kPlanSub"></span></div></div>
+      <div id="kQuota" class="u-hidden"><div class="u-meter"><i id="kQuotaBar"></i></div><div class="u-sub" id="kQuotaTx"></div></div>
+      <div class="u-actions" id="kProBtns" style="margin-top:12px"></div>
+      <div class="u-confirm u-hidden" id="kCancelBox">
+        <div><b>Tarif wirklich kündigen?</b><br><span id="kCancelTxt"></span></div>
+        <div class="u-actions"><button class="u-btn danger solid" id="kCancelYes" type="button">Ja, kündigen</button><button class="u-btn ghost" id="kCancelNo" type="button">Behalten</button></div>
       </div>
+      <div class="u-msg err" id="kProErr" role="alert"></div>
+    </div>
 
-      <div class="card-sec is-hidden" id="kPro"><h3><span class="crown-ic" data-icon="crown" data-size="18" style="display:inline-flex;vertical-align:-3px;margin-right:6px"></span>Mein Abo</h3>
-        <div class="status-line" id="kProLine"></div>
-        <div class="btn-row" id="kProBtns"></div>
-        <div class="page-note is-hidden" id="kCancelBox"><b>Abo wirklich kündigen?</b><br><span id="kCancelTxt"></span>
-          <div class="btn-row"><button class="ai-btn ai-del" id="kCancelYes" type="button">Ja, jetzt kündigen</button><button class="ai-btn ghost" id="kCancelNo" type="button">Abbrechen</button></div>
-          <div class="auth-err" id="kProErr" role="alert"></div></div>
-      </div>
+    <div class="u-card">
+      <div class="u-card-h"><span data-icon="mail" data-size="18" style="display:inline-flex"></span>E-Mail</div>
+      <div class="u-row-flex" style="justify-content:space-between"><span id="kMail" style="min-width:0;overflow-wrap:anywhere"></span><span id="kMailBadge" class="u-badge u-hidden"></span></div>
+      <button class="u-btn ghost sm" id="kMailBtn" type="button" style="margin-top:12px">E-Mail angeben</button>
+    </div>
 
-      <div class="card-sec" id="kQuick"><h3>Schnellzugriff</h3>
-        <div class="btn-row">
-          <a class="ai-btn" href="ki.html">KI-Aufgabenhilfe</a>
-          <a class="ai-btn ghost" href="ueben.html">Üben mit Karteikarten</a>
-          <button class="ai-btn ghost" id="kontoClearRecent" type="button">Verlauf „Zuletzt geöffnet“ löschen</button>
-        </div>
+    <div class="u-card">
+      <div class="u-card-h"><span data-icon="sparkles" data-size="18" style="display:inline-flex"></span>Schnellzugriff</div>
+      <div class="u-links">
+        <a class="u-btn ghost" href="ki.html" id="kLinkKi">KI-Aufgabenhilfe</a>
+        <a class="u-btn ghost" href="ueben.html" id="kLinkUeben">Üben mit Karteikarten</a>
+        <button class="u-btn ghost" id="kontoClearRecent" type="button">Verlauf löschen</button>
       </div>
     </div>
 
-    <div class="danger-zone">
-      <h3>Konto löschen</h3>
-      <p>Dein Konto, alle gespeicherten Chats und alle Anmeldungen werden unwiderruflich gelöscht.</p>
-      <button class="ai-btn ai-del" id="delStart" type="button">Konto löschen</button>
-      <div class="is-hidden" id="delBox">
-        <p style="margin-top:12px">Gib zur Bestätigung dein Passwort ein.</p>
-        <input class="auth-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort">
-        <div class="auth-err" id="delErr" role="alert"></div>
-        <div class="btn-row"><button class="ai-btn ai-del" id="delGo" type="button" style="background:#b91c1c;color:#fff;border-color:#b91c1c">Endgültig löschen</button>
-        <button class="ai-btn ghost" id="delCancel" type="button">Abbrechen</button></div>
+    <div class="u-acc u-danger" id="kDanger">
+      <button type="button" class="u-acc-h" aria-expanded="false"><span data-icon="trash" data-size="18" style="display:inline-flex"></span><span class="u-grow">Konto löschen</span><span class="u-chev" data-icon="chevron-down" data-size="18"></span></button>
+      <div class="u-acc-b">
+        <div class="u-sub" style="margin-bottom:12px">Konto, Chats und Anmeldungen werden unwiderruflich gelöscht. Ein laufendes Abo wird beendet.</div>
+        <input class="u-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort zur Bestätigung">
+        <div class="u-msg err" id="delErr" role="alert"></div>
+        <button class="u-btn danger solid block" id="delGo" type="button" style="margin-top:10px">Endgültig löschen</button>
       </div>
     </div>
   </div>
@@ -84,11 +87,11 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261101a"></script>
-<script src="assets/js/footer.js?v=20261101a"></script>
-<script src="assets/js/core.js?v=20261101a"></script>
-<script src="assets/js/icons.js?v=20261101a"></script>
-<script src="assets/js/layout.js?v=20261101a"></script>
-<script src="assets/js/konto.js?v=20261101a"></script>
+<script src="assets/js/config.js?v=20261103c"></script>
+<script src="assets/js/footer.js?v=20261103c"></script>
+<script src="assets/js/core.js?v=20261103c"></script>
+<script src="assets/js/icons.js?v=20261103c"></script>
+<script src="assets/js/layout.js?v=20261103c"></script>
+<script src="assets/js/konto.js?v=20261103c"></script>
 </body>
 </html>
