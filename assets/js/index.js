@@ -427,7 +427,9 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
       + (r.diagram ? '<div class="diagram-section"><div class="label">Skizze</div><div class="diagram-frame">' + r.diagram + '</div></div>' : '')
       + '<div class="share-foot"><b>Regelheft Mathematik</b><span>' + escapeHtml(location.host || 'Regelheft') + '</span></div>';
     document.body.appendChild(card);
-    const canvas = await html2canvas(card, {scale:2, backgroundColor:'#ffffff', logging:false, useCORS:true});
+    const canvas = await html2canvas(card, {scale:2, backgroundColor:'#ffffff', logging:false, useCORS:true,
+      // Das Bild wird immer im hellen Standard-Look gezeichnet (Heft-Look und Dunkelmodus der Seite spielen keine Rolle)
+      onclone: doc => { const r = doc.documentElement; r.setAttribute('data-heft', 'off'); r.setAttribute('data-theme', 'light'); r.style.colorScheme = 'light'; }});
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
     if(!blob) throw new Error('blob');
     const name = 'Regelheft-' + r.title.replace(/[^A-Za-z0-9ÄÖÜäöüß]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) + '.png';

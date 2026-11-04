@@ -57,12 +57,15 @@
     if(user){
       const ini = esc((user.username || '?').trim().charAt(0).toUpperCase());
       const bill = RH.cfg().billing.enabled;
-      host.innerHTML = '<button class="acct-avatar" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü">' + ini + (user.pro && bill ? '<span class="acct-crown">' + icon('crown', 11, true) + '</span>' : '') + '</button>'
-        + '<div class="acct-menu" id="acctMenu" role="menu"><p>Angemeldet als <b>' + esc(user.username) + '</b>' + (user.pro && bill ? '<span class="pro-tag">' + icon('crown', 12, true) + 'Pro</span>' : (user.plus && bill ? '<span class="pro-tag">Plus</span>' : '')) + '</p>'
-        + (user.admin ? '<a href="dashboard.html" role="menuitem">Dashboard</a>' : '')
-        + '<a href="konto.html" role="menuitem">Mein Konto</a>'
-        + (bill && !user.pro ? '<a href="pro.html" role="menuitem" class="menu-pro"><span class="crown-ic">' + icon('crown', 16, true) + '</span>' + (user.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>' : '')
-        + '<button id="acctLogout" role="menuitem">Abmelden</button></div>';
+      const tier = bill && !user.admin ? (user.pro ? 'pro' : user.plus ? 'plus' : 'free') : 'free';
+      const planBadge = tier === 'pro' ? '<span class="u-badge pro">' + icon('crown', 12, true) + 'Pro</span>' : tier === 'plus' ? '<span class="u-badge plus">Plus</span>' : (user.owner ? '<span class="u-badge ok">Besitzer</span>' : user.admin ? '<span class="u-badge ok">Team</span>' : '');
+      host.innerHTML = '<button type="button" class="acct-chip ' + tier + '" id="acctBtn" aria-haspopup="true" aria-expanded="false" aria-label="Konto-Menü"><span class="u-av">' + ini + '</span>'
+        + (tier === 'pro' ? '<span class="acct-chip-plan">' + icon('crown', 13, true) + 'Pro</span>' : tier === 'plus' ? '<span class="acct-chip-plan">Plus</span>' : '') + '</button>'
+        + '<div class="acct-menu" id="acctMenu" role="menu"><div class="am-head"><span class="u-av">' + ini + '</span><div class="am-head-tx"><b>' + esc(user.username) + '</b>' + planBadge + '</div></div>'
+        + (user.admin ? '<a href="dashboard.html" role="menuitem">' + icon('dashboard', 18) + 'Dashboard</a>' : '')
+        + '<a href="konto.html" role="menuitem">' + icon('user', 18) + 'Mein Konto</a>'
+        + (bill && !user.admin && !user.pro ? '<a href="pro.html" role="menuitem" class="am-pro">' + icon('crown', 18, true) + (user.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>' : '')
+        + '<button type="button" class="am-it am-out" id="acctLogout" role="menuitem">' + icon('logout', 18) + 'Abmelden</button></div>';
       const btn = host.querySelector('#acctBtn'), menu = host.querySelector('#acctMenu');
       btn.onclick = e => { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); };
       host.querySelector('#acctLogout').onclick = async () => {
@@ -70,7 +73,7 @@
         if(page !== 'index.html' && page !== '') location.href = 'index.html';
       };
     }else if(loading){
-      host.innerHTML = '<a class="acct-avatar" href="konto.html" aria-label="Konto">' + icon('user', 18) + '</a>';
+      host.innerHTML = '<a class="acct-chip free" href="konto.html" aria-label="Konto"><span class="u-av">' + icon('user', 18) + '</span></a>';
     }else{
       const next = (page === 'index.html' || page === 'anmeldung.html') ? '' : '?next=' + encodeURIComponent(page);
       host.innerHTML = '<a class="acct-link" href="anmeldung.html' + next + '">Anmelden</a>';

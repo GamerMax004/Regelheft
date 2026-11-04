@@ -30,7 +30,7 @@
     out.push(li('Jederzeit kündbar, keine versteckten Kosten'));
     $('proList').innerHTML = out.join('');
     $('proFine').innerHTML = (c.kleinunternehmer ? 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet. ' : 'Alle Preise inkl. gesetzlicher Umsatzsteuer. ')
-      + 'Das Abo verlängert sich automatisch um den gewählten Zeitraum und ist jederzeit unter „Mein Konto“ kündbar. Zahlungsabwicklung und Rechnungsstellung erfolgen über Scherer Integration Excellence, Zahlungsdienstleister ist Stripe (Karte, SEPA-Lastschrift u. a.); auf deiner Kreditkarten- bzw. Kontoabrechnung erscheint die Belastung in der Regel unter Stripe. Es gelten die <a href="agb.html" target="_blank">AGB</a>, die <a href="widerruf.html" target="_blank">Widerrufsbelehrung</a> und die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a>.'
+      + 'Das Abo verlängert sich automatisch um den gewählten Zeitraum und ist jederzeit unter „Mein Konto“ kündbar. Zahlungsabwicklung und Rechnungsstellung erfolgen über Scherer Development Excellence, Zahlungsdienstleister ist Stripe (Karte, SEPA-Lastschrift u. a.); auf deiner Kreditkarten- bzw. Kontoabrechnung erscheint die Belastung in der Regel unter Stripe. Es gelten die <a href="agb.html" target="_blank">AGB</a>, die <a href="widerruf.html" target="_blank">Widerrufsbelehrung</a> und die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a>.'
       + (c.note ? ' ' + RH.esc(c.note) : '');
   }
   function renderPlans(){

@@ -56,12 +56,6 @@
     try{
       const j = await RH.api('/api/' + mode, {body});
       $('authPw').value = '';
-      if(mode === 'register' && j.needsVerify){
-        busyFlow = true; RH.setAuth(j.token, j.user);
-        $('vLead').textContent = 'Wir haben dir einen 6-stelligen Code an ' + mail + ' geschickt. Er ist 15 Minuten gültig.';
-        show('authVerify'); $('vCode').focus();
-        return;
-      }
       RH.setAuth(j.token, j.user);
       location.href = next;
     }catch(ex){
