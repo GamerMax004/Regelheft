@@ -2,80 +2,86 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Regelheft Mathematik</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="description" content="Regelheft Mathematik: alle Regeln zum Suchen, Üben und Nachschlagen – mit Formeln und Skizzen.">
 <meta name="author" content="Gölitzer Development">
 <meta name="copyright" content="Copyright © Gölitzer Development">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261103c"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/style.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/header.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/heft-font.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/konto.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/ui.css?v=20261103c">
+<script src="assets/js/theme-init.js?v=20261109a"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/style.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/header.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/heft-font.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/ui.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/apple.css?v=20261109a">
 </head>
 <body>
+<a class="skip-link" href="#main">Zum Inhalt springen</a>
 
+<noscript><p class="noscript">Das Regelheft braucht JavaScript. Bitte schalte es in deinem Browser ein.</p></noscript>
 <header class="top top--scroll">
   <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft<span> Mathematik</span></h1></a><div data-account></div></div>
 </header>
 
-<main>
-<div class="searchbar" id="searchbar">
+<main id="main" tabindex="-1">
+<div class="searchbar" id="searchbar" role="search">
   <a class="sq-btn" id="aiSq" href="ki.html" aria-label="KI-Aufgabenhilfe" title="KI-Aufgabenhilfe"><span class="sq-ic" id="aiSqIcon"></span><span class="sq-tx">KI-Hilfe</span></a>
   <div class="searchwrap">
     <span class="icon">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20L16.5 16.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </span>
-    <input id="searchInput" type="text" placeholder="Regel suchen …" autocomplete="off" aria-label="Regel suchen">
-    <button class="clear-btn" id="clearBtn" aria-label="Suche löschen" data-icon="x" data-size="16"></button>
+    <input id="searchInput" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Regel suchen …" aria-label="Regel suchen" aria-controls="list" aria-keyshortcuts="/">
+    <button class="clear-btn" id="clearBtn" type="button" aria-label="Suche löschen" data-icon="x" data-size="16"></button>
   </div>
   <a class="sq-btn" id="practiceSq" href="ueben.html" aria-label="Üben mit Karteikarten" title="Üben mit Karteikarten"><span class="sq-ic" data-icon="layers" data-size="22"></span><span class="sq-tx">Üben</span><span class="sq-crown is-hidden" id="practiceCrown" data-icon="crown" data-size="13" aria-hidden="true"></span></a>
 </div>
-<div class="chips" id="chips"></div>
-<div class="meta-row">
+<div class="chips" id="chips" role="group" aria-label="Kategorien"></div>
+<div class="meta-row" role="status" aria-live="polite" aria-atomic="true">
   <span><span class="count" id="resultCount"></span> Regeln</span>
   <span id="activeCatLabel"></span>
 </div>
 
-<div class="list" id="list"></div>
+<h2 class="sr-only">Regeln</h2>
+<div class="list" id="list" role="list"></div>
 <div class="empty-state" id="emptyState" style="display:none;">
   <div class="big" id="emptyTitle">Keine Treffer</div>
   <div id="emptySub">Versuch es mit einem anderen Suchbegriff.</div>
+  <button class="ai-btn ghost empty-reset" id="emptyReset" type="button">Suche zurücksetzen</button>
 </div>
 </main>
 
-<div class="news-overlay" id="newsOverlay" role="dialog" aria-modal="true" aria-labelledby="newsTitle">
-  <div class="news-card">
+<div class="news-overlay" id="newsOverlay">
+  <div class="news-card" role="dialog" aria-modal="true" aria-labelledby="newsTitle" tabindex="-1">
     <span class="news-badge">Aktuelles</span>
     <h2 id="newsTitle"></h2>
     <div class="news-date" id="newsDate"></div>
     <ul id="newsList"></ul>
-    <button id="newsClose">Alles klar</button>
+    <button id="newsClose" type="button">Alles klar</button>
   </div>
 </div>
 
-<div class="overlay" id="overlay">
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle" aria-describedby="overlayCat">
   <div class="overlay-head">
-    <button class="back" id="backBtn" aria-label="Zurück zur Liste" data-icon="arrow-left" data-size="20"></button>
+    <button class="back" id="backBtn" type="button" aria-label="Zurück zur Liste" data-icon="arrow-left" data-size="20"></button>
     <span class="headcat" id="overlayCat"></span>
     <div class="head-actions">
-      <button class="icon-btn is-hidden" id="favBtn" aria-label="Zur Merkliste hinzufügen" aria-pressed="false"></button>
-      <button class="icon-btn" id="shareBtn" aria-label="Regel als Bild teilen" data-icon="image" data-size="20"></button>
-      <button class="icon-btn" id="copyBtn" aria-label="Link zur Regel kopieren" data-icon="link" data-size="20"></button>
+      <button class="icon-btn is-hidden" id="favBtn" type="button" aria-label="Zur Merkliste hinzufügen" aria-pressed="false"></button>
+      <button class="icon-btn" id="shareBtn" type="button" aria-label="Regel als Bild teilen" data-icon="image" data-size="20"></button>
+      <button class="icon-btn" id="copyBtn" type="button" aria-label="Link zur Regel kopieren" data-icon="link" data-size="20"></button>
     </div>
   </div>
   <div class="overlay-body">
-    <h2 id="overlayTitle"></h2>
+    <h2 id="overlayTitle" tabindex="-1"></h2>
     <div id="overlayText"></div>
     <div class="diagram-section" id="diagramSection" style="display:none;">
       <div class="label">Skizze</div>
@@ -91,24 +97,24 @@
   </div>
   <div class="nav-bar">
     <div class="nav-buttons">
-      <button id="prevBtn"><span data-icon="chevron-left" data-size="18"></span>Vorherige</button>
-      <button id="nextBtn">Nächste<span data-icon="chevron-right" data-size="18"></span></button>
+      <button id="prevBtn" type="button" aria-keyshortcuts="ArrowLeft"><span data-icon="chevron-left" data-size="18"></span>Vorherige</button>
+      <button id="nextBtn" type="button" aria-keyshortcuts="ArrowRight">Nächste<span data-icon="chevron-right" data-size="18"></span></button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261103c"></script>
-<script src="assets/js/footer.js?v=20261103c"></script>
-<script src="assets/js/core.js?v=20261103c"></script>
-<script src="assets/js/icons.js?v=20261103c"></script>
-<script src="assets/js/layout.js?v=20261103c"></script>
-<script src="assets/js/heft-grid.js?v=20261030c"></script>
-<script src="assets/js/regeln.js?v=20261103c"></script>
-<script src="assets/js/format.js?v=20261103c"></script>
-<script src="assets/js/index.js?v=20261103c"></script>
+<script src="assets/js/config.js?v=20261109a"></script>
+<script src="assets/js/footer.js?v=20261109a"></script>
+<script src="assets/js/core.js?v=20261109a"></script>
+<script src="assets/js/icons.js?v=20261109a"></script>
+<script src="assets/js/layout.js?v=20261109a"></script>
+<script src="assets/js/heft-grid.js?v=20261109a"></script>
+<script src="assets/js/regeln.js?v=20261109a"></script>
+<script src="assets/js/format.js?v=20261109a"></script>
+<script src="assets/js/index.js?v=20261109a"></script>
 </body>
 </html>

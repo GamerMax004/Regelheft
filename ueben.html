@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Üben – Regelheft Mathematik</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -11,26 +11,28 @@
 <meta name="copyright" content="Copyright © Gölitzer Development">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
-<script src="assets/js/theme-init.js?v=20261103c"></script>
-<link rel="stylesheet" href="assets/css/fonts.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/style.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/footer.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/seiten.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/theme.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/header.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/heft-font.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/konto.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/ueben.css?v=20261103c">
-<link rel="stylesheet" href="assets/css/ui.css?v=20261103c">
+<script src="assets/js/theme-init.js?v=20261109a"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/style.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/header.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/heft-font.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/ueben.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/ui.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/apple.css?v=20261109a">
 </head>
 <body>
+<a class="skip-link" href="#main">Zum Inhalt springen</a>
 
 <header class="top">
   <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft<span> Mathematik</span></h1></a><div data-account></div></div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 <div class="page practice">
   <h2 class="page-title">Üben</h2>
   <p class="page-lead">Karteikarten zu allen Regeln: erst überlegen, dann umdrehen.</p>
@@ -45,13 +47,14 @@
     <div class="p-label">Wie viele Karten?</div>
     <div class="p-chips" id="pCount" role="radiogroup" aria-label="Anzahl"></div>
     <button class="ai-btn" id="pStart" type="button">Los geht’s</button>
+    <div class="u-msg" id="pMsg" role="status" aria-live="polite"></div>
     <div class="p-stats is-hidden" id="pStats"></div>
   </section>
 
   <section id="pRun" class="is-hidden">
-    <div class="p-top"><button class="p-quit" id="pQuit" type="button">Beenden</button><div class="p-progress"><i id="pBar"></i></div><span class="p-num" id="pNum"></span></div>
+    <div class="p-top"><button class="p-quit" id="pQuit" type="button">Beenden</button><div class="p-progress" id="pProg" role="progressbar" aria-label="Fortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pBar"></i></div><span class="p-num" id="pNum" aria-live="polite"></span></div>
     <div class="p-card" id="pCard" role="button" tabindex="0" aria-label="Karte umdrehen">
-      <div class="p-front" id="pFront"><span class="cat-pill" id="pCat"></span><h3 id="pTitle"></h3><div class="p-hint">Tippen zum Umdrehen</div></div>
+      <div class="p-front" id="pFront"><span class="cat-pill" id="pCat"></span><h3 id="pTitle"></h3><div class="p-hint">Tippen oder Leertaste zum Umdrehen</div></div>
       <div class="p-back is-hidden" id="pBack">
         <h3 id="pTitle2"></h3>
         <div class="overlay-body p-body" id="pBody"></div>
@@ -59,9 +62,10 @@
         <a class="link p-open" id="pOpen" href="index.html">Im Regelheft öffnen</a>
       </div>
     </div>
+    <p class="p-swipehint is-hidden" id="pSwipeHint">Oder wische die Karte: nach rechts = gewusst, nach links = nochmal.</p>
     <div class="p-actions is-hidden" id="pActions">
-      <button class="p-btn again" id="pAgain" type="button"><span data-icon="rotate" data-size="20"></span>Nochmal</button>
-      <button class="p-btn know" id="pKnow" type="button"><span data-icon="check" data-size="20"></span>Gewusst</button>
+      <button class="p-btn again" id="pAgain" type="button" aria-keyshortcuts="ArrowLeft"><span data-icon="rotate" data-size="20"></span>Nochmal</button>
+      <button class="p-btn know" id="pKnow" type="button" aria-keyshortcuts="ArrowRight"><span data-icon="check" data-size="20"></span>Gewusst</button>
     </div>
   </section>
 
@@ -81,13 +85,13 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261103c"></script>
-<script src="assets/js/footer.js?v=20261103c"></script>
-<script src="assets/js/core.js?v=20261103c"></script>
-<script src="assets/js/icons.js?v=20261103c"></script>
-<script src="assets/js/layout.js?v=20261103c"></script>
-<script src="assets/js/regeln.js?v=20261103c"></script>
-<script src="assets/js/format.js?v=20261103c"></script>
-<script src="assets/js/ueben.js?v=20261103c"></script>
+<script src="assets/js/config.js?v=20261109a"></script>
+<script src="assets/js/footer.js?v=20261109a"></script>
+<script src="assets/js/core.js?v=20261109a"></script>
+<script src="assets/js/icons.js?v=20261109a"></script>
+<script src="assets/js/layout.js?v=20261109a"></script>
+<script src="assets/js/regeln.js?v=20261109a"></script>
+<script src="assets/js/format.js?v=20261109a"></script>
+<script src="assets/js/ueben.js?v=20261109a"></script>
 </body>
 </html>
