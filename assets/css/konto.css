@@ -8,12 +8,12 @@
 
 /* ---------- Konto: Kopfkarte ---------- */
 .k-hero{ display:flex; align-items:center; gap:14px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); margin-bottom:16px; flex-wrap:wrap; }
-.k-av{ flex:none; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent-fg); font-size:22px; font-weight:700; }
+.k-av{ flex:none; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent-fg); font-size:1.375rem; font-weight:700; }
 .k-hero-tx{ display:flex; flex-direction:column; min-width:0; flex:1 1 140px; }
-.k-sub{ font-size:13px; color:var(--muted); }
-.k-name{ font-size:20px; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.k-sub{ font-size:0.8125rem; color:var(--muted); }
+.k-name{ font-size:1.25rem; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .k-hero-act{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
-.k-link{ display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--ink); font:inherit; font-size:15px; font-weight:600; text-decoration:none; cursor:pointer; transition:background .15s, border-color .15s; }
+.k-link{ display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:0 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface); color:var(--ink); font:inherit; font-size:0.9375rem; font-weight:600; text-decoration:none; cursor:pointer; transition:background .15s, border-color .15s; }
 .k-link:hover{ background:var(--bg-soft); border-color:var(--accent); }
 
 /* ---------- Konto: Karten im Raster ---------- */
@@ -34,7 +34,7 @@
 
 /* ---------- Dashboard: Tabs ---------- */
 .dash-tabs{ display:flex; gap:6px; padding:5px; margin:0 0 18px; background:var(--bg-soft); border:1px solid var(--border); border-radius:16px; width:100%; box-sizing:border-box; }
-.dash-tabs .ai-btn{ flex:1 1 0; width:auto; margin:0; padding:11px 8px; border-radius:12px; font-size:15px; }
+.dash-tabs .ai-btn{ flex:1 1 0; width:auto; margin:0; padding:11px 8px; border-radius:12px; font-size:0.9375rem; }
 .dash-tabs .ai-btn.ghost{ background:transparent; border:none; color:var(--ink-soft); box-shadow:none; }
 .dash-tabs .ai-btn:not(.ghost){ background:var(--accent); color:#fff; }
 @media (min-width:700px){ .dash-tabs{ width:auto; display:inline-flex; } .dash-tabs .ai-btn{ flex:none; padding:11px 26px; } }
@@ -42,8 +42,8 @@
 /* ---------- Dashboard: Übersicht ---------- */
 .dash-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:8px; }
 .dash-stat{ padding:16px 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); text-align:center; }
-.dash-stat b{ display:block; font-size:28px; line-height:1.1; color:var(--ink); }
-.dash-stat span{ display:block; margin-top:4px; font-size:13px; color:var(--muted); }
+.dash-stat b{ display:block; font-size:1.75rem; line-height:1.1; color:var(--ink); }
+.dash-stat span{ display:block; margin-top:4px; font-size:0.8125rem; color:var(--muted); }
 
 /* ---------- Einstellungen: Karten im Raster, Speichern-Leiste schwebt unten ---------- */
 .set-wrap{ display:grid; grid-template-columns:1fr; gap:16px; align-items:start; padding-bottom:8px; }
@@ -61,41 +61,41 @@
 
 /* ---------- Heft-Look ---------- */
 html[data-heft="on"] .k-hero, html[data-heft="on"] .dash-stat, html[data-heft="on"] .set-card, html[data-heft="on"] .card-sec{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--grid-strong); box-shadow:none; }
-html[data-heft="on"] .k-av{ background:var(--marker); color:var(--pen); border:1.5px solid var(--pen-soft); font-size:26px; font-weight:400; }
-html[data-heft="on"] .k-name{ font-size:24px; font-weight:400; color:var(--pen); }
-html[data-heft="on"] .k-sub{ font-size:16px; color:var(--pen-soft); }
-html[data-heft="on"] .k-link{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-size:18px; font-weight:400; }
+html[data-heft="on"] .k-av{ background:var(--marker); color:var(--pen); border:1.5px solid var(--pen-soft); font-size:1.625rem; font-weight:400; }
+html[data-heft="on"] .k-name{ font-size:1.5rem; font-weight:400; color:var(--pen); }
+html[data-heft="on"] .k-sub{ font-size:1rem; color:var(--pen-soft); }
+html[data-heft="on"] .k-link{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-size:1.125rem; font-weight:400; }
 html[data-heft="on"] .k-link:hover{ background:var(--marker); border-color:var(--pen); }
-html[data-heft="on"] .card-sec h3, html[data-heft="on"] .set-card h3, html[data-heft="on"] .danger-zone h3{ font-size:22px; font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:5px; border-bottom:none; padding-bottom:4px; display:inline-block; }
+html[data-heft="on"] .card-sec h3, html[data-heft="on"] .set-card h3, html[data-heft="on"] .danger-zone h3{ font-size:1.375rem; font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:5px; border-bottom:none; padding-bottom:4px; display:inline-block; }
 html[data-heft="on"] .danger-zone h3{ color:var(--pen-red); text-decoration-color:var(--pen-red); }
 html[data-heft="on"] .danger-zone{ background:transparent; border:1.5px solid var(--pen-red); }
-html[data-heft="on"] .danger-zone p{ color:var(--pen-red); font-size:18px; }
+html[data-heft="on"] .danger-zone p{ color:var(--pen-red); font-size:1.125rem; }
 html[data-heft="on"] .danger-zone .ai-btn.ai-del{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); }
 html[data-heft="on"] .danger-zone .ai-btn#delGo{ background:var(--pen-red) !important; color:var(--paper) !important; }
-html[data-heft="on"] .status-line{ font-size:18px; color:var(--pen); }
-html[data-heft="on"] .badge-ok, html[data-heft="on"] .badge-warn{ font-weight:400; font-size:15px; background:transparent; border:1.5px solid var(--pen-green); color:var(--pen-green); }
+html[data-heft="on"] .status-line{ font-size:1.125rem; color:var(--pen); }
+html[data-heft="on"] .badge-ok, html[data-heft="on"] .badge-warn{ font-weight:400; font-size:0.9375rem; background:transparent; border:1.5px solid var(--pen-green); color:var(--pen-green); }
 html[data-heft="on"] .badge-warn{ border-color:var(--pen-red); color:var(--pen-red); }
 html[data-heft="on"] .dash-tabs{ background:transparent; border:1.5px solid var(--pen-soft); }
-html[data-heft="on"] .dash-tabs .ai-btn{ font-size:19px; background:transparent; color:var(--pen); border:none; }
+html[data-heft="on"] .dash-tabs .ai-btn{ font-size:1.1875rem; background:transparent; color:var(--pen); border:none; }
 html[data-heft="on"] .dash-tabs .ai-btn:not(.ghost){ background:var(--marker); color:var(--pen); box-shadow:inset 0 -3px 0 var(--pen-green); border-radius:10px; }
-html[data-heft="on"] .dash-stat b{ font-size:34px; font-weight:400; color:var(--pen); background:none; }
-html[data-heft="on"] .dash-stat span{ font-size:16px; color:var(--pen-soft); }
-html[data-heft="on"] .dash-h{ font-size:20px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--pen-green); margin:20px 0 8px; }
-html[data-heft="on"] .dash-row{ background:var(--paper-glass, var(--paper)); border:1px solid var(--grid-strong); font-size:17px; color:var(--pen); }
+html[data-heft="on"] .dash-stat b{ font-size:2.125rem; font-weight:400; color:var(--pen); background:none; }
+html[data-heft="on"] .dash-stat span{ font-size:1rem; color:var(--pen-soft); }
+html[data-heft="on"] .dash-h{ font-size:1.25rem; font-weight:400; text-transform:none; letter-spacing:0; color:var(--pen-green); margin:20px 0 8px; }
+html[data-heft="on"] .dash-row{ background:var(--paper-glass, var(--paper)); border:1px solid var(--grid-strong); font-size:1.0625rem; color:var(--pen); }
 html[data-heft="on"] .dash-row i{ background:var(--marker); }
 html[data-heft="on"] .dash-row b{ background:none; font-weight:400; }
-html[data-heft="on"] .set-card .set-help, html[data-heft="on"] .sw-tx small, html[data-heft="on"] .prov-name small{ font-size:16px; color:var(--pen-soft); }
-html[data-heft="on"] .sw-tx b, html[data-heft="on"] .prov-name b{ font-weight:400; font-size:19px; color:var(--pen); background:none; }
-html[data-heft="on"] .set-f > span{ font-size:17px; font-weight:400; color:var(--pen); }
+html[data-heft="on"] .set-card .set-help, html[data-heft="on"] .sw-tx small, html[data-heft="on"] .prov-name small{ font-size:1rem; color:var(--pen-soft); }
+html[data-heft="on"] .sw-tx b, html[data-heft="on"] .prov-name b{ font-weight:400; font-size:1.1875rem; color:var(--pen); background:none; }
+html[data-heft="on"] .set-f > span{ font-size:1.0625rem; font-weight:400; color:var(--pen); }
 html[data-heft="on"] .sw-row, html[data-heft="on"] .prov-row{ border-color:var(--grid-strong); }
 html[data-heft="on"] .sw-ui{ background:var(--grid-strong); }
 html[data-heft="on"] .sw:checked + .sw-ui{ background:var(--pen-green); }
-html[data-heft="on"] .auth-in, html[data-heft="on"] .set-ta, html[data-heft="on"] select.auth-in{ background:var(--paper); color:var(--pen); border:1.5px solid var(--pen-soft); font-family:var(--font); font-size:18px; border-radius:12px; }
+html[data-heft="on"] .auth-in, html[data-heft="on"] .set-ta, html[data-heft="on"] select.auth-in{ background:var(--paper); color:var(--pen); border:1.5px solid var(--pen-soft); font-family:var(--font); font-size:1.125rem; border-radius:12px; }
 html[data-heft="on"] .auth-in:focus, html[data-heft="on"] .set-ta:focus{ outline:none; border-color:var(--pen-green); box-shadow:none; }
-html[data-heft="on"] .prov-n{ background:transparent; border:1.5px solid var(--pen); color:var(--pen); font-weight:400; font-size:16px; }
+html[data-heft="on"] .prov-n{ background:transparent; border:1.5px solid var(--pen); color:var(--pen); font-weight:400; font-size:1rem; }
 html[data-heft="on"] .prov-mv{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); }
 html[data-heft="on"] .set-save, html[data-heft="on"] .set-save *{ font-family:var(--font); }
-html[data-heft="on"] .page-title{ font-size:36px; font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:2px; text-underline-offset:7px; display:inline-block; }
-html[data-heft="on"] .page-lead, html[data-heft="on"] .page-note{ font-size:19px; color:var(--pen-soft); }
+html[data-heft="on"] .page-title{ font-size:2.25rem; font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:2px; text-underline-offset:7px; display:inline-block; }
+html[data-heft="on"] .page-lead, html[data-heft="on"] .page-note{ font-size:1.1875rem; color:var(--pen-soft); }
 html[data-heft="on"] .page-note{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--grid-strong); color:var(--pen); }
-html[data-heft="on"] .auth-err{ color:var(--pen-red); font-size:17px; }
+html[data-heft="on"] .auth-err{ color:var(--pen-red); font-size:1.0625rem; }

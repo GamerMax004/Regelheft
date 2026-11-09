@@ -15,7 +15,7 @@
 
 /* obere Zeile: Marke links, Icons + Nach-oben rechts */
 .sf-top{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-.sf-brand-name{ font-size:18px; font-weight:700; letter-spacing:-.02em; color:var(--sf-text); text-decoration:none; }
+.sf-brand-name{ font-size:1.125rem; font-weight:700; letter-spacing:-.02em; color:var(--sf-text); text-decoration:none; }
 .sf-brand-name span{ color:var(--sf-accent); font-weight:600; margin-left:.28em; }
 .sf-tools{ display:flex; align-items:center; gap:8px; }
 .sf-social a, .sf-top-btn{
@@ -29,13 +29,13 @@
 
 /* Link-Zeile */
 .sf-links{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:0 22px; }
-.sf-links a{ display:inline-block; padding:12px 0; font-size:15px; color:var(--sf-text); text-decoration:none; transition:color .15s ease; }
+.sf-links a{ display:inline-block; padding:12px 0; font-size:0.9375rem; color:var(--sf-text); text-decoration:none; transition:color .15s ease; }
 .sf-links a:hover{ color:var(--sf-accent); }
 
 /* unten */
 .sf-bottom{
   margin-top:10px; padding-top:16px; border-top:1px solid var(--sf-line);
-  display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--sf-muted);
+  display:flex; flex-direction:column; gap:8px; font-size:0.875rem; color:var(--sf-muted);
 }
 .sf-made{ display:flex; align-items:center; gap:8px; }
 .sf-flag{ width:18px; height:18px; border-radius:5px; flex:none; display:block; }

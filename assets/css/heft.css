@@ -11,11 +11,11 @@ html[data-heft="on"]{
   --pen:#1f2f94;             /* blauer Kugelschreiber */
   --pen-soft:#44508f;
   --pen-red:#c4161c;         /* roter Stift: Wichtig */
-  --pen-green:#1f8a45;       /* grüner Stift: Unterstreichung, Hinweise */
+  --pen-green:#187a3b;       /* grüner Stift: Unterstreichung, Hinweise */
   --pen-black:#2a2a2e;       /* Lineal-/Tabellenstrich */
   --marker:rgba(255,224,60,.55);
   --font:'Patrick Hand','Segoe Print','Comic Sans MS',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  --cell:20px;
+  --cell:1.25rem;
 }
 html[data-heft="on"][data-theme="dark"]{
   --paper:#171b26; --grid:#252d3f; --grid-strong:#313b52; --margin-line:#3b4560;
@@ -48,16 +48,16 @@ html[data-heft="on"] .overlay-head{ border-bottom:2px solid var(--pen); }
 
 /* ---------- Schrift & Tinte ---------- */
 html[data-heft="on"] h1, html[data-heft="on"] h2, html[data-heft="on"] h3{ font-weight:400; letter-spacing:0; color:var(--pen); }
-html[data-heft="on"] .brand h1{ font-size:26px; }
+html[data-heft="on"] .brand h1{ font-size:1.625rem; }
 html[data-heft="on"] .brand h1 span{ color:var(--pen-green); }
-html[data-heft="on"] .overlay-body h2{ font-size:32px; line-height:1.15; text-decoration:underline double var(--pen-green); text-decoration-thickness:2px; text-underline-offset:6px; }
-html[data-heft="on"] .rule-card h3{ font-size:21px; line-height:1.25; text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; }
-html[data-heft="on"] p, html[data-heft="on"] li, html[data-heft="on"] .prose-line, html[data-heft="on"] .bullet-list li, html[data-heft="on"] .step{ color:var(--pen); font-size:19px; line-height:1.55; }
-html[data-heft="on"] .rule-card p{ font-size:17.5px; color:var(--pen-soft); }
+html[data-heft="on"] .overlay-body h2{ font-size:2rem; line-height:1.15; text-decoration:underline double var(--pen-green); text-decoration-thickness:2px; text-underline-offset:6px; }
+html[data-heft="on"] .rule-card h3{ font-size:1.3125rem; line-height:1.25; text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; }
+html[data-heft="on"] p, html[data-heft="on"] li, html[data-heft="on"] .prose-line, html[data-heft="on"] .bullet-list li, html[data-heft="on"] .step{ color:var(--pen); font-size:1.1875rem; line-height:1.55; }
+html[data-heft="on"] .rule-card p{ font-size:1.0938rem; color:var(--pen-soft); }
 html[data-heft="on"] b, html[data-heft="on"] strong{ font-weight:400; background:linear-gradient(transparent 58%, var(--marker) 58%, var(--marker) 92%, transparent 92%); padding:0 1px; }
-html[data-heft="on"] .subhead{ font-size:20px; font-weight:400; color:var(--pen-green); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; margin-top:22px; }
+html[data-heft="on"] .subhead{ font-size:1.25rem; font-weight:400; color:var(--pen-green); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; margin-top:22px; }
 html[data-heft="on"] .bullet-list li::before{ background:var(--pen); }
-html[data-heft="on"] .step .n{ background:transparent; color:var(--pen); border:2px solid var(--pen); font-size:15px; font-weight:400; }
+html[data-heft="on"] .step .n{ background:transparent; color:var(--pen); border:2px solid var(--pen); font-size:0.9375rem; font-weight:400; }
 html[data-heft="on"] mark{ background:var(--marker); color:inherit; border-radius:2px; }
 
 /* ---------- Regelkarten: Einträge direkt auf dem Karopapier ---------- */
@@ -67,8 +67,8 @@ html[data-heft="on"] .rule-card{
   transition:background .15s;
 }
 html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ background:var(--marker); border-color:var(--pen); transform:none; box-shadow:none; }
-html[data-heft="on"] .cat-pill{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); border-radius:255px 14px 225px 14px/14px 225px 14px 255px; font-size:14px; font-weight:400; padding:1px 10px; }
-html[data-heft="on"] .chip{ background:transparent; color:var(--pen); border:1.5px dashed var(--pen-soft); font-size:16px; font-weight:400; box-shadow:none; border-radius:255px 14px 225px 14px/14px 225px 14px 255px; }
+html[data-heft="on"] .cat-pill{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); border-radius:255px 14px 225px 14px/14px 225px 14px 255px; font-size:0.875rem; font-weight:400; padding:1px 10px; }
+html[data-heft="on"] .chip{ background:transparent; color:var(--pen); border:1.5px dashed var(--pen-soft); font-size:1rem; font-weight:400; box-shadow:none; border-radius:255px 14px 225px 14px/14px 225px 14px 255px; }
 html[data-heft="on"] .chip.active{ background:var(--marker); color:var(--pen); border:1.5px solid var(--pen); box-shadow:none; }
 
 /* ---------- Formeln: mit Stift eingerahmt ---------- */
@@ -78,41 +78,41 @@ html[data-heft="on"] .formula-block{
 }
 html[data-heft="on"] .fl{ color:var(--pen); }
 html[data-heft="on"] .fl + .fl{ border-top:1px dashed var(--grid-strong); }
-html[data-heft="on"] .fl-note{ font-family:var(--font); font-size:16px; color:var(--pen-green); }
+html[data-heft="on"] .fl-note{ font-family:var(--font); font-size:1rem; color:var(--pen-green); }
 html[data-heft="on"] .sqrt .radicand{ border-top-color:var(--pen); }
-html[data-heft="on"] .pre{ background:transparent; border:1.5px solid var(--pen-black); color:var(--pen); font-family:var(--font); font-size:18px; border-radius:6px; }
+html[data-heft="on"] .pre{ background:transparent; border:1.5px solid var(--pen-black); color:var(--pen); font-family:var(--font); font-size:1.125rem; border-radius:6px; }
 
 /* ---------- „Wichtig“ in Rot, Hinweise in Grün ---------- */
 html[data-heft="on"] .callout{
   background:transparent; color:var(--pen-red); border:2px solid var(--pen-red); border-left-width:2px;
-  border-radius:255px 14px 225px 14px/14px 225px 14px 255px; font-size:19px; line-height:1.5;
+  border-radius:255px 14px 225px 14px/14px 225px 14px 255px; font-size:1.1875rem; line-height:1.5;
 }
 html[data-heft="on"] .callout b{ background:none; }
 
 /* ---------- Tabellen: schwarze Lineal-Striche wie im Heft ---------- */
 html[data-heft="on"] .tbl-wrap{ background:var(--paper); border:2px solid var(--pen-black); border-radius:2px; }
-html[data-heft="on"] .tbl{ font-size:18px; }
+html[data-heft="on"] .tbl{ font-size:1.125rem; }
 html[data-heft="on"] .tbl th{ background:transparent; color:var(--pen); font-weight:400; text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; }
 html[data-heft="on"] .tbl th, html[data-heft="on"] .tbl td{ border-color:var(--pen-black); color:var(--pen); }
 
 /* ---------- Zeichnungen: wie mit Bleistift auf dem Papier ---------- */
 html[data-heft="on"] .diagram-frame{ background:var(--paper); border:2px solid var(--pen-black); border-radius:2px; }
-html[data-heft="on"] .diagram-section .label{ font-size:16px; color:var(--pen-green); font-weight:400; }
+html[data-heft="on"] .diagram-section .label{ font-size:1rem; color:var(--pen-green); font-weight:400; }
 
 /* ---------- Bedienelemente ---------- */
-html[data-heft="on"] .searchwrap input{ background:var(--paper); border:2px solid var(--pen); border-radius:10px; font-size:19px; color:var(--pen); }
+html[data-heft="on"] .searchwrap input{ background:var(--paper); border:2px solid var(--pen); border-radius:10px; font-size:1.1875rem; color:var(--pen); }
 html[data-heft="on"] .searchwrap input:focus{ background:var(--paper); border-color:var(--pen-green); box-shadow:none; }
 html[data-heft="on"] .searchwrap input::placeholder{ color:var(--pen-soft); opacity:.8; }
 html[data-heft="on"] .sq-btn, html[data-heft="on"] .overlay-head .back, html[data-heft="on"] .icon-btn{ background:transparent; border:2px solid var(--pen); color:var(--pen); box-shadow:none; border-radius:12px; }
-html[data-heft="on"] .nav-buttons button{ background:transparent; border:2px solid var(--pen); color:var(--pen); font-size:18px; font-weight:400; border-radius:12px; }
+html[data-heft="on"] .nav-buttons button{ background:transparent; border:2px solid var(--pen); color:var(--pen); font-size:1.125rem; font-weight:400; border-radius:12px; }
 html[data-heft="on"] .nav-buttons button:not(:disabled){ border-color:var(--pen); color:var(--pen); }
-html[data-heft="on"] .overlay-head .headcat{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); font-weight:400; font-size:16px; }
-html[data-heft="on"] .acct-btn, html[data-heft="on"] .ai-btn, html[data-heft="on"] .news-card button{ background:var(--pen); color:var(--paper); box-shadow:none; font-weight:400; font-size:17px; }
+html[data-heft="on"] .overlay-head .headcat{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); font-weight:400; font-size:1rem; }
+html[data-heft="on"] .acct-btn, html[data-heft="on"] .ai-btn, html[data-heft="on"] .news-card button{ background:var(--pen); color:var(--paper); box-shadow:none; font-weight:400; font-size:1.0625rem; }
 html[data-heft="on"] .ai-open{ background:transparent; color:var(--pen); border:2px solid var(--pen); box-shadow:none; font-weight:400; }
 html[data-heft="on"] .ai-open div span{ color:var(--pen-soft); }
 html[data-heft="on"] .news-card, html[data-heft="on"] .auth-card, html[data-heft="on"] .acct-menu{ background:var(--paper); border:2px solid var(--pen); box-shadow:none; }
-html[data-heft="on"] .note-box textarea, html[data-heft="on"] textarea{ background:var(--paper); color:var(--pen); font-size:18px; border:1.5px solid var(--pen-soft); }
-html[data-heft="on"] .meta-row, html[data-heft="on"] .meta-row *{ font-size:16px; color:var(--pen-soft); }
+html[data-heft="on"] .note-box textarea, html[data-heft="on"] textarea{ background:var(--paper); color:var(--pen); font-size:1.125rem; border:1.5px solid var(--pen-soft); }
+html[data-heft="on"] .meta-row, html[data-heft="on"] .meta-row *{ font-size:1rem; color:var(--pen-soft); }
 html[data-heft="on"] footer{ background:var(--paper); border-top:2px solid var(--pen); position:relative; z-index:1; }
 
 /* ---------- Heft-Umschalter in der Kopfzeile ---------- */
@@ -123,29 +123,29 @@ html[data-heft="on"] .heft-btn{ color:var(--pen); }
 html[data-heft="on"] .heft-btn:hover{ background:var(--marker); }
 
 /* ---------- Feinschliff ---------- */
-html[data-heft="on"] .brand h1{ font-size:23px; }
+html[data-heft="on"] .brand h1{ font-size:1.4375rem; }
 html[data-heft="on"] .acct-btn, html[data-heft="on"] .acct-avatar, html[data-heft="on"] .acct-menu a, html[data-heft="on"] .acct-menu button, html[data-heft="on"] .mini, html[data-heft="on"] .auth-tabs button, html[data-heft="on"] .auth-in{ font-family:var(--font); }
 html[data-heft="on"] .acct-btn{ background:transparent; color:var(--pen); border:2px solid var(--pen); }
-html[data-heft="on"] .meta-row b, html[data-heft="on"] .count{ background:none; font-weight:400; color:var(--pen); font-size:18px; }
-html[data-heft="on"] .acct-link{ font-family:var(--font); font-weight:400; font-size:18px; color:var(--pen); background:transparent; border:2px solid var(--pen); border-radius:12px; box-shadow:none; }
+html[data-heft="on"] .meta-row b, html[data-heft="on"] .count{ background:none; font-weight:400; color:var(--pen); font-size:1.125rem; }
+html[data-heft="on"] .acct-link{ font-family:var(--font); font-weight:400; font-size:1.125rem; color:var(--pen); background:transparent; border:2px solid var(--pen); border-radius:12px; box-shadow:none; }
 
 /* ============================================================
    ZEILENRASTER: Schrift steht auf den Linien, nicht dazwischen.
    Ein Kästchen = --cell (24px). Jede Textzeile ist genau ein Kästchen hoch,
    alle Abstände sind Vielfache davon. Die Rasterlinie liegt auf der Schriftlinie (--gy).
    ============================================================ */
-html[data-heft="on"]{ --cell:24px; --gy:20px; --gridbg:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px); }
+html[data-heft="on"]{ --cell:1.5rem; --gy:1.25rem; --gridbg:linear-gradient(var(--grid) 1px, transparent 1px),linear-gradient(90deg, var(--grid) 1px, transparent 1px); }
 html[data-heft="on"] body,
 html[data-heft="on"] .top, html[data-heft="on"] .searchbar, html[data-heft="on"] .chips, html[data-heft="on"] .meta-row,
 html[data-heft="on"] .list, html[data-heft="on"] .overlay, html[data-heft="on"] .overlay-head, html[data-heft="on"] .overlay-body{
   background-color:var(--paper); background-image:var(--gridbg); background-size:var(--cell) var(--cell); background-position:-1px var(--gy);
 }
-html[data-heft="on"] .top{ box-sizing:border-box; height:72px; padding:0 18px; display:flex; flex-direction:column; justify-content:center; border-bottom:2px solid var(--pen); }
+html[data-heft="on"] .top{ box-sizing:border-box; height:4.5rem; padding:0 18px; display:flex; flex-direction:column; justify-content:center; border-bottom:2px solid var(--pen); }
 html[data-heft="on"] .toprow{ min-height:0; }
-html[data-heft="on"] .searchbar{ box-sizing:border-box; height:72px; padding:0 14px; align-items:center; border-bottom:0; backdrop-filter:none; -webkit-backdrop-filter:none; }
-html[data-heft="on"] .chips{ box-sizing:border-box; height:72px; padding:0 18px; margin:0; align-items:center; }
-html[data-heft="on"] .meta-row{ box-sizing:border-box; height:48px; padding:0 20px; align-items:center; }
-html[data-heft="on"] .overlay-head{ box-sizing:border-box; height:72px; padding:0 16px; border-bottom:2px solid var(--pen); backdrop-filter:none; -webkit-backdrop-filter:none; }
+html[data-heft="on"] .searchbar{ box-sizing:border-box; height:4.5rem; padding:0 14px; align-items:center; border-bottom:0; backdrop-filter:none; -webkit-backdrop-filter:none; }
+html[data-heft="on"] .chips{ box-sizing:border-box; height:4.5rem; padding:0 18px; margin:0; align-items:center; }
+html[data-heft="on"] .meta-row{ box-sizing:border-box; height:3rem; padding:0 20px; align-items:center; }
+html[data-heft="on"] .overlay-head{ box-sizing:border-box; height:4.5rem; padding:0 16px; border-bottom:2px solid var(--pen); backdrop-filter:none; -webkit-backdrop-filter:none; }
 html[data-heft="on"] .overlay{ background-image:none; }
 
 /* Inhalt in voller Breite (damit das Raster überall gleich läuft), Text bleibt zentriert */
@@ -154,17 +154,17 @@ html[data-heft="on"] .overlay-body{ max-width:none; margin:0; padding:24px max(1
 
 /* Textzeilen: 1 Kästchen */
 html[data-heft="on"] p, html[data-heft="on"] li, html[data-heft="on"] .prose-line, html[data-heft="on"] .bullet-list li, html[data-heft="on"] .step{ line-height:var(--cell); }
-html[data-heft="on"] .prose-line{ margin:0; font-size:20px; }
+html[data-heft="on"] .prose-line{ margin:0; font-size:1.25rem; }
 html[data-heft="on"] .body-block{ margin:0 0 var(--cell); }
 html[data-heft="on"] .bullet-list{ margin:0; }
-html[data-heft="on"] .bullet-list li{ margin:0; font-size:20px; }
+html[data-heft="on"] .bullet-list li{ margin:0; font-size:1.25rem; }
 html[data-heft="on"] .bullet-list li::before{ top:10px; }
-html[data-heft="on"] .step{ margin:0; font-size:20px; align-items:flex-start; }
-html[data-heft="on"] .step .n{ flex:0 0 24px; height:24px; width:24px; margin-top:0; font-size:15px; }
-html[data-heft="on"] .overlay-body h2{ font-size:30px; line-height:calc(var(--cell) * 2); margin:0 0 var(--cell); }
-html[data-heft="on"] .subhead{ font-size:21px; line-height:var(--cell); margin:var(--cell) 0 0; }
+html[data-heft="on"] .step{ margin:0; font-size:1.25rem; align-items:flex-start; }
+html[data-heft="on"] .step .n{ flex:0 0 24px; height:24px; width:24px; margin-top:0; font-size:0.9375rem; }
+html[data-heft="on"] .overlay-body h2{ font-size:1.875rem; line-height:calc(var(--cell) * 2); margin:0 0 var(--cell); }
+html[data-heft="on"] .subhead{ font-size:1.3125rem; line-height:var(--cell); margin:var(--cell) 0 0; }
 html[data-heft="on"] .formula-block{ margin:0 0 var(--cell); padding:0 18px; border:0; box-shadow:inset 0 0 0 2px var(--pen); box-sizing:border-box; }
-html[data-heft="on"] .fl{ padding:0; line-height:var(--cell); box-sizing:border-box; align-items:center; font-size:20px; }
+html[data-heft="on"] .fl{ padding:0; line-height:var(--cell); box-sizing:border-box; align-items:center; font-size:1.25rem; }
 html[data-heft="on"] .callout{ margin:0 0 var(--cell); padding:0 16px; border:0; box-shadow:inset 0 0 0 2px var(--pen-red); line-height:var(--cell); box-sizing:border-box; }
 html[data-heft="on"] .tbl-wrap{ margin:0 0 var(--cell); box-sizing:border-box; }
 html[data-heft="on"] .tbl th, html[data-heft="on"] .tbl td{ padding:0 12px; line-height:var(--cell); }
@@ -178,9 +178,9 @@ html[data-heft="on"] .nav-buttons button{ height:48px; padding:0; }
 /* Regelkarten als Heft-Einträge: Marke (1 Zeile), Titel, Text (max. 2 Zeilen), eine Leerzeile dazwischen */
 html[data-heft="on"] .rule-card{ box-sizing:border-box; padding:var(--cell) 6px 0; border:0; border-bottom:0; background:transparent; }
 html[data-heft="on"] .rule-card .row-top{ margin:0; height:var(--cell); }
-html[data-heft="on"] .cat-pill{ height:var(--cell); box-sizing:border-box; display:inline-flex; align-items:center; line-height:1; padding:0 10px; font-size:15px; }
-html[data-heft="on"] .rule-card h3{ margin:0; font-size:22px; line-height:var(--cell); }
-html[data-heft="on"] .rule-card p{ margin:0; font-size:19px; line-height:var(--cell); }
+html[data-heft="on"] .cat-pill{ height:var(--cell); box-sizing:border-box; display:inline-flex; align-items:center; line-height:1; padding:0 10px; font-size:0.9375rem; }
+html[data-heft="on"] .rule-card h3{ margin:0; font-size:1.375rem; line-height:var(--cell); }
+html[data-heft="on"] .rule-card p{ margin:0; font-size:1.1875rem; line-height:var(--cell); }
 html[data-heft="on"] .rule-card .fav-star{ margin:0 -6px 0 0; }
 html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ border-color:transparent; }
 
@@ -198,36 +198,36 @@ html[data-heft="on"] body::before{ display:none; }
 /* Kopfzeile + Suchleiste ruhig auf glattem Papier */
 html[data-heft="on"] .top, html[data-heft="on"] header.top{ background:var(--paper); background-image:none; border-bottom:1.5px solid var(--pen-soft); }
 html[data-heft="on"] .searchbar{ background:var(--paper); padding-bottom:10px; }
-html[data-heft="on"] .searchwrap input{ border:1.5px solid var(--pen-soft); border-radius:12px; font-size:18px; }
+html[data-heft="on"] .searchwrap input{ border:1.5px solid var(--pen-soft); border-radius:12px; font-size:1.125rem; }
 html[data-heft="on"] .sq-btn{ border:1.5px solid var(--pen-soft); border-radius:12px; }
-html[data-heft="on"] .acct-link{ border-width:1.5px; border-color:var(--pen-soft); font-size:17px; }
+html[data-heft="on"] .acct-link{ border-width:1.5px; border-color:var(--pen-soft); font-size:1.0625rem; }
 /* Filter: ruhig, einzeilig scrollbar, glatter Hintergrund */
 html[data-heft="on"] .chips{ background:var(--paper); padding:10px 16px 12px; margin-bottom:0; border-bottom:1px solid var(--grid-strong); }
-html[data-heft="on"] .chip{ border:1.5px solid var(--grid-strong); border-radius:999px; background:var(--paper); color:var(--pen-soft); font-size:16px; padding:6px 14px; }
+html[data-heft="on"] .chip{ border:1.5px solid var(--grid-strong); border-radius:999px; background:var(--paper); color:var(--pen-soft); font-size:1rem; padding:6px 14px; }
 html[data-heft="on"] .chip.active{ background:var(--marker); color:var(--pen); border-color:var(--pen-soft); }
 html[data-heft="on"] .meta-row{ padding:12px 22px 4px; }
 /* Karten: Text auf ruhigem Grund, Raster nur am Rand sichtbar */
 html[data-heft="on"] .list{ padding:4px 14px 36px 22px; gap:8px; }
 html[data-heft="on"] .rule-card{ background:var(--paper-glass); border:1px solid var(--grid-strong); border-bottom-width:2px; border-radius:10px; padding:12px 14px 12px; }
 html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ background:var(--marker); border-color:var(--pen-soft); }
-html[data-heft="on"] .rule-card h3{ font-size:20px; text-decoration:none; background:linear-gradient(transparent 88%, var(--pen-green) 88%, var(--pen-green) 94%, transparent 94%) 0 0/100% 100% no-repeat; display:inline; }
+html[data-heft="on"] .rule-card h3{ font-size:1.25rem; text-decoration:none; background:linear-gradient(transparent 88%, var(--pen-green) 88%, var(--pen-green) 94%, transparent 94%) 0 0/100% 100% no-repeat; display:inline; }
 html[data-heft="on"] .rule-card .row-top{ margin-bottom:6px; }
-html[data-heft="on"] .cat-pill{ border:none; padding:0; color:var(--pen-red); font-size:14px; text-transform:none; background:none; border-radius:0; }
-html[data-heft="on"] .rule-card p{ font-size:16.5px; line-height:1.4; margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-html[data-heft="on"] .brand h1{ font-size:20px; white-space:nowrap; }
+html[data-heft="on"] .cat-pill{ border:none; padding:0; color:var(--pen-red); font-size:0.875rem; text-transform:none; background:none; border-radius:0; }
+html[data-heft="on"] .rule-card p{ font-size:1.0312rem; line-height:1.4; margin-top:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+html[data-heft="on"] .brand h1{ font-size:1.25rem; white-space:nowrap; }
 html[data-heft="on"] .top-actions{ gap:0; }
 html[data-heft="on"] .heft-btn, html[data-heft="on"] .theme-btn{ width:36px; }
 @media (max-width:360px){ html[data-heft="on"] .brand h1 span{ display:none; } }
 
-html[data-heft="on"] .pro-list li.tier-h{ font-size:22px; font-weight:400; color:var(--pen-green); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; text-decoration-skip-ink:none; }
-html[data-heft="on"] .pro-list li.tier-h small{ font-size:16px; color:var(--pen-soft); text-decoration:none; }
+html[data-heft="on"] .pro-list li.tier-h{ font-size:1.375rem; font-weight:400; color:var(--pen-green); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:4px; text-decoration-skip-ink:none; }
+html[data-heft="on"] .pro-list li.tier-h small{ font-size:1rem; color:var(--pen-soft); text-decoration:none; }
 html[data-heft="on"] .pro-list li.no, html[data-heft="on"] .pro-list li.no svg{ color:var(--pen-soft); }
-html[data-heft="on"] .plan-group{ font-size:20px; font-weight:400; text-transform:none; letter-spacing:0; color:var(--pen-green); }
+html[data-heft="on"] .plan-group{ font-size:1.25rem; font-weight:400; text-transform:none; letter-spacing:0; color:var(--pen-green); }
 html[data-heft="on"] .plan{ background:var(--paper-glass,var(--paper)); border:1.5px solid var(--grid-strong); box-shadow:none; }
 html[data-heft="on"] .plan.on{ border-color:var(--pen); background:var(--marker); box-shadow:none; }
 html[data-heft="on"] .plan-name, html[data-heft="on"] .plan-price{ font-weight:400; color:var(--pen); }
-html[data-heft="on"] .plan-price small, html[data-heft="on"] .plan-sub{ color:var(--pen-soft); font-size:16px; }
-html[data-heft="on"] .plan-badge{ font-weight:400; font-size:15px; }
+html[data-heft="on"] .plan-price small, html[data-heft="on"] .plan-sub{ color:var(--pen-soft); font-size:1rem; }
+html[data-heft="on"] .plan-badge{ font-weight:400; font-size:0.9375rem; }
 
 /* ============================================================
    Version 3: Feinschliff (Leiste in der Regel, Unterstreichungen, Rahmen, Knöpfe)
@@ -246,13 +246,13 @@ html[data-heft="on"] .overlay-body b, html[data-heft="on"] .overlay-body strong,
 html[data-heft="on"] .callout b{ background:none; }
 /* 4) Eingabefelder, Knöpfe und Fußzeile nutzen die Heftschrift */
 html[data-heft="on"] button, html[data-heft="on"] input, html[data-heft="on"] select, html[data-heft="on"] textarea, html[data-heft="on"] .sf, html[data-heft="on"] .sf *{ font-family:var(--font); }
-html[data-heft="on"] .ai-btn{ background:var(--pen); color:var(--paper); border:1.5px solid var(--pen); box-shadow:none; font-weight:400; font-size:19px; border-radius:12px; }
+html[data-heft="on"] .ai-btn{ background:var(--pen); color:var(--paper); border:1.5px solid var(--pen); box-shadow:none; font-weight:400; font-size:1.1875rem; border-radius:12px; }
 html[data-heft="on"] .ai-btn.ghost{ background:transparent; color:var(--pen); border-color:var(--pen-soft); }
 html[data-heft="on"] .ai-btn.ghost:hover, html[data-heft="on"] .ai-btn:hover{ background:var(--marker); color:var(--pen); }
 html[data-heft="on"] .ai-btn:disabled{ opacity:.45; }
 /* 5) Leiste oben in der geöffneten Regel: ruhig, an der Textspalte ausgerichtet */
 html[data-heft="on"] .overlay-head{
-  display:flex; align-items:center; gap:10px; min-height:64px; box-sizing:border-box;
+  display:flex; align-items:center; gap:10px; min-height:4rem; box-sizing:border-box;
   padding:10px max(14px, calc((100% - 680px) / 2));
   background:var(--paper); background-image:none; border-bottom:1.5px solid var(--pen-soft);
 }
@@ -262,7 +262,7 @@ html[data-heft="on"] .overlay-head .back, html[data-heft="on"] .head-actions .ic
 html[data-heft="on"] .overlay-head .back:hover, html[data-heft="on"] .head-actions .icon-btn:hover{ background:var(--marker); border-color:var(--pen); }
 html[data-heft="on"] .overlay-head .headcat{
   flex:0 1 auto; min-width:0; max-width:calc(100% - 190px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  border:none; background:none; padding:0 6px; font-size:18px; color:var(--pen-red);
+  border:none; background:none; padding:0 6px; font-size:1.125rem; color:var(--pen-red);
 }
 html[data-heft="on"] .head-actions{ margin-left:auto; display:flex; gap:8px; }
 html[data-heft="on"] .nav-bar{ background:var(--paper); border-top:1.5px solid var(--pen-soft); backdrop-filter:none; -webkit-backdrop-filter:none; padding:10px max(14px, calc((100% - 680px) / 2)) calc(10px + env(safe-area-inset-bottom)); }
@@ -270,47 +270,47 @@ html[data-heft="on"] .nav-bar .nav-buttons{ max-width:none; }
 html[data-heft="on"] .nav-buttons button{ border:1.5px solid var(--pen-soft); }
 /* 6) Fußzeile im Heft-Look */
 html[data-heft="on"] .sf{ background:var(--paper); border-top:1.5px solid var(--pen-soft); }
-html[data-heft="on"] .sf-brand-name{ font-size:22px; font-weight:400; color:var(--pen); }
+html[data-heft="on"] .sf-brand-name{ font-size:1.375rem; font-weight:400; color:var(--pen); }
 html[data-heft="on"] .sf-brand-name span{ color:var(--pen-green); font-weight:400; }
-html[data-heft="on"] .sf-links a, html[data-heft="on"] .sf-bottom, html[data-heft="on"] .sf-made{ font-size:17px; color:var(--pen); }
-html[data-heft="on"] .sf-social a, html[data-heft="on"] .sf-top-btn{ border:1.5px solid var(--pen-soft); background:transparent; color:var(--pen); font-weight:400; font-size:16px; }
+html[data-heft="on"] .sf-links a, html[data-heft="on"] .sf-bottom, html[data-heft="on"] .sf-made{ font-size:1.0625rem; color:var(--pen); }
+html[data-heft="on"] .sf-social a, html[data-heft="on"] .sf-top-btn{ border:1.5px solid var(--pen-soft); background:transparent; color:var(--pen); font-weight:400; font-size:1rem; }
 html[data-heft="on"] .sf-top-btn{ width:auto; padding:0 14px; gap:6px; }
 html[data-heft="on"] .sf-bottom{ border-top:1px solid var(--grid-strong); }
 /* 7) Startseite: Suchzeile, Filter und Liste laufen wie im normalen Look über die volle Breite. */
-html[data-heft="on"] .sq-tx{ font-size:18px; }
+html[data-heft="on"] .sq-tx{ font-size:1.125rem; }
 
 /* ---------- Version 3b: KI, Üben, Anmeldung, Links ---------- */
 html[data-heft="on"] main a:not([class]), html[data-heft="on"] .link, html[data-heft="on"] .legal a, html[data-heft="on"] .ai-note a, html[data-heft="on"] .auth-chk a, html[data-heft="on"] .dlg-link{ color:var(--pen-green); text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:3px; }
-html[data-heft="on"] .ai-note, html[data-heft="on"] .ai-sub, html[data-heft="on"] .ki-quota{ font-size:17px; color:var(--pen-soft); line-height:1.5; }
-html[data-heft="on"] .ai-pick, html[data-heft="on"] .ai-file{ background:var(--paper-glass, var(--paper)); color:var(--pen); border:2px dashed var(--pen-soft); border-radius:14px; font-size:20px; font-weight:400; }
+html[data-heft="on"] .ai-note, html[data-heft="on"] .ai-sub, html[data-heft="on"] .ki-quota{ font-size:1.0625rem; color:var(--pen-soft); line-height:1.5; }
+html[data-heft="on"] .ai-pick, html[data-heft="on"] .ai-file{ background:var(--paper-glass, var(--paper)); color:var(--pen); border:2px dashed var(--pen-soft); border-radius:14px; font-size:1.25rem; font-weight:400; }
 html[data-heft="on"] .ai-pick *, html[data-heft="on"] .ai-file *{ font-family:var(--font); font-weight:400; font-size:inherit; color:inherit; }
-html[data-heft="on"] .ai-text{ background:var(--paper); color:var(--pen); border:1.5px solid var(--pen-soft); border-radius:12px; font-size:18px; }
-html[data-heft="on"] .ai-title, html[data-heft="on"] .ai-lbl{ font-size:20px; font-weight:400; color:var(--pen-green); }
-html[data-heft="on"] .ai-bubble, html[data-heft="on"] .ai-rule, html[data-heft="on"] .ai-you{ background:var(--paper-glass, var(--paper)); color:var(--pen); border:1.5px solid var(--grid-strong); box-shadow:none; font-size:18px; border-radius:12px; }
+html[data-heft="on"] .ai-text{ background:var(--paper); color:var(--pen); border:1.5px solid var(--pen-soft); border-radius:12px; font-size:1.125rem; }
+html[data-heft="on"] .ai-title, html[data-heft="on"] .ai-lbl{ font-size:1.25rem; font-weight:400; color:var(--pen-green); }
+html[data-heft="on"] .ai-bubble, html[data-heft="on"] .ai-rule, html[data-heft="on"] .ai-you{ background:var(--paper-glass, var(--paper)); color:var(--pen); border:1.5px solid var(--grid-strong); box-shadow:none; font-size:1.125rem; border-radius:12px; }
 html[data-heft="on"] .ai-you{ border-color:var(--pen-soft); background:var(--marker); }
 html[data-heft="on"] .ai-rule b, html[data-heft="on"] .ai-bubble b{ background:none; }
-html[data-heft="on"] .ai-bar .ai-btn{ font-size:19px; }
+html[data-heft="on"] .ai-bar .ai-btn{ font-size:1.1875rem; }
 html[data-heft="on"] .p-card{ background:var(--paper-glass, var(--paper)); border:2px solid var(--pen); box-shadow:none; border-radius:14px; color:var(--pen); }
 html[data-heft="on"] .p-front, html[data-heft="on"] .p-big{ font-weight:400; color:var(--pen); }
-html[data-heft="on"] .p-label, html[data-heft="on"] .p-hint, html[data-heft="on"] .p-num{ color:var(--pen-soft); font-weight:400; font-size:16px; letter-spacing:0; text-transform:none; }
-html[data-heft="on"] .p-btn{ background:transparent; border:2px solid var(--pen); color:var(--pen); font-weight:400; font-size:19px; box-shadow:none; border-radius:12px; }
+html[data-heft="on"] .p-label, html[data-heft="on"] .p-hint, html[data-heft="on"] .p-num{ color:var(--pen-soft); font-weight:400; font-size:1rem; letter-spacing:0; text-transform:none; }
+html[data-heft="on"] .p-btn{ background:transparent; border:2px solid var(--pen); color:var(--pen); font-weight:400; font-size:1.1875rem; box-shadow:none; border-radius:12px; }
 html[data-heft="on"] .p-btn.know{ border-color:var(--pen-green); color:var(--pen-green); }
 html[data-heft="on"] .p-btn.again{ border-color:var(--pen-red); color:var(--pen-red); }
-html[data-heft="on"] .p-chip{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-weight:400; font-size:16px; }
+html[data-heft="on"] .p-chip{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-weight:400; font-size:1rem; }
 html[data-heft="on"] .p-progress{ background:var(--grid-strong); }
 html[data-heft="on"] .p-progress i, html[data-heft="on"] .p-progress > *{ background:var(--pen-green); }
 html[data-heft="on"] .auth-card{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--pen-soft); box-shadow:none; }
 html[data-heft="on"] .auth-tabs{ background:transparent; border:1.5px solid var(--pen-soft); }
-html[data-heft="on"] .auth-tabs button{ font-size:19px; font-weight:400; color:var(--pen); background:transparent; }
+html[data-heft="on"] .auth-tabs button{ font-size:1.1875rem; font-weight:400; color:var(--pen); background:transparent; }
 html[data-heft="on"] .auth-tabs button.on{ background:var(--marker); box-shadow:inset 0 -3px 0 var(--pen-green); color:var(--pen); }
-html[data-heft="on"] .g-btn{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-size:19px; font-weight:400; }
-html[data-heft="on"] .or-sep{ color:var(--pen-soft); font-size:16px; }
-html[data-heft="on"] .auth-success{ background:transparent; border:1.5px solid var(--pen-green); color:var(--pen-green); font-size:18px; }
-html[data-heft="on"] .auth-chk{ font-size:17px; color:var(--pen); }
+html[data-heft="on"] .g-btn{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-size:1.1875rem; font-weight:400; }
+html[data-heft="on"] .or-sep{ color:var(--pen-soft); font-size:1rem; }
+html[data-heft="on"] .auth-success{ background:transparent; border:1.5px solid var(--pen-green); color:var(--pen-green); font-size:1.125rem; }
+html[data-heft="on"] .auth-chk{ font-size:1.0625rem; color:var(--pen); }
 html[data-heft="on"] .legal h3, html[data-heft="on"] .legal h2{ font-weight:400; color:var(--pen); text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:5px; display:inline-block; }
-html[data-heft="on"] .legal p, html[data-heft="on"] .legal li{ font-size:18px; }
+html[data-heft="on"] .legal p, html[data-heft="on"] .legal li{ font-size:1.125rem; }
 
-html[data-heft="on"] .p-stats, html[data-heft="on"] .p-stats *{ font-family:var(--font); font-size:17px; font-weight:400; }
+html[data-heft="on"] .p-stats, html[data-heft="on"] .p-stats *{ font-family:var(--font); font-size:1.0625rem; font-weight:400; }
 html[data-heft="on"] .p-stats .link{ color:var(--pen-green); }
 html[data-heft="on"] .sf-links a{ text-decoration:none; }
 html[data-heft="on"] .auth-tabs{ border-radius:14px; padding:4px; gap:4px; }
