@@ -49,6 +49,6 @@ const NEWS = {
     "Persönliches Konto: Mit einem Konto wird die KI-Aufgabenhilfe freigeschaltet und die Chats werden gespeichert!",
     "KI-Aufgabenhilfe: KI-Funktionen sind nur noch mit Konto verfügbar!",
     "Design-Update: Das Regelheft hat ein neues, moderneres Design mit frischen Farben und neuer Schrift!",
-    "Kontakt: Nutze unseren Discord Server und trete mit uns in Kontakt, wenn es Probelme gibt."
+    "Kontakt: Nutze unseren Discord Server und trete mit uns in Kontakt, wenn es Probleme gibt."
   ]
 };

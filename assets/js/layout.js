@@ -6,20 +6,31 @@
   const esc = RH.esc;
   const page = (location.pathname.split('/').pop() || 'index.html');
 
-  /* ---------- Hell/Dunkel-Umschalter (neben dem Konto-Knopf) ---------- */
+  /* ---------- Darstellung: Automatisch (wie das Gerät) / Hell / Dunkel ----------
+     Ohne eigene Wahl folgt die Seite dem Gerät. Wer umschaltet, kann jederzeit zu „Automatisch“ zurück. */
   const root = document.documentElement;
+  const sysDark = () => !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  const savedMode = () => { let v = null; try{ v = localStorage.getItem('regelheft-theme'); }catch(e){} return (v === 'dark' || v === 'light') ? v : 'auto'; };
   const themeNow = () => root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const MODES = {auto:{icon:'monitor', name:'Automatisch (wie das Gerät)'}, light:{icon:'sun', name:'Hell'}, dark:{icon:'moon', name:'Dunkel'}};
+  const nextMode = m => m === 'auto' ? 'light' : m === 'light' ? 'dark' : 'auto';
+  function paintThemeBtn(){
+    const b = document.getElementById('themeBtn'); if(!b) return;
+    const m = savedMode();
+    b.innerHTML = icon(MODES[m].icon, 19);
+    b.setAttribute('aria-label', 'Darstellung: ' + MODES[m].name + '. Antippen für ' + MODES[nextMode(m)].name);
+    b.title = 'Darstellung: ' + MODES[m].name;
+  }
   function applyTheme(t, save){
     root.setAttribute('data-theme', t);
     const m = document.querySelector('meta[name="theme-color"]');
     if(m) m.setAttribute('content', t === 'dark' ? '#0F1218' : '#ffffff');
     if(save){ try{ localStorage.setItem('regelheft-theme', t); }catch(e){} }
-    const b = document.getElementById('themeBtn');
-    if(b){
-      b.innerHTML = icon(t === 'dark' ? 'sun' : 'moon', 19);
-      b.setAttribute('aria-label', t === 'dark' ? 'Zum hellen Design wechseln' : 'Zum dunklen Design wechseln');
-      b.title = t === 'dark' ? 'Helles Design' : 'Dunkles Design';
-    }
+    paintThemeBtn();
+  }
+  function setMode(mode){
+    try{ mode === 'auto' ? localStorage.removeItem('regelheft-theme') : localStorage.setItem('regelheft-theme', mode); }catch(e){}
+    applyTheme(mode === 'auto' ? (sysDark() ? 'dark' : 'light') : mode, false);
   }
   /* ---------- Heft-Look an/aus (Karopapier) ---------- */
   const heftNow = () => root.getAttribute('data-heft') === 'off' ? 'off' : 'on';
@@ -30,8 +41,8 @@
     if(b){
       b.innerHTML = icon('book', 19);
       b.setAttribute('aria-pressed', h === 'on' ? 'true' : 'false');
-      b.setAttribute('aria-label', h === 'on' ? 'Heft-Look ausschalten' : 'Heft-Look einschalten');
-      b.title = h === 'on' ? 'Heft-Look aus' : 'Heft-Look an';
+      b.setAttribute('aria-label', 'Heft-Look (Karopapier)');
+      b.title = h === 'on' ? 'Heft-Look ist an' : 'Heft-Look ist aus';
     }
   }
   /* ---------- Konto-Knopf ---------- */
@@ -39,7 +50,7 @@
   if(host){
     const wrap = document.createElement('div'); wrap.className = 'top-actions';
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'theme-btn'; tb.id = 'themeBtn';
-    tb.onclick = () => applyTheme(themeNow() === 'dark' ? 'light' : 'dark', true);
+    tb.onclick = () => { const m = nextMode(savedMode()); setMode(m); if(RH.toast) RH.toast('Darstellung: ' + MODES[m].name); };
     const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'heft-btn'; hb.id = 'heftBtn';
     hb.onclick = () => applyHeft(heftNow() === 'on' ? 'off' : 'on', true);
     host.parentNode.insertBefore(wrap, host); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
@@ -47,8 +58,7 @@
     applyTheme(themeNow(), false);
     // Ohne eigene Auswahl dem Gerät folgen (z. B. wenn abends auf Dunkel umgestellt wird)
     if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      let saved = null; try{ saved = localStorage.getItem('regelheft-theme'); }catch(_){}
-      if(!saved) applyTheme(e.matches ? 'dark' : 'light', false);
+      if(savedMode() === 'auto') applyTheme(e.matches ? 'dark' : 'light', false);
     });
   }
   function renderAccount(user, loading){
@@ -67,7 +77,17 @@
         + (bill && !user.admin && !user.pro ? '<a href="pro.html" role="menuitem" class="am-pro">' + icon('crown', 18, true) + (user.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>' : '')
         + '<button type="button" class="am-it am-out" id="acctLogout" role="menuitem">' + icon('logout', 18) + 'Abmelden</button></div>';
       const btn = host.querySelector('#acctBtn'), menu = host.querySelector('#acctMenu');
-      btn.onclick = e => { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); };
+      const items = () => Array.from(menu.querySelectorAll('[role="menuitem"]'));
+      const closeMenu = back => { menu.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); if(back) btn.focus(); };
+      btn.onclick = e => { e.stopPropagation(); const o = menu.classList.toggle('open'); btn.setAttribute('aria-expanded', o); if(o && e.detail === 0 && items()[0]) items()[0].focus(); };
+      host.onkeydown = e => {
+        if(!menu.classList.contains('open')) return;
+        const list = items(), i = list.indexOf(document.activeElement);
+        if(e.key === 'Escape'){ e.preventDefault(); closeMenu(true); }
+        else if(e.key === 'ArrowDown'){ e.preventDefault(); list[(i + 1) % list.length].focus(); }
+        else if(e.key === 'ArrowUp'){ e.preventDefault(); list[(i - 1 + list.length) % list.length].focus(); }
+        else if(e.key === 'Tab' && !menu.contains(e.target)) closeMenu(false);
+      };
       host.querySelector('#acctLogout').onclick = async () => {
         await RH.logout();
         if(page !== 'index.html' && page !== '') location.href = 'index.html';
@@ -81,7 +101,7 @@
   }
   document.addEventListener('click', e => {
     const m = document.getElementById('acctMenu');
-    if(m && !m.contains(e.target)) m.classList.remove('open');
+    if(m && !m.contains(e.target)){ m.classList.remove('open'); const b = document.getElementById('acctBtn'); if(b) b.setAttribute('aria-expanded', 'false'); }
   });
 
   /* ---------- Footer ---------- */
@@ -149,6 +169,7 @@
       + '<div class="dlg-links"><button class="dlg-link is-hidden" id="emResend" type="button">Code erneut senden</button><button class="dlg-link is-hidden" id="emBack" type="button">Andere E-Mail</button>'
       + '<button class="dlg-link" id="emOut" type="button">' + (opts.dismissible ? 'Abbrechen' : 'Abmelden') + '</button></div></div>';
     document.body.appendChild(dlgEl); document.body.style.overflow = 'hidden';
+    dlgEl.addEventListener('keydown', e => { if(e.key === 'Escape' && opts.dismissible){ e.stopPropagation(); closeDlg(); } });
     const $ = id => dlgEl.querySelector('#' + id);
     const render = () => {
       const code = dlgStep === 'code';
@@ -182,6 +203,42 @@
     render();
   }
   RH.openEmailDialog = openEmailDialog;
+
+  /* ---------- Kurze Meldung (Hinweis am unteren Rand) ---------- */
+  let toastT;
+  RH.toast = function(msg){
+    let t = document.getElementById('toast');
+    if(!t){ t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+  };
+
+  /* ---------- Rückfrage im Seitenstil (statt confirm des Browsers) ----------
+     Nur für Unwiderrufliches. „Abbrechen“ ist vorausgewählt, Esc und Tippen daneben brechen ab.
+     Benutzung: if(await RH.confirm({title, text, ok:'Löschen', danger:true})) { … } */
+  RH.confirm = function(o){
+    o = o || {};
+    return new Promise(res => {
+      const prev = document.activeElement, prevOv = document.body.style.overflow;
+      const back = document.createElement('div'); back.className = 'dlg-back';
+      back.innerHTML = '<div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfText"><h3 id="cfTitle"></h3><p class="dlg-lead" id="cfText"></p>'
+        + '<div class="dlg-actions"><button type="button" class="ai-btn ghost" data-no></button><button type="button" class="ai-btn' + (o.danger ? ' ai-del' : '') + '" data-yes></button></div></div>';
+      back.querySelector('#cfTitle').textContent = o.title || 'Sicher?';
+      back.querySelector('#cfText').textContent = o.text || '';
+      const no = back.querySelector('[data-no]'), yes = back.querySelector('[data-yes]');
+      no.textContent = o.cancel || 'Abbrechen'; yes.textContent = o.ok || 'OK';
+      const done = v => { document.removeEventListener('keydown', key, true); back.remove(); document.body.style.overflow = prevOv; if(prev && prev.focus) prev.focus(); res(v); };
+      const key = e => {
+        if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); done(false); }
+        else if(e.key === 'Tab'){ e.preventDefault(); (document.activeElement === no ? yes : no).focus(); }
+      };
+      no.onclick = () => done(false); yes.onclick = () => done(true);
+      back.addEventListener('click', e => { if(e.target === back) done(false); });
+      document.addEventListener('keydown', key, true);
+      document.body.appendChild(back); document.body.style.overflow = 'hidden';
+      no.focus();
+    });
+  };
   function maybePrompt(){
     const u = RH.user(), c = RH.cfg();
     if(!u || RH.isLoading() || EXEMPT.includes(page) || dlgEl) return;

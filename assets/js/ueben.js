@@ -17,7 +17,7 @@
   /* ---------- Auswahl ---------- */
   function chip(label, key, group){
     const on = group === 'src' ? source === key : count === key;
-    return '<button type="button" class="p-chip' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-k="' + RH.esc(String(key)) + '">' + RH.esc(label) + '</button>';
+    return '<button type="button" class="p-chip' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" tabindex="' + (on ? 0 : -1) + '" data-k="' + RH.esc(String(key)) + '">' + RH.esc(label) + '</button>';
   }
   function renderSetup(){
     let h = chip('Alle Regeln', 'all', 'src');
@@ -31,16 +31,29 @@
       st.classList.remove('is-hidden');
       st.innerHTML = 'Du kannst schon <b>' + sure + ' von ' + RULES.length + '</b> Regeln sicher. Dein Lernstand wird in deinem Konto gespeichert.<br><button type="button" id="pReset">Lernstand zurücksetzen</button>';
       $('pReset').onclick = async () => {
-        if(!confirm('Lernstand wirklich zurücksetzen?')) return;
-        try{ await RH.api('/api/cards', {body:{reset:true}}); boxes = {}; renderSetup(); }catch(e){ alert(e.message); }
+        if(!await RH.confirm({title:'Lernstand zurücksetzen?', text:'Alle Regeln gelten danach wieder als „noch nicht sicher“. Das lässt sich nicht rückgängig machen.', ok:'Zurücksetzen', danger:true})) return;
+        try{ await RH.api('/api/cards', {body:{reset:true}}); boxes = {}; renderSetup(); $('pMsg').textContent = 'Lernstand zurückgesetzt.'; }catch(e){ $('pMsg').textContent = e.message; }
       };
     }else{
       st.classList.remove('is-hidden');
       st.innerHTML = 'Tipp: Mit einem <a class="link" href="anmeldung.html?next=ueben.html">Konto</a> merkt sich das Regelheft, welche Regeln du schon sicher kannst.';
     }
   }
-  $('pSource').addEventListener('click', e => { const b = e.target.closest('.p-chip'); if(b){ source = b.dataset.k; renderSetup(); } });
-  $('pCount').addEventListener('click', e => { const b = e.target.closest('.p-chip'); if(b){ count = +b.dataset.k; renderSetup(); } });
+  function pick(group, b){
+    if(group === 'src') source = b.dataset.k; else count = +b.dataset.k;
+    renderSetup();
+    const again = $(group === 'src' ? 'pSource' : 'pCount').querySelector('.p-chip.on'); if(again) again.focus();
+  }
+  [['pSource', 'src'], ['pCount', 'cnt']].forEach(([id, group]) => {
+    const box = $(id);
+    box.addEventListener('click', e => { const b = e.target.closest('.p-chip'); if(b) pick(group, b); });
+    box.addEventListener('keydown', e => {
+      const keys = {ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1};
+      if(!keys[e.key]) return;
+      const all = Array.from(box.querySelectorAll('.p-chip')), i = all.indexOf(document.activeElement); if(i < 0) return;
+      e.preventDefault(); pick(group, all[(i + keys[e.key] + all.length) % all.length]);
+    });
+  });
 
   /* ---------- Stapel bauen ---------- */
   function shuffle(a){ for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -55,7 +68,8 @@
   }
   function start(cards){
     deck = cards; idx = 0; missed = []; known = 0;
-    if(!deck.length){ alert(source === '__fav' ? 'Deine Merkliste ist noch leer.' : 'Für diese Auswahl gibt es keine Karten.'); return; }
+    if(!deck.length){ $('pMsg').textContent = source === '__fav' ? 'Deine Merkliste ist noch leer. Tippe in einer Regel auf den Stern, um sie hier zu üben.' : 'Für diese Auswahl gibt es keine Karten.'; return; }
+    $('pMsg').textContent = '';
     $('pSetup').classList.add('is-hidden'); $('pDone').classList.add('is-hidden'); $('pRun').classList.remove('is-hidden');
     window.scrollTo(0, 0);
     show();
@@ -67,10 +81,14 @@
     const r = deck[idx]; flipped = false;
     $('pCat').textContent = r.category; $('pTitle').textContent = r.title;
     $('pFront').classList.remove('is-hidden'); $('pBack').classList.add('is-hidden'); $('pActions').classList.add('is-hidden');
-    $('pNum').textContent = (idx + 1) + ' / ' + deck.length;
-    $('pBar').style.width = (idx / deck.length * 100) + '%';
-    $('pCard').setAttribute('aria-label', 'Karte umdrehen: ' + r.title);
+    $('pNum').textContent = (idx + 1) + ' von ' + deck.length;
+    setProgress(idx / deck.length * 100);
+    const c = $('pCard');
+    c.setAttribute('role', 'button'); c.setAttribute('tabindex', '0'); c.setAttribute('aria-label', 'Karte umdrehen: ' + r.title);
+    c.classList.remove('is-flipped'); $('pSwipeHint').classList.add('is-hidden');
+    c.focus({preventScroll:true});
   }
+  function setProgress(pct){ $('pBar').style.width = pct + '%'; $('pProg').setAttribute('aria-valuenow', Math.round(pct)); }
   function flip(){
     if(flipped) return;
     flipped = true;
@@ -81,9 +99,15 @@
     $('pDiag').innerHTML = r.diagram || '';
     $('pOpen').href = 'index.html?from=ueben#' + encodeURIComponent(r.id);
     $('pFront').classList.add('is-hidden'); $('pBack').classList.remove('is-hidden'); $('pActions').classList.remove('is-hidden');
+    $('pDiag').setAttribute('role', 'img'); $('pDiag').setAttribute('aria-label', 'Skizze zu: ' + r.title);
+    // Die Rückseite enthält Links und Knöpfe: die Karte ist jetzt eine Gruppe, kein Knopf mehr
+    const c = $('pCard');
+    c.setAttribute('role', 'group'); c.removeAttribute('tabindex'); c.setAttribute('aria-label', 'Antwort: ' + r.title);
+    c.classList.add('is-flipped'); $('pSwipeHint').classList.remove('is-hidden');
+    $('pBack').setAttribute('tabindex', '-1'); $('pBack').focus({preventScroll:true});
   }
   $('pCard').addEventListener('click', e => { if(e.target.closest('a')) return; flip(); });
-  $('pCard').addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); flip(); } });
+  $('pCard').addEventListener('keydown', e => { if(!flipped && e.target === $('pCard') && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); flip(); } });
 
   function rate(good){
     const r = deck[idx];
@@ -101,9 +125,52 @@
   });
   $('pQuit').onclick = () => { $('pRun').classList.add('is-hidden'); $('pSetup').classList.remove('is-hidden'); renderSetup(); };
 
+  /* ---------- Wischen: Karte folgt dem Finger (rechts = gewusst, links = nochmal). Knöpfe und Pfeiltasten gibt es zusätzlich. ---------- */
+  (function(){
+    const card = $('pCard'), reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let x0 = 0, y0 = 0, dx = 0, drag = false, locked = false, pid = null;
+    function clean(){ card.style.transform = ''; card.style.opacity = ''; card.style.transition = ''; card.classList.remove('dragging'); card.removeAttribute('data-swipe'); card.style.removeProperty('--swipe'); }
+    card.addEventListener('pointerdown', e => {
+      if(!flipped || e.pointerType === 'mouse' || e.target.closest('a, button, .tbl-wrap, .pre, .diagram-frame')) return;
+      drag = true; locked = false; dx = 0; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
+    });
+    card.addEventListener('pointermove', e => {
+      if(!drag || e.pointerId !== pid) return;
+      const mx = e.clientX - x0, my = e.clientY - y0;
+      if(!locked){
+        if(Math.abs(my) > 14 && Math.abs(my) > Math.abs(mx)){ drag = false; return; }     // wer nach unten scrollt, wischt nicht
+        if(Math.abs(mx) < 10) return;
+        locked = true; try{ card.setPointerCapture(pid); }catch(_){} card.classList.add('dragging');
+      }
+      dx = mx;
+      if(!reduce()) card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 28).toFixed(2) + 'deg)';
+      card.setAttribute('data-swipe', dx > 0 ? 'know' : 'again');
+      card.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / 110).toFixed(2));
+    });
+    function end(e){
+      if(!drag || (e && e.pointerId !== pid)) return;
+      drag = false;
+      if(locked && Math.abs(dx) > 110){
+        const good = dx > 0;
+        if(reduce()){ clean(); rate(good); return; }
+        card.classList.remove('dragging');
+        card.style.transition = 'transform .2s ease-in, opacity .2s ease-in';
+        card.style.transform = 'translateX(' + (good ? 130 : -130) + '%) rotate(' + (good ? 12 : -12) + 'deg)'; card.style.opacity = '0';
+        setTimeout(() => { clean(); rate(good); }, 190);
+      }else{
+        if(reduce()){ clean(); return; }
+        card.classList.remove('dragging');
+        card.style.transition = 'transform .38s cubic-bezier(.2,1.3,.35,1)';   // federt zurück
+        card.style.transform = ''; card.removeAttribute('data-swipe');
+        setTimeout(clean, 380);
+      }
+    }
+    card.addEventListener('pointerup', end); card.addEventListener('pointercancel', end);
+  })();
+
   /* ---------- Ergebnis ---------- */
   function finish(){
-    $('pBar').style.width = '100%';
+    setProgress(100);
     $('pRun').classList.add('is-hidden'); $('pDone').classList.remove('is-hidden');
     $('pDoneBig').textContent = known + ' von ' + deck.length;
     $('pDoneSub').textContent = missed.length ? (known >= deck.length / 2 ? 'Stark! ' : 'Weiter so! ') + 'Die ' + missed.length + ' verpassten Karten kannst du gleich noch einmal üben.' : 'Alle gewusst. Stark!';

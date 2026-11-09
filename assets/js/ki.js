@@ -53,8 +53,8 @@
     window.scrollTo(0, 0);
   }
 
-  function removeChat(c){
-    if(!confirm('Diesen Chat wirklich löschen?')) return;
+  async function removeChat(c){
+    if(!await RH.confirm({title:'Chat löschen?', text:'Der Chat wird dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.', ok:'Löschen', danger:true})) return;
     const i = chats.indexOf(c);
     chats.splice(i, 1); c.el.remove();
     if(RH.user()) api('/api/chat/delete', {body:{chatId:c.cid}}).catch(() => {});

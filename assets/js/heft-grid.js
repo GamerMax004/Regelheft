@@ -4,8 +4,17 @@
    Läuft nur, wenn der Heft-Look an ist.
    ============================================================ */
 (function(){
-  const CELL = 24;
   const root = document.documentElement;
+  // Ein Kästchen ist 1,5 rem hoch (bei normaler Schrift 24 px). Gemessen statt festgeschrieben,
+  // damit das Raster mit der Schriftgröße des Browsers mitwächst.
+  function cellPx(){
+    const m = document.createElement('div');
+    m.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;height:var(--cell,1.5rem);width:0';
+    root.appendChild(m);
+    const h = m.getBoundingClientRect().height || 24;
+    m.remove();
+    return h;
+  }
   const SEL = '.overlay-body .fl, .overlay-body .formula-block, .overlay-body .callout, .overlay-body .tbl-wrap, .overlay-body .pre, .overlay-body .diagram-frame, .overlay-body .step';
   let queued = false;
   function snap(){
@@ -14,6 +23,7 @@
     els.forEach(e => { e.style.minHeight = ''; });
     if(root.getAttribute('data-heft') !== 'on') return;
     // von innen nach außen: erst die Zeilen, dann die Kästen darum
+    const CELL = cellPx();
     const list = Array.from(els).sort((a, b) => (a.contains(b) ? 1 : b.contains(a) ? -1 : 0));
     list.forEach(e => {
       const h = e.getBoundingClientRect().height;

@@ -17,7 +17,7 @@ let toastT;
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2000);
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
 }
 async function toggleFav(id){
   if(!canFav()) return;
@@ -106,21 +106,26 @@ let filtered = RULES.slice();
 let currentIndex = -1;
 
 const chipsEl = document.getElementById('chips');
+let chipSig = '';
 function renderChips(){
-  let html = `<div class="chip ${activeCat==='Alle'?'active':''}" data-cat="Alle">Alle</div>`;
-  if(canFav()) html += `<div class="chip ${activeCat===FAV?'active':''}" data-cat="${FAV}">${icon('star',15,activeCat===FAV)}Merkliste</div>`;
-  if(canRecent()) html += `<div class="chip ${activeCat===REC?'active':''}" data-cat="${REC}">${icon('clock',15)}Zuletzt</div>`;
-  if(canNote()) html += `<div class="chip ${activeCat===NOTE?'active':''}" data-cat="${NOTE}">${icon('pencil',15)}Notizen</div>`;
-  categories.forEach(c=>{
-    html += `<div class="chip ${activeCat===c?'active':''}" data-cat="${escapeAttr(c)}">${escapeHtml(c)}</div>`;
-  });
-  chipsEl.innerHTML = html;
-  chipsEl.querySelectorAll('.chip').forEach(el=>{
-    el.addEventListener('click', ()=>{
+  const list = [{cat:'Alle', html:'Alle'}];
+  if(canFav()) list.push({cat:FAV, html:icon('star',15,activeCat===FAV)+'Merkliste'});
+  if(canRecent()) list.push({cat:REC, html:icon('clock',15)+'Zuletzt'});
+  if(canNote()) list.push({cat:NOTE, html:icon('pencil',15)+'Notizen'});
+  categories.forEach(c => list.push({cat:c, html:escapeHtml(c)}));
+  const sig = list.map(x => x.cat).join('|') + '|' + (activeCat === FAV);
+  if(sig !== chipSig){
+    const hadFocus = chipsEl.contains(document.activeElement) ? document.activeElement.getAttribute('data-cat') : null;
+    chipSig = sig;
+    chipsEl.innerHTML = list.map(x => `<button type="button" class="chip" data-cat="${escapeAttr(x.cat)}" aria-pressed="false">${x.html}</button>`).join('');
+    chipsEl.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => {
       activeCat = el.getAttribute('data-cat');
-      applyFilter();
-    });
-  });
+      applyFilter({animate:true});
+      el.scrollIntoView({block:'nearest', inline:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+    }));
+    if(hadFocus !== null){ const again = Array.from(chipsEl.children).find(c => c.getAttribute('data-cat') === hadFocus); if(again) again.focus({preventScroll:true}); }
+  }
+  chipsEl.querySelectorAll('.chip').forEach(el => { const on = el.getAttribute('data-cat') === activeCat; el.classList.toggle('active', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); });
 }
 
 const escapeAttr = RH.esc;
@@ -135,7 +140,8 @@ function highlight(text, q){
   }catch(e){ return esc; }
 }
 
-function applyFilter(){
+function applyFilter(opts){
+  opts = opts || {};
   const q = query.trim().toLowerCase();
   filtered = RULES.filter(r=>{
     const catOk = activeCat === "Alle" || (activeCat === FAV ? favs.has(r.id) : activeCat === REC ? recent.includes(r.id) : activeCat === NOTE ? !!notes[r.id] : r.category === activeCat);
@@ -159,12 +165,12 @@ function applyFilter(){
   }
   if(activeCat === REC && !q) filtered.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));   // neueste zuerst
   renderChips();
-  renderList();
+  renderList(opts.animate);
   document.getElementById('resultCount').textContent = filtered.length;
   document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : (activeCat === FAV ? 'Merkliste' : activeCat === REC ? 'Zuletzt geöffnet' : activeCat === NOTE ? 'Notizen' : activeCat);
 }
 
-function renderList(){
+function renderList(animate){
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyState');
   if(filtered.length === 0){
@@ -173,17 +179,18 @@ function renderList(){
     document.getElementById('emptyTitle').textContent = fav ? 'Noch nichts gemerkt' : rec ? 'Noch nichts geöffnet' : nt ? 'Noch keine Notizen' : 'Keine Treffer';
     document.getElementById('emptySub').textContent = fav ? 'Öffne eine Regel und tippe auf den Stern, um sie hier zu speichern.' : rec ? 'Regeln, die du öffnest, erscheinen hier.' : nt ? 'Öffne eine Regel und schreibe unten deine Notiz dazu.' : 'Versuch es mit einem anderen Suchbegriff.';
     emptyEl.style.display = 'block';
+    document.getElementById('emptyReset').style.display = (query.trim() || activeCat !== 'Alle') ? '' : 'none';
     return;
   }
   emptyEl.style.display = 'none';
   const q = query.trim();
   listEl.innerHTML = filtered.map((r,idx) => `
-    <div class="rule-card" data-id="${r.id}" style="animation-delay:${Math.min(idx*18,240)}ms">
+    <div class="rule-card${animate ? ' anim' : ''}" role="listitem" data-id="${r.id}" style="${animate ? 'animation-delay:' + Math.min(idx*18,240) + 'ms' : ''}">
       <div class="row-top">
         <span class="cat-pill">${escapeHtml(r.category)}</span>
         ${canFav() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
-      <h3>${highlight(r.title, q)}</h3>
+      <h3><a class="rule-link" href="index.html#${encodeURIComponent(r.id)}">${highlight(r.title, q)}</a></h3>
       <p>${highlight(r.excerpt, q)}</p>
       ${notes[r.id] ? '<div class="card-note">' + icon('pencil', 14) + '<span>' + escapeHtml(notes[r.id].replace(/\s+/g, ' ').slice(0, 90)) + '</span></div>' : ''}
     </div>
@@ -192,6 +199,8 @@ function renderList(){
     el.addEventListener('click', (e)=>{
       const star = e.target.closest('.fav-star');
       if(star){ e.stopPropagation(); toggleFav(star.dataset.id); return; }
+      if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;      // „In neuem Tab öffnen“ bleibt möglich
+      e.preventDefault();
       openDetail(el.getAttribute('data-id'), {log:true});
     });
   });
@@ -206,6 +215,13 @@ function ruleIdFromHash(){
   let h = ''; try{ h = decodeURIComponent(location.hash.slice(1)); }catch(e){}
   return RULES.some(r => r.id === h) ? h : null;
 }
+// Hintergrund „abschalten“, solange das Detail offen ist (Tastatur und Screenreader bleiben im Dialog)
+const BG = () => Array.from(document.querySelectorAll('header.top, main, footer, #siteNotice'));
+let lastFocus = null;
+function lockBackground(on){
+  BG().forEach(el => on ? el.setAttribute('inert', '') : el.removeAttribute('inert'));
+  document.documentElement.classList.toggle('modal-open', on);
+}
 function openDetail(id, opts){
   opts = opts || {};
   let idx = filtered.findIndex(r => r.id === id);
@@ -216,9 +232,11 @@ function openDetail(id, opts){
     if(idx === -1) return;
   }
   const wasOpen = overlayEl.classList.contains('open');
+  if(!wasOpen){ lastFocus = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null; }
   currentIndex = idx;
   showCurrent();
   overlayEl.classList.add('open');
+  if(!wasOpen){ lockBackground(true); document.getElementById('backBtn').focus({preventScroll:true}); }
   if(opts.log){ RH.logEv('open', id); noteRecent(id); }
   if(location.hash !== '#' + id){
     if(wasOpen) history.replaceState(null, '', '#' + id);
@@ -235,6 +253,8 @@ function showCurrent(){
   const diagFrame = document.getElementById('diagramFrame');
   if(r.diagram){
     diagFrame.innerHTML = r.diagram;
+    diagFrame.setAttribute('role', 'img');
+    diagFrame.setAttribute('aria-label', 'Skizze zu: ' + r.title);
     diagSection.style.display = 'block';
   } else {
     diagFrame.innerHTML = '';
@@ -251,6 +271,12 @@ function showCurrent(){
 // Kam man über einen Link aus der KI-Seite (oder dem Dashboard)? Dann führt der Zurück-Pfeil dorthin zurück (zum Chat).
 const FROM = {ki:'ki.html', dashboard:'dashboard.html', ueben:'ueben.html'};
 const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || null;
+function hideOverlay(){
+  overlayEl.classList.remove('open'); lockBackground(false);
+  if(lastFocus && document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
+  else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-link'); if(c) c.focus({preventScroll:true}); }
+  lastFocus = null;
+}
 function closeDetail(){
   document.getElementById('toast').classList.remove('show');
   if(overlayPushed){ overlayPushed = false; history.back(); return; }
@@ -258,13 +284,13 @@ function closeDetail(){
     if(history.length > 1) history.back(); else location.href = fromTarget;
     return;
   }
-  overlayEl.classList.remove('open'); flushFav();
+  hideOverlay(); flushFav();
   if(location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 window.addEventListener('popstate', () => {
   const id = ruleIdFromHash();
   if(id) openDetail(id);
-  else { overlayEl.classList.remove('open'); overlayPushed = false; flushFav(); }
+  else { if(overlayEl.classList.contains('open')) hideOverlay(); overlayPushed = false; flushFav(); }
 });
 document.getElementById('backBtn').addEventListener('click', closeDetail);
 document.getElementById('prevBtn').addEventListener('click', () => {
@@ -285,6 +311,11 @@ searchInput.addEventListener('input', (e) => {
   qt = setTimeout(() => { if(v.length >= 2 && v !== lastQ){ lastQ = v; RH.logEv('search', v); } }, 1500);
 });
 let lastQ = '', qt;
+searchInput.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && searchInput.value){ e.preventDefault(); clearBtn.click(); }
+  else if(e.key === 'Enter'){ e.preventDefault(); if(matchMedia('(pointer: coarse)').matches) searchInput.blur(); }   // Tastatur wegklappen, Ergebnisse sehen
+});
+document.getElementById('emptyReset').addEventListener('click', () => { searchInput.value = ''; query = ''; clearBtn.style.display = 'none'; activeCat = 'Alle'; applyFilter({animate:true}); searchInput.focus(); });
 clearBtn.addEventListener('click', () => {
   searchInput.value = '';
   query = '';
@@ -371,33 +402,74 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
 
 // ---- Aktuelles-Popup (Inhalt: config.js -> NEWS) ----
 const newsEl = document.getElementById('newsOverlay');
-function closeNews(){ newsEl.classList.remove('open'); document.body.style.overflow = ''; }
+// Das Popup erscheint nur, wenn es etwas Neues gibt: gemerkt wird, welche Fassung schon gesehen wurde.
+const newsKey = n => 'regelheft-news:' + [n.title, n.date, (n.items || []).join('|')].join('~').slice(0, 400);
+let newsFocus = null;
+function closeNews(){
+  const n = RH.cfg().news; try{ if(n) localStorage.setItem(newsKey(n), '1'); }catch(e){}
+  newsEl.classList.remove('open'); document.body.style.overflow = '';
+  if(!overlayEl.classList.contains('open')) BG().forEach(el => el.removeAttribute('inert'));
+  if(newsFocus && document.contains(newsFocus)) newsFocus.focus({preventScroll:true}); newsFocus = null;
+}
 function openNews(){
+  newsFocus = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
   const NEWS_ = RH.cfg().news;
   document.getElementById('newsTitle').textContent = NEWS_.title;
   document.getElementById('newsDate').textContent = NEWS_.date;
   const ul = document.getElementById('newsList'); ul.innerHTML = '';
   NEWS_.items.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
   newsEl.classList.add('open'); document.body.style.overflow = 'hidden';
+  BG().forEach(el => el.setAttribute('inert', ''));
+  document.getElementById('newsClose').focus({preventScroll:true});
 }
 document.getElementById('newsClose').addEventListener('click', closeNews);
 newsEl.addEventListener('click', e => { if(e.target === newsEl) closeNews(); });
+const typing = t => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
 document.addEventListener('keydown', e => {
-  if(e.key !== 'Escape') return;
-  if(newsEl.classList.contains('open')) closeNews();
-  else if(overlayEl.classList.contains('open')) closeDetail();
+  if(e.key === 'Escape'){
+    if(newsEl.classList.contains('open')) closeNews();
+    else if(overlayEl.classList.contains('open')) closeDetail();
+    return;
+  }
+  if(e.ctrlKey || e.metaKey || e.altKey || typing(e.target) || newsEl.classList.contains('open')) return;
+  if(overlayEl.classList.contains('open')){
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('prevBtn').click(); }
+    else if(e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('nextBtn').click(); }
+  }else if(e.key === '/'){ e.preventDefault(); searchInput.focus(); searchInput.select(); }
 });
+
+// ---- Wischen im Regel-Detail: nach links = nächste Regel, nach rechts = vorherige (Knöpfe und Pfeiltasten gibt es zusätzlich) ----
+(function(){
+  let sx = 0, sy = 0, st = 0, track = false;
+  overlayEl.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    track = e.touches.length === 1 && !e.target.closest('.tbl-wrap, .pre, .diagram-frame, textarea, input, button, a');   // waagerecht scrollbare Flächen ausnehmen
+    sx = t.clientX; sy = t.clientY; st = Date.now();
+  }, {passive:true});
+  overlayEl.addEventListener('touchend', e => {
+    if(!track) return; track = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || Date.now() - st > 600) return;
+    if(window.getSelection && String(window.getSelection())) return;                  // gerade Text markiert
+    document.getElementById(dx < 0 ? 'nextBtn' : 'prevBtn').click();
+  }, {passive:true});
+})();
 
 // ---- Start ----
 started = true;
 renderChips();
-applyFilter();
+applyFilter({animate:true});
 const startId = ruleIdFromHash();
 if(startId) openDetail(startId, {log:true});
 const wantNews = new URLSearchParams(location.search).get('news') === '1';
 let cameFromHere = false;
 try{ cameFromHere = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
-RH.configReady.then(() => { const n = RH.cfg().news; if(n && n.enabled && n.items.length && (wantNews || (!cameFromHere && !startId))) openNews(); });
+let seenNews = false;
+RH.configReady.then(() => {
+  const n = RH.cfg().news;
+  try{ seenNews = !!(n && localStorage.getItem(newsKey(n))); }catch(e){}
+  if(n && n.enabled && n.items.length && (wantNews || (!cameFromHere && !startId && !seenNews))) openNews();
+});
 if(wantNews) history.replaceState(null, '', location.pathname + location.hash);
 
 

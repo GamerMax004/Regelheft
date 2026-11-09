@@ -33,6 +33,47 @@ function isMinus(s,i){
   if(/[0-9({√∞]/.test(n)) return true;
   return isLetter(n) && !isLetter(s[i+2]) && !(isLetter(p) && isLetter(s[i-2]));
 }
+
+/* ---- Vorlesetext für Formeln (VoiceOver & Co.): Brüche, Wurzeln, Hoch-/Tiefzahlen werden ausgesprochen ---- */
+function speakMath(s){
+  let out = '', i = 0;
+  while(i < s.length){
+    const c = s[i];
+    if(c==='{'){
+      const j = matchClose(s,i);
+      if(j<0){ i++; continue; }
+      const inner = s.slice(i+1,j), sp = topSlash(inner);
+      out += sp ? ' Bruch ' + speakMath(sp[0]) + ' durch ' + speakMath(sp[1]) + ', Bruchende ' : speakMath(inner);
+      i = j+1; continue;
+    }
+    if(c==='√'){
+      i++; let idx = '';
+      if(s[i]==='['){ const j = matchClose(s,i); idx = s.slice(i+1,j); i = j+1; }
+      let rad;
+      if(s[i]==='('){ const j = matchClose(s,i); rad = s.slice(i+1,j); i = j+1; }
+      else { const m = /^[A-Za-z0-9²³πΔ]+/.exec(s.slice(i)); rad = m?m[0]:''; i += rad.length; }
+      out += (idx ? ' ' + speakMath(idx) + '-te Wurzel aus ' : ' Wurzel aus ') + speakMath(rad) + ', Wurzelende ';
+      continue;
+    }
+    if(c==='~' && s[i+1]==='('){ const j = matchClose(s,i+1); out += speakMath(s.slice(i+2,j)) + ' Periode '; i = j+1; continue; }
+    if(c==='^' || c==='_'){
+      let inner;
+      if(s[i+1]==='('){ const j = matchClose(s,i+1); inner = s.slice(i+2,j); i = j+1; }
+      else { const m = /^[-+]?[A-Za-z0-9]+/.exec(s.slice(i+1)); if(m){ inner = m[0]; i += 1+inner.length; } else { i++; continue; } }
+      out += (c==='^' ? ' hoch ' : ' tief ') + speakMath(inner) + ' ';
+      continue;
+    }
+    if(SUP_MAP[c]!==undefined){
+      let run = ''; while(i<s.length && SUP_MAP[s[i]]!==undefined){ run += SUP_MAP[s[i]]; i++; }
+      out += ' hoch ' + run.replace('-', 'minus ') + ' '; continue;
+    }
+    if(c==='-' && isMinus(s,i)){ out += ' minus '; i++; continue; }
+    out += ({'+':' plus ','·':' mal ','*':' mal ','=':' gleich ','≤':' kleiner gleich ','≥':' größer gleich ','≠':' ungleich ','±':' plus minus ','π':' Pi ','Δ':' Delta ','∞':' unendlich ','⇒':' daraus folgt ','⇔':' genau dann, wenn '})[c] || c;
+    i++;
+  }
+  return out.replace(/\s+/g,' ').trim();
+}
+const SR = t => '<span class="sr-only"> ' + t + ' </span>';
 function parseMath(s){
   let out = '', i = 0;
   while(i < s.length){
@@ -41,7 +82,7 @@ function parseMath(s){
       const j = matchClose(s,i);
       if(j<0){ out += '{'; i++; continue; }
       const inner = s.slice(i+1,j), sp = topSlash(inner);
-      if(sp) out += '<span class="frac"><span class="num">'+parseMath(sp[0].trim())+'</span><span class="den">'+parseMath(sp[1].trim())+'</span></span>';
+      if(sp) out += '<span class="frac" role="img" aria-label="' + escapeHtml('Bruch ' + speakMath(sp[0]) + ' durch ' + speakMath(sp[1])) + '"><span class="num">'+parseMath(sp[0].trim())+'</span><span class="den">'+parseMath(sp[1].trim())+'</span></span>';
       else out += '{'+parseMath(inner)+'}';
       i = j+1; continue;
     }
@@ -51,7 +92,7 @@ function parseMath(s){
       let rad;
       if(s[i]==='('){ const j = matchClose(s,i); rad = s.slice(i+1,j); i = j+1; }
       else { const m = /^[A-Za-z0-9²³πΔ]+/.exec(s.slice(i)); rad = m?m[0]:''; i += rad.length; }
-      out += '<span class="sqrt">'+(idx?'<sup class="idx">'+parseMath(idx)+'</sup>':'')+'<span class="rad">√</span><span class="radicand">'+parseMath(rad)+'</span></span>';
+      out += '<span class="sqrt" role="img" aria-label="' + escapeHtml((idx ? speakMath(idx) + '-te Wurzel aus ' : 'Wurzel aus ') + speakMath(rad)) + '">'+(idx?'<sup class="idx">'+parseMath(idx)+'</sup>':'')+'<span class="rad">√</span><span class="radicand">'+parseMath(rad)+'</span></span>';
       continue;
     }
     if(c==='~' && s[i+1]==='('){
@@ -65,13 +106,13 @@ function parseMath(s){
         const m = /^[-+]?[A-Za-z0-9]+/.exec(s.slice(i+1));
         if(m){ inner = m[0]; i += 1+inner.length; } else { out += c; i++; continue; }
       }
-      out += (c==='^'?'<sup>':'<sub>')+parseMath(inner)+(c==='^'?'</sup>':'</sub>');
+      out += SR(c==='^' ? 'hoch' : 'tief') + (c==='^'?'<sup>':'<sub>')+parseMath(inner)+(c==='^'?'</sup>':'</sub>');
       continue;
     }
     if(SUP_MAP[c]!==undefined){
       let run = '';
       while(i<s.length && SUP_MAP[s[i]]!==undefined){ run += SUP_MAP[s[i]]; i++; }
-      out += '<sup>'+run+'</sup>'; continue;
+      out += SR('hoch') + '<sup>'+run+'</sup>'; continue;
     }
     if(c==='-' && isMinus(s,i)){ out += '−'; i++; continue; }
     out += c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':c;
