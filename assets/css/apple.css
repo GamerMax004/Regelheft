@@ -60,6 +60,8 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{ font-size:max(
 .rule-card.anim{ animation:cardIn .32s cubic-bezier(.2,.8,.25,1) both; }
 @media (prefers-reduced-motion:no-preference){
   .overlay.open{ animation:sheetIn .3s cubic-bezier(.2,.9,.25,1); }
+  .overlay.opening{ animation:expandIn .4s var(--spring); }
+  .overlay.closing{ animation:collapseOut .23s cubic-bezier(.4,0,1,1) forwards; }
   .news-card{ animation:sheetIn .32s cubic-bezier(.2,.9,.25,1); }
   @view-transition{ navigation:auto; }
   header.top{ view-transition-name:site-top; }
@@ -76,23 +78,30 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{ font-size:max(
   .news-card{ max-width:none; width:100%; border-radius:26px 26px 0 0; padding-bottom:calc(22px + env(safe-area-inset-bottom)); }
 }
 
-/* ---- 7. Üben: Karte folgt dem Finger ---- */
+/* ---- 7. Üben: Karte folgt dem Finger – grau, leicht unscharf, Symbol statt Text ---- */
 .p-card{ position:relative; }
 .p-card.is-flipped{ touch-action:pan-y; }
-.p-card.dragging{ transition:none; cursor:grabbing; user-select:none; }
-.p-card[data-swipe]::after{
-  position:absolute; top:14px; padding:4px 12px; border-radius:999px; font-weight:600; font-size:.9rem;
-  opacity:var(--swipe,0); background:var(--surface); border:2px solid currentColor; pointer-events:none;
-}
-.p-card[data-swipe="know"]{ box-shadow:0 0 0 calc(var(--swipe,0)*4px) #15803d; }
-.p-card[data-swipe="know"]::after{ content:"Gewusst"; right:14px; color:#15803d; }
-.p-card[data-swipe="again"]{ box-shadow:0 0 0 calc(var(--swipe,0)*4px) #b91c1c; }
-.p-card[data-swipe="again"]::after{ content:"Nochmal"; left:14px; color:#b91c1c; }
-.p-swipehint{ display:none; margin:8px 0 0; text-align:center; font-size:.85rem; color:var(--muted); }
-@media (pointer:coarse){ .p-swipehint:not(.is-hidden){ display:block; } }
+.p-card.dragging{ cursor:grabbing; user-select:none; transition:none; }
+.p-card[data-swipe] > *{ filter:grayscale(calc(var(--swipe,0)*.75)) blur(calc(var(--swipe,0)*1.6px)); }
+.p-card[data-swipe]::before{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:1;
+  background:rgb(120 128 140 / calc(var(--swipe,0)*.16)); }
+.p-card[data-swipe]::after{ content:""; position:absolute; z-index:2; top:50%; left:50%; width:84px; height:84px; margin:-42px 0 0 -42px;
+  border-radius:50%; pointer-events:none; opacity:calc(var(--swipe,0)*1.15); transform:scale(calc(.6 + var(--swipe,0)*.4));
+  background-position:center; background-repeat:no-repeat; background-size:44px; box-shadow:0 8px 28px rgb(0 0 0 / .22); }
+.p-card[data-swipe="know"]::after{ background-color:#15803d;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
+.p-card[data-swipe="again"]::after{ background-color:#c2410c;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 3-6.7'/%3E%3Cpath d='M3 4v5h5'/%3E%3C/svg%3E"); }
+.p-hint{ display:flex; justify-content:center; margin-top:18px; color:var(--u-muted,var(--muted)); opacity:.7; animation:hintPulse 2.4s ease-in-out infinite; }
+@keyframes hintPulse{ 0%,100%{ transform:scale(1); opacity:.45; } 50%{ transform:scale(1.14) rotate(12deg); opacity:.85; } }
 .u-msg{ min-height:1.4em; margin-top:10px; text-align:center; font-size:.9rem; color:var(--ink-soft); }
 .dlg-actions{ display:flex; gap:10px; margin-top:16px; }
 .dlg-actions .ai-btn{ flex:1; margin:0; }
+/* Auf dem Handy wischt man; die Knöpfe bleiben für Tastatur, Maus und VoiceOver im Dokument, nur unsichtbar */
+@media (pointer:coarse){
+  .p-actions:not(:focus-within){ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .nav-bar:not(:focus-within){ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+}
 
 /* ---- 8. Systemeinstellungen der Person respektieren ---- */
 @media (prefers-reduced-transparency:reduce){
@@ -104,3 +113,104 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{ font-size:max(
   :root[data-theme="dark"]{ --border:#8A93A8; --ink-soft:#D3D9E6; --muted:#C2C9D8; }
   html[data-heft="on"]{ --pen-soft:var(--pen); }
 }
+
+
+/* ==========================================================================
+   9. Bewegung: eine Feder, ein Tempo – überall dieselbe
+   ========================================================================== */
+:root{ --spring:cubic-bezier(.34,1.45,.55,1); --ease-out:cubic-bezier(.2,.9,.25,1); }
+@keyframes expandIn{ from{ opacity:0; transform:scale(.82); border-radius:30px; } to{ opacity:1; transform:none; border-radius:0; } }
+@keyframes collapseOut{ to{ opacity:0; transform:scale(.88); border-radius:30px; } }
+.overlay.dragging-down{ box-shadow:0 -12px 60px rgb(0 0 0 / .28); overflow:hidden; }
+.overlay-body, .rule-card, .chip, .u-btn, .u-row, .u-tab, .ai-btn, .p-btn, .fav-star, .icon-btn{ -webkit-tap-highlight-color:transparent; }
+.rule-card, .chip, .u-btn, .ai-btn, .p-btn, .fav-star, .icon-btn, button.u-row{ transition:transform .18s var(--ease-out), background-color .18s, border-color .18s, filter .18s, box-shadow .18s; }
+.rule-card:active, .u-btn:active, .ai-btn:active, .p-btn:active{ transform:scale(.97); }
+.chip:active, .fav-star:active, .icon-btn:active{ transform:scale(.92); }
+button.u-row:active{ background:var(--u-acc-soft); transform:scale(.99); }
+@media (prefers-reduced-motion:reduce){ .rule-card:active,.u-btn:active,.ai-btn:active,.p-btn:active,.chip:active,.fav-star:active,.icon-btn:active,button.u-row:active{ transform:none; } .p-hint{ animation:none; } }
+
+/* ---- Vollbild-Ansicht für Skizzen (Zoomen, Ziehen, nach unten wegwischen) ---- */
+.is-zoomable{ cursor:zoom-in; position:relative; }
+.is-zoomable::after{ content:""; position:absolute; right:10px; bottom:10px; width:30px; height:30px; border-radius:50%; background:rgb(0 0 0 / .55) no-repeat center / 16px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E"); pointer-events:none; }
+.lb{ position:fixed; inset:0; z-index:600; background:rgb(8 10 16 / calc(.88*var(--lb-dim,1))); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); animation:lbIn .25s var(--ease-out); }
+.lb.out{ opacity:0; transition:opacity .22s; }
+@keyframes lbIn{ from{ opacity:0; } }
+.lb-stage{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; -webkit-user-select:none; overflow:hidden; }
+.lb-pic{ width:min(96vw,980px); max-height:90vh; margin:0; will-change:transform; box-shadow:0 20px 70px rgb(0 0 0 / .45); }
+.lb-pic svg{ max-height:84vh; }
+.lb-close{ position:absolute; top:max(14px,env(safe-area-inset-top)); right:14px; width:44px; height:44px; border-radius:50%; border:0; display:flex; align-items:center; justify-content:center;
+  background:rgb(255 255 255 / .16); color:#fff; cursor:pointer; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+@media (prefers-reduced-motion:reduce){ .lb{ animation:none; } }
+
+/* ==========================================================================
+   10. Dashboard und Konto im Apple-Stil: gruppierte Flächen, gleitende Auswahl,
+       weiche Auf-/Zuklapper, iOS-Schalter, Ladegerüst statt „Lade …“
+   ========================================================================== */
+.u-root{ letter-spacing:-.005em; }
+.page-title{ letter-spacing:-.03em; }
+html:not([data-heft="on"]) .page-title{ font-size:2rem; font-weight:800; line-height:1.1; }
+
+.u-card, .u-acc, .u-stat{ border-radius:20px; }
+html:not([data-heft="on"]) .u-card, html:not([data-heft="on"]) .u-acc, html:not([data-heft="on"]) .u-stat{ border-color:transparent; box-shadow:0 0 0 1px var(--u-line), 0 1px 3px rgb(16 24 40 / .05); }
+html[data-theme="dark"]:not([data-heft="on"]) .u-card, html[data-theme="dark"]:not([data-heft="on"]) .u-acc, html[data-theme="dark"]:not([data-heft="on"]) .u-stat{ box-shadow:0 0 0 1px var(--u-line); }
+.u-btn{ border-radius:14px; }
+
+/* Segment-Auswahl mit gleitender Markierung */
+.u-tabs{ position:relative; border-radius:18px; }
+.u-ind{ position:absolute; top:4px; bottom:4px; left:0; border-radius:14px; background:var(--u-acc); transition:transform .38s var(--spring), width .3s var(--ease-out); pointer-events:none; }
+.u-tab{ position:relative; z-index:1; background:transparent !important; transition:color .2s; }
+.u-tab[aria-selected="true"]{ color:var(--u-on-acc); }
+.u-tab span{ transition:opacity .2s; }
+@media (prefers-reduced-motion:reduce){ .u-ind{ transition:none; } }
+
+/* Inhalt blendet beim Wechsel sanft ein */
+#dashBody > *, #kontoApp > *{ animation:uIn .42s var(--ease-out) both; }
+#dashBody > *:nth-child(2), #kontoApp > *:nth-child(2){ animation-delay:.04s; }
+#dashBody > *:nth-child(3), #kontoApp > *:nth-child(3){ animation-delay:.08s; }
+#dashBody > *:nth-child(4), #kontoApp > *:nth-child(4){ animation-delay:.12s; }
+#dashBody > *:nth-child(n+5), #kontoApp > *:nth-child(n+5){ animation-delay:.16s; }
+@keyframes uIn{ from{ opacity:0; transform:translateY(12px); } }
+.u-bar i{ transform-origin:left center; animation:barGrow .8s var(--ease-out) both; }
+@keyframes barGrow{ from{ transform:scaleX(0); } }
+.u-meter i{ transition:width .8s var(--ease-out); }
+
+/* Auf-/Zuklappen: Höhe gleitet, Pfeil dreht */
+.u-acc-b{ display:grid !important; grid-template-rows:0fr; padding:0 16px !important; opacity:0; visibility:hidden;
+  transition:grid-template-rows .36s var(--ease-out), opacity .25s, visibility 0s .36s; }
+.u-acc.open .u-acc-b{ grid-template-rows:1fr; opacity:1; visibility:visible; transition:grid-template-rows .36s var(--ease-out), opacity .3s .05s, visibility 0s; }
+.u-acc-in{ min-height:0; overflow:hidden; padding-bottom:0; }
+.u-acc.open .u-acc-in{ padding:2px 0 16px; }
+.u-acc-in{ padding-top:0; }
+.u-chev{ transition:transform .32s var(--spring) !important; }
+@media (prefers-reduced-motion:reduce){ .u-acc-b, .u-acc.open .u-acc-b{ transition:none; } }
+
+/* Schalter wie bei Apple: 51 × 31, Daumen dehnt sich beim Drücken, federt */
+.u-sw .u-sw-ui{ width:51px; height:31px; transition:background-color .25s; }
+.u-sw .u-sw-ui::after{ top:2px; left:2px; width:27px; height:27px; box-shadow:0 2px 6px rgb(0 0 0 / .28); transition:transform .32s var(--spring), width .2s var(--ease-out); }
+.u-sw:active .u-sw-ui::after{ width:33px; }
+.u-sw input:checked + .u-sw-ui::after{ transform:translateX(20px); }
+.u-sw:active input:checked + .u-sw-ui::after{ transform:translateX(14px); }
+
+/* Ladegerüst */
+.u-skel{ display:grid; gap:12px; padding:4px 0; }
+.u-skel i{ display:block; height:88px; border-radius:20px; background:linear-gradient(100deg, var(--u-soft-bg,#eef0f4) 30%, rgb(255 255 255 / .55) 50%, var(--u-soft-bg,#eef0f4) 70%) 0 0 / 220% 100%; background-color:var(--bg-soft,#eef0f4); animation:shimmer 1.3s linear infinite; }
+.u-skel i:first-child{ height:120px; } .u-skel i:last-child{ width:70%; height:56px; }
+html[data-theme="dark"] .u-skel i{ background:linear-gradient(100deg, #1a1f2b 30%, #262c3b 50%, #1a1f2b 70%) 0 0 / 220% 100%; }
+html[data-heft="on"] .u-skel i{ background:none; border:1.5px dashed var(--pen-soft); opacity:.6; animation:hintPulse 1.6s ease-in-out infinite; }
+@keyframes shimmer{ to{ background-position:-220% 0; } }
+@media (prefers-reduced-motion:reduce){ .u-skel i{ animation:none; } }
+
+/* Konto: Schnellzugriff als Liste mit Pfeil (wie Einstellungen auf dem iPhone) */
+.u-links{ display:flex; flex-direction:column; gap:0; margin:-4px -4px; }
+.u-links .u-btn{ justify-content:flex-start; min-height:52px; border:0; border-radius:0; border-top:1px solid var(--u-line); background:transparent; color:var(--u-ink); font-weight:500; padding:0 10px; text-align:left; }
+.u-links .u-btn:first-child{ border-top:0; }
+.u-links .u-btn::after{ content:""; margin-left:auto; width:8px; height:8px; border:solid var(--u-muted); border-width:2px 2px 0 0; transform:rotate(45deg); flex:none; }
+.u-links button.u-btn::after{ display:none; }
+.u-links .u-btn:active{ background:var(--u-acc-soft); transform:none; }
+.u-hero{ border-radius:24px; }
+.u-av{ transition:transform .3s var(--spring); }
+.u-hero .u-av{ width:64px; height:64px; font-size:1.6rem; }
+
+/* Kopfzeile: lieber „Regelheft“ ganz als „Regelheft Mathem…“ abgeschnitten */
+@media (max-width:430px){ .brand h1 span{ display:none; } }
