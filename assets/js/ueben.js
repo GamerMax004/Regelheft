@@ -85,10 +85,11 @@
     setProgress(idx / deck.length * 100);
     const c = $('pCard');
     c.setAttribute('role', 'button'); c.setAttribute('tabindex', '0'); c.setAttribute('aria-label', 'Karte umdrehen: ' + r.title);
-    c.classList.remove('is-flipped'); $('pSwipeHint').classList.add('is-hidden');
+    c.classList.remove('is-flipped');
     c.focus({preventScroll:true});
   }
   function setProgress(pct){ $('pBar').style.width = pct + '%'; $('pProg').setAttribute('aria-valuenow', Math.round(pct)); }
+  let peekHook = null;
   function flip(){
     if(flipped) return;
     flipped = true;
@@ -99,11 +100,12 @@
     $('pDiag').innerHTML = r.diagram || '';
     $('pOpen').href = 'index.html?from=ueben#' + encodeURIComponent(r.id);
     $('pFront').classList.add('is-hidden'); $('pBack').classList.remove('is-hidden'); $('pActions').classList.remove('is-hidden');
-    $('pDiag').setAttribute('role', 'img'); $('pDiag').setAttribute('aria-label', 'Skizze zu: ' + r.title);
+    RH.zoomable($('pDiag'), r.title);
     // Die Rückseite enthält Links und Knöpfe: die Karte ist jetzt eine Gruppe, kein Knopf mehr
     const c = $('pCard');
     c.setAttribute('role', 'group'); c.removeAttribute('tabindex'); c.setAttribute('aria-label', 'Antwort: ' + r.title);
-    c.classList.add('is-flipped'); $('pSwipeHint').classList.remove('is-hidden');
+    c.classList.add('is-flipped'); RH.haptic(6);
+    if(peekHook) peekHook();
     $('pBack').setAttribute('tabindex', '-1'); $('pBack').focus({preventScroll:true});
   }
   $('pCard').addEventListener('click', e => { if(e.target.closest('a')) return; flip(); });
@@ -125,47 +127,81 @@
   });
   $('pQuit').onclick = () => { $('pRun').classList.add('is-hidden'); $('pSetup').classList.remove('is-hidden'); renderSetup(); };
 
-  /* ---------- Wischen: Karte folgt dem Finger (rechts = gewusst, links = nochmal). Knöpfe und Pfeiltasten gibt es zusätzlich. ---------- */
+  /* ---------- Wischen: Die Karte folgt dem Finger, wird dabei leicht grau und unscharf, ein Symbol blendet ein.
+     Rechts = gewusst, links = nochmal. Beim ersten Mal „zeigt“ die Karte die Geste selbst (bis man sie einmal benutzt hat). ---------- */
   (function(){
     const card = $('pCard'), reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let x0 = 0, y0 = 0, dx = 0, drag = false, locked = false, pid = null;
-    function clean(){ card.style.transform = ''; card.style.opacity = ''; card.style.transition = ''; card.classList.remove('dragging'); card.removeAttribute('data-swipe'); card.style.removeProperty('--swipe'); }
+    let x0 = 0, y0 = 0, dx = 0, drag = false, locked = false, pid = null, busy = false, peeking = 0, crossed = false;
+    const SEEN = 'regelheft-swipe-seen';
+    const seen = () => { try{ return +localStorage.getItem(SEEN) || 0; }catch(e){ return 0; } };
+    const mark = n => { try{ localStorage.setItem(SEEN, String(n)); }catch(e){} };
+    function clean(){
+      cancelAnimationFrame(peeking); card.style.transform = ''; card.style.opacity = ''; card.style.transition = '';
+      if(card.classList.contains('dragging')) card.classList.remove('dragging');      // nur anfassen, wenn nötig (jede Klassenänderung weckt den Beobachter unten)
+      if(card.hasAttribute('data-swipe')) card.removeAttribute('data-swipe');
+      card.style.removeProperty('--swipe');
+    }
+    function look(x, max){
+      card.style.transform = 'translateX(' + x + 'px) rotate(' + (x / 28).toFixed(2) + 'deg)';
+      card.setAttribute('data-swipe', x >= 0 ? 'know' : 'again');
+      card.style.setProperty('--swipe', Math.min(1, Math.abs(x) / max).toFixed(2));
+    }
     card.addEventListener('pointerdown', e => {
-      if(!flipped || e.pointerType === 'mouse' || e.target.closest('a, button, .tbl-wrap, .pre, .diagram-frame')) return;
-      drag = true; locked = false; dx = 0; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
+      if(!flipped || busy || e.pointerType === 'mouse' || e.target.closest('a, button, .tbl-wrap, .pre, .diagram-frame')) return;
+      clean(); drag = true; locked = false; crossed = false; dx = 0; x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
     });
     card.addEventListener('pointermove', e => {
       if(!drag || e.pointerId !== pid) return;
       const mx = e.clientX - x0, my = e.clientY - y0;
       if(!locked){
-        if(Math.abs(my) > 14 && Math.abs(my) > Math.abs(mx)){ drag = false; return; }     // wer nach unten scrollt, wischt nicht
+        if(Math.abs(my) > 14 && Math.abs(my) > Math.abs(mx)){ drag = false; return; }
         if(Math.abs(mx) < 10) return;
         locked = true; try{ card.setPointerCapture(pid); }catch(_){} card.classList.add('dragging');
       }
       dx = mx;
-      if(!reduce()) card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 28).toFixed(2) + 'deg)';
-      card.setAttribute('data-swipe', dx > 0 ? 'know' : 'again');
-      card.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / 110).toFixed(2));
+      if(reduce()) card.style.setProperty('--swipe', Math.min(1, Math.abs(dx) / 110).toFixed(2)), card.setAttribute('data-swipe', dx > 0 ? 'know' : 'again');
+      else look(dx, 110);
+      if(!crossed && Math.abs(dx) > 110){ crossed = true; RH.haptic(10); } else if(crossed && Math.abs(dx) < 100) crossed = false;   // „rastet“ ein
     });
     function end(e){
       if(!drag || (e && e.pointerId !== pid)) return;
       drag = false;
       if(locked && Math.abs(dx) > 110){
-        const good = dx > 0;
-        if(reduce()){ clean(); rate(good); return; }
+        const good = dx > 0; busy = true; mark(3);
+        if(reduce()){ clean(); busy = false; rate(good); return; }
         card.classList.remove('dragging');
-        card.style.transition = 'transform .2s ease-in, opacity .2s ease-in';
-        card.style.transform = 'translateX(' + (good ? 130 : -130) + '%) rotate(' + (good ? 12 : -12) + 'deg)'; card.style.opacity = '0';
-        setTimeout(() => { clean(); rate(good); }, 190);
+        card.style.transition = 'transform .24s cubic-bezier(.4,0,1,1), opacity .24s';
+        card.style.transform = 'translateX(' + (good ? 130 : -130) + '%) rotate(' + (good ? 14 : -14) + 'deg)'; card.style.opacity = '0';
+        setTimeout(() => { clean(); busy = false; rate(good); }, 220);
       }else{
         if(reduce()){ clean(); return; }
         card.classList.remove('dragging');
-        card.style.transition = 'transform .38s cubic-bezier(.2,1.3,.35,1)';   // federt zurück
+        card.style.transition = 'transform .42s cubic-bezier(.2,1.3,.35,1)';                  // federt zurück
         card.style.transform = ''; card.removeAttribute('data-swipe');
-        setTimeout(clean, 380);
+        setTimeout(clean, 420);
       }
     }
     card.addEventListener('pointerup', end); card.addEventListener('pointercancel', end);
+
+    // Die Karte macht die Geste einmal selbst vor: erst nach rechts (grün, Haken), dann nach links (Pfeil).
+    peekHook = function(){
+      const n = seen();
+      if(n >= 3 || reduce() || !matchMedia('(pointer: coarse)').matches) return;
+      mark(n + 1);
+      const t0 = performance.now() + 750, D = 2200;
+      const frame = t => {
+        if(!flipped || drag || busy){ clean(); return; }
+        const k = (t - t0) / D;
+        if(k < 0){ peeking = requestAnimationFrame(frame); return; }
+        if(k >= 1){ clean(); return; }
+        const ph = k < .5 ? Math.sin(k * 2 * Math.PI) : -Math.sin((k - .5) * 2 * Math.PI);
+        look(ph * 60, 60 / .8);
+        peeking = requestAnimationFrame(frame);
+      };
+      peeking = requestAnimationFrame(frame);
+    };
+    // Falls eine neue Karte kommt, während die Andeutung läuft
+    new MutationObserver(() => { if(!flipped && (card.hasAttribute('data-swipe') || card.style.transform)) clean(); }).observe(card, {attributes:true, attributeFilter:['class']});
   })();
 
   /* ---------- Ergebnis ---------- */

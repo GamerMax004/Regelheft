@@ -213,6 +213,92 @@
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
   };
 
+  /* ---------- Haptik (wo der Browser sie erlaubt, z. B. Android) ---------- */
+  const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  RH.haptic = ms => { try{ if(!calm() && navigator.vibrate) navigator.vibrate(ms || 8); }catch(e){} };
+  document.addEventListener('change', e => { if(e.target.matches && e.target.matches('.u-sw input')) RH.haptic(8); });
+
+  /* ---------- Skizzen vergrößern: Antippen öffnet Vollbild. Zwei Finger zoomen, Doppeltippen zoomt, ziehen verschiebt,
+     bei normaler Größe nach unten ziehen schließt (wie Fotos). Mausrad und Esc gehen auch. ---------- */
+  RH.zoomable = function(frame, title){
+    if(!frame) return;
+    const label = 'Skizze zu: ' + (title || '') + '. Vergrößern';
+    frame.setAttribute('role', 'button'); frame.setAttribute('tabindex', '0'); frame.setAttribute('aria-label', label);
+    frame.classList.add('is-zoomable');
+    if(frame.dataset.zoomReady) return; frame.dataset.zoomReady = '1';
+    const open = () => openLightbox(frame);
+    frame.addEventListener('click', open);
+    frame.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
+  };
+  function openLightbox(frame){
+    const prevFocus = document.activeElement, prevOv = document.body.style.overflow;
+    const box = document.createElement('div'); box.className = 'lb'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-label', (frame.getAttribute('aria-label') || 'Skizze').replace('. Vergrößern', ', vergrößert'));
+    const stage = document.createElement('div'); stage.className = 'lb-stage';
+    const pic = frame.cloneNode(true);
+    ['id','role','tabindex','aria-label','data-zoom-ready'].forEach(a => pic.removeAttribute(a)); pic.classList.remove('is-zoomable'); pic.classList.add('lb-pic'); pic.setAttribute('aria-hidden', 'true');
+    stage.appendChild(pic);
+    const close = document.createElement('button'); close.type = 'button'; close.className = 'lb-close'; close.setAttribute('aria-label', 'Schließen'); close.innerHTML = icon('x', 22);
+    box.appendChild(stage); box.appendChild(close);
+    document.body.appendChild(box); document.body.style.overflow = 'hidden'; close.focus({preventScroll:true});
+
+    let sc = 1, tx = 0, ty = 0, dragY = 0, closing = false;
+    const pts = new Map(); let pinch = null, pan = null, lastTap = 0, lastTapAt = {x:0, y:0};
+    const apply = (anim) => {
+      pic.style.transition = anim && !calm() ? 'transform .28s cubic-bezier(.2,.9,.25,1)' : 'none';
+      pic.style.transform = 'translate(' + tx + 'px,' + (ty + dragY) + 'px) scale(' + sc + ')';
+      box.style.setProperty('--lb-dim', String(Math.max(0, 1 - Math.abs(dragY) / 420)));
+    };
+    const limit = () => { const w = pic.offsetWidth, h = pic.offsetHeight; const mx = Math.max(0, (w * sc - innerWidth) / 2 + 40), my = Math.max(0, (h * sc - innerHeight) / 2 + 40);
+      tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty)); if(sc <= 1.001){ tx = 0; ty = 0; } };
+    const done = () => {
+      if(closing) return; closing = true; document.removeEventListener('keydown', key, true);
+      const fin = () => { box.remove(); document.body.style.overflow = prevOv; if(prevFocus && prevFocus.focus) prevFocus.focus({preventScroll:true}); };
+      if(calm()){ fin(); return; }
+      box.classList.add('out'); pic.style.transition = 'transform .22s ease-in, opacity .22s'; pic.style.opacity = '0'; setTimeout(fin, 210);
+    };
+    const key = e => { if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); done(); } else if(e.key === 'Tab'){ e.preventDefault(); close.focus(); } else if(e.key === '+' || e.key === '='){ sc = Math.min(5, sc * 1.3); limit(); apply(true); } else if(e.key === '-'){ sc = Math.max(1, sc / 1.3); limit(); apply(true); } };
+    document.addEventListener('keydown', key, true);
+    close.onclick = done;
+    box.addEventListener('click', e => { if(e.target === box || e.target === stage) done(); });
+
+    const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+    const mid = () => { const [a, b] = [...pts.values()]; return {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2}; };
+    stage.addEventListener('pointerdown', e => {
+      stage.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(pts.size === 2){ pinch = {d: dist(), s: sc, m: mid(), tx, ty}; pan = null; }
+      else if(pts.size === 1){ pan = {x: e.clientX, y: e.clientY, tx, ty, moved: false}; }
+    });
+    stage.addEventListener('pointermove', e => {
+      if(!pts.has(e.pointerId)) return; pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(pts.size === 2 && pinch){
+        sc = Math.max(.9, Math.min(5, pinch.s * dist() / pinch.d)); const m = mid(); tx = pinch.tx + (m.x - pinch.m.x); ty = pinch.ty + (m.y - pinch.m.y); apply(false);
+      }else if(pts.size === 1 && pan){
+        const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+        if(Math.abs(dx) + Math.abs(dy) > 6) pan.moved = true;
+        if(sc > 1.02){ tx = pan.tx + dx; ty = pan.ty + dy; apply(false); }
+        else { dragY = dy; apply(false); }
+      }
+    });
+    const up = e => {
+      if(!pts.has(e.pointerId)) return; const wasPinch = pts.size === 2; pts.delete(e.pointerId);
+      if(wasPinch){ if(sc < 1) sc = 1; limit(); apply(true); pinch = null; pan = null; return; }
+      if(!pan) return;
+      if(sc <= 1.02 && Math.abs(dragY) > 110){ dragY = dragY; done(); return; }          // nach unten wegwischen
+      if(!pan.moved){                                                                      // Doppeltippen
+        const now = Date.now();
+        if(now - lastTap < 320 && Math.hypot(e.clientX - lastTapAt.x, e.clientY - lastTapAt.y) < 30){
+          if(sc > 1.2){ sc = 1; tx = 0; ty = 0; } else { sc = 2.6; tx = -(e.clientX - innerWidth / 2) * (sc - 1); ty = -(e.clientY - innerHeight / 2) * (sc - 1); }
+          limit(); lastTap = 0;
+        }else{ lastTap = now; lastTapAt = {x:e.clientX, y:e.clientY}; }
+      }
+      dragY = 0; limit(); apply(true); pan = null;
+    };
+    stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+    stage.addEventListener('wheel', e => { e.preventDefault(); sc = Math.max(1, Math.min(5, sc * Math.exp(-e.deltaY * .0025))); limit(); apply(false); }, {passive:false});
+    apply(false);
+  }
+
   /* ---------- Rückfrage im Seitenstil (statt confirm des Browsers) ----------
      Nur für Unwiderrufliches. „Abbrechen“ ist vorausgewählt, Esc und Tippen daneben brechen ab.
      Benutzung: if(await RH.confirm({title, text, ok:'Löschen', danger:true})) { … } */

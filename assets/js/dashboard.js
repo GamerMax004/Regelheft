@@ -15,7 +15,7 @@
   let isOwner = false, tab = 'ov';
 
   /* ---------- Bausteine ---------- */
-  const acc = (title, iconName, body, open) => '<div class="u-acc' + (open ? ' open' : '') + '"><button type="button" class="u-acc-h" aria-expanded="' + !!open + '">' + ic(iconName) + '<span class="u-grow">' + esc(title) + '</span><span class="u-chev">' + ic('chevron-down') + '</span></button><div class="u-acc-b">' + body + '</div></div>';
+  const acc = (title, iconName, body, open) => '<div class="u-acc' + (open ? ' open' : '') + '"><button type="button" class="u-acc-h" aria-expanded="' + !!open + '">' + ic(iconName) + '<span class="u-grow">' + esc(title) + '</span><span class="u-chev">' + ic('chevron-down') + '</span></button><div class="u-acc-b"><div class="u-acc-in">' + body + '</div></div></div>';
   const sw = (id, on, label, sub) => '<label class="u-sw"><span class="u-sw-tx"><b>' + esc(label) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span class="u-sw-ui" aria-hidden="true"></span></label>';
   const fld = (id, label, val, ph, type) => '<label class="u-field"><span>' + esc(label) + '</span><input class="u-in" id="' + id + '" type="' + (type || 'text') + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + esc(ph || '') + '"' + (type === 'number' ? ' inputmode="numeric" min="0"' : '') + '></label>';
   const area = (id, label, val, ph, rows) => '<label class="u-field"><span>' + esc(label) + '</span><textarea class="u-in" id="' + id + '" rows="' + (rows || 3) + '" placeholder="' + esc(ph || '') + '">' + esc(val || '') + '</textarea></label>';
@@ -25,14 +25,27 @@
     return rows.length ? rows.map(r => '<div class="u-bar"><i style="width:' + Math.round(r.c / max * 100) + '%"></i><span>' + esc(label(r)) + '</span><span><b>' + r.c + '×</b></span></div>').join('') : '<div class="u-empty">Noch keine Daten.</div>';
   };
   const err = e => '<div class="u-card"><div class="u-msg err">' + esc(e.message || e) + '</div></div>';
-  const loading = () => { $('dashBody').innerHTML = '<div class="u-empty">Lade …</div>'; };
+  const loading = () => { $('dashBody').innerHTML = '<div class="u-skel" role="status" aria-label="Lädt"><i></i><i></i><i></i></div>'; };
 
   /* ---------- Tabs ---------- */
   const TABS = [['ov', 'chart', 'Übersicht'], ['users', 'users', 'Nutzer'], ['chats', 'chat', 'Chats'], ['team', 'shield', 'Team', 1], ['set', 'sliders', 'Einstellungen', 1]];
-  function renderTabs(){
-    $('dashTabs').innerHTML = TABS.filter(t => !t[3] || isOwner).map(t => '<button type="button" class="u-tab" role="tab" data-t="' + t[0] + '" aria-selected="' + (t[0] === tab) + '">' + ic(t[1]) + '<span>' + t[2] + '</span></button>').join('');
+  function placeInd(animate){
+    const bar = $('dashTabs'), on = bar.querySelector('[aria-selected="true"]'), ind = bar.querySelector('.u-ind'); if(!on || !ind) return;
+    if(!animate) ind.style.transition = 'none';
+    ind.style.width = on.offsetWidth + 'px'; ind.style.transform = 'translateX(' + on.offsetLeft + 'px)';
+    if(!animate){ void ind.offsetWidth; ind.style.transition = ''; }
+    on.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
   }
-  function go(t){ tab = t; renderTabs(); ({ov: viewOv, users: viewUsers, chats: viewChats, team: viewTeam, set: viewSet})[t](); }
+  function renderTabs(){
+    const bar = $('dashTabs');
+    if(!bar.querySelector('.u-tab')){
+      bar.innerHTML = '<span class="u-ind" aria-hidden="true"></span>' + TABS.filter(t => !t[3] || isOwner).map(t => '<button type="button" class="u-tab" role="tab" data-t="' + t[0] + '" aria-selected="false">' + ic(t[1]) + '<span>' + t[2] + '</span></button>').join('');
+      window.addEventListener('resize', () => placeInd(false));
+    }
+    bar.querySelectorAll('.u-tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === tab ? 'true' : 'false'));
+    placeInd(!!bar.dataset.ready); bar.dataset.ready = '1';
+  }
+  function go(t){ tab = t; renderTabs(); RH.haptic && RH.haptic(6); ({ov: viewOv, users: viewUsers, chats: viewChats, team: viewTeam, set: viewSet})[t](); }
   $('dashTabs').onclick = e => { const b = e.target.closest('.u-tab'); if(b) go(b.dataset.t); };
   $('dashBody').addEventListener('click', e => {
     const h = e.target.closest('.u-acc-h'); if(!h) return;
@@ -49,7 +62,18 @@
         + acc('Häufigste Suchen', 'search', bars(j.topSearches, r => r.value), true)
         + acc('Meistgeöffnete Regeln', 'book', bars(j.topRules, r => ruleTitle(r.value)))
         + acc('Neueste Nutzer', 'user', j.newUsers.map(u => '<div class="u-bar"><span>' + esc(u.username) + '</span><span>' + D(u.created_at) + '</span></div>').join('') || '<div class="u-empty">Noch keine Nutzer.</div>');
+      countUp($('dashBody'));
     }catch(e){ $('dashBody').innerHTML = err(e); }
+  }
+  // Kennzahlen zählen kurz hoch (nicht bei „Bewegung reduzieren“)
+  function countUp(root){
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    root.querySelectorAll('.u-stat b').forEach(el => {
+      const to = parseInt(el.textContent, 10); if(!(to > 0)) return;
+      const t0 = performance.now(), dur = 700;
+      const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e); if(k < 1) requestAnimationFrame(step); else el.textContent = to; };
+      el.textContent = '0'; requestAnimationFrame(step);
+    });
   }
 
   /* ---------- Nutzer: suchen, Plus/Pro schenken ---------- */

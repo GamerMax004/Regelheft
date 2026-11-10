@@ -201,7 +201,7 @@ function renderList(animate){
       if(star){ e.stopPropagation(); toggleFav(star.dataset.id); return; }
       if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;      // „In neuem Tab öffnen“ bleibt möglich
       e.preventDefault();
-      openDetail(el.getAttribute('data-id'), {log:true});
+      openDetail(el.getAttribute('data-id'), {log:true, from:el});
     });
   });
 }
@@ -222,6 +222,9 @@ function lockBackground(on){
   BG().forEach(el => on ? el.setAttribute('inert', '') : el.removeAttribute('inert'));
   document.documentElement.classList.toggle('modal-open', on);
 }
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const overlayBody = overlayEl.querySelector('.overlay-body');
+let closeTimer = 0, instantClose = false;
 function openDetail(id, opts){
   opts = opts || {};
   let idx = filtered.findIndex(r => r.id === id);
@@ -231,12 +234,27 @@ function openDetail(id, opts){
     idx = filtered.findIndex(r => r.id === id);
     if(idx === -1) return;
   }
-  const wasOpen = overlayEl.classList.contains('open');
+  const wasOpen = overlayEl.classList.contains('open') && !overlayEl.classList.contains('closing');
   if(!wasOpen){ lastFocus = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null; }
   currentIndex = idx;
   showCurrent();
+  if(!wasOpen){
+    clearTimeout(closeTimer); overlayEl.classList.remove('closing'); overlayEl.style.cssText = '';
+    if(opts.from && !still()){                                     // wächst aus der Karte heraus, auf die getippt wurde
+      const b = opts.from.getBoundingClientRect();
+      overlayEl.style.transformOrigin = (b.left + b.width / 2) + 'px ' + (b.top + b.height / 2) + 'px';
+      overlayEl.classList.add('opening'); setTimeout(() => overlayEl.classList.remove('opening'), 400);
+    }
+  }
   overlayEl.classList.add('open');
-  if(!wasOpen){ lockBackground(true); document.getElementById('backBtn').focus({preventScroll:true}); }
+  if(!wasOpen){
+    lockBackground(true); document.getElementById('backBtn').focus({preventScroll:true});
+    // Einmalig: Der Inhalt „deutet“ von selbst an, dass man wischen kann (statt Erklärtext)
+    if(matchMedia('(pointer: coarse)').matches && !still() && filtered.length > 1){
+      try{ if(!localStorage.getItem('regelheft-peek')){ localStorage.setItem('regelheft-peek', '1');
+        setTimeout(() => { if(overlayEl.classList.contains('open')) overlayBody.animate([{transform:'none'}, {transform:'translateX(-30px)'}, {transform:'none'}], {duration:1000, easing:'ease-in-out'}); }, 1200); } }catch(e){}
+    }
+  }
   if(opts.log){ RH.logEv('open', id); noteRecent(id); }
   if(location.hash !== '#' + id){
     if(wasOpen) history.replaceState(null, '', '#' + id);
@@ -253,8 +271,7 @@ function showCurrent(){
   const diagFrame = document.getElementById('diagramFrame');
   if(r.diagram){
     diagFrame.innerHTML = r.diagram;
-    diagFrame.setAttribute('role', 'img');
-    diagFrame.setAttribute('aria-label', 'Skizze zu: ' + r.title);
+    RH.zoomable(diagFrame, r.title);
     diagSection.style.display = 'block';
   } else {
     diagFrame.innerHTML = '';
@@ -272,12 +289,22 @@ function showCurrent(){
 const FROM = {ki:'ki.html', dashboard:'dashboard.html', ueben:'ueben.html'};
 const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || null;
 function hideOverlay(){
-  overlayEl.classList.remove('open'); lockBackground(false);
+  const instant = instantClose; instantClose = false;
+  lockBackground(false);
+  const finish = () => { overlayEl.classList.remove('open', 'closing'); overlayEl.style.cssText = ''; };
+  clearTimeout(closeTimer);
+  if(instant || still() || !overlayEl.classList.contains('open')) finish();
+  else {
+    const card = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"]');
+    if(card){ const b = card.getBoundingClientRect(); if(b.bottom > 0 && b.top < innerHeight) overlayEl.style.transformOrigin = (b.left + b.width / 2) + 'px ' + (b.top + b.height / 2) + 'px'; }
+    overlayEl.classList.add('closing'); closeTimer = setTimeout(finish, 230);
+  }
   if(lastFocus && document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
   else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-link'); if(c) c.focus({preventScroll:true}); }
   lastFocus = null;
 }
-function closeDetail(){
+function closeDetail(instant){
+  if(instant === true) instantClose = true;
   document.getElementById('toast').classList.remove('show');
   if(overlayPushed){ overlayPushed = false; history.back(); return; }
   if(fromTarget && !location.search.includes('news=1')){
@@ -293,12 +320,14 @@ window.addEventListener('popstate', () => {
   else { if(overlayEl.classList.contains('open')) hideOverlay(); overlayPushed = false; flushFav(); }
 });
 document.getElementById('backBtn').addEventListener('click', closeDetail);
-document.getElementById('prevBtn').addEventListener('click', () => {
-  if(currentIndex > 0){ currentIndex--; showCurrent(); noteRecent(filtered[currentIndex].id); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
-});
-document.getElementById('nextBtn').addEventListener('click', () => {
-  if(currentIndex < filtered.length - 1){ currentIndex++; showCurrent(); noteRecent(filtered[currentIndex].id); history.replaceState(null, '', '#' + filtered[currentIndex].id); }
-});
+function stepRule(delta){
+  const n = currentIndex + delta; if(n < 0 || n >= filtered.length) return;
+  currentIndex = n; showCurrent(); noteRecent(filtered[currentIndex].id); history.replaceState(null, '', '#' + filtered[currentIndex].id);
+  overlayEl.scrollTop = 0; RH.haptic(6);
+  if(!still()) overlayBody.animate([{transform:'translateX(' + (delta > 0 ? 56 : -56) + 'px)', opacity:0}, {transform:'none', opacity:1}], {duration:300, easing:'cubic-bezier(.2,.9,.25,1)'});
+}
+document.getElementById('prevBtn').addEventListener('click', () => stepRule(-1));
+document.getElementById('nextBtn').addEventListener('click', () => stepRule(1));
 
 const searchInput = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
@@ -438,21 +467,64 @@ document.addEventListener('keydown', e => {
   }else if(e.key === '/'){ e.preventDefault(); searchInput.focus(); searchInput.select(); }
 });
 
-// ---- Wischen im Regel-Detail: nach links = nächste Regel, nach rechts = vorherige (Knöpfe und Pfeiltasten gibt es zusätzlich) ----
+// ---- Gesten im Regel-Detail (der Inhalt folgt dem Finger):
+//      nach links/rechts = nächste/vorherige Regel · von oben nach unten ziehen = schließen ----
 (function(){
-  let sx = 0, sy = 0, st = 0, track = false;
+  let t = null;
+  const reset = (spring) => {
+    overlayBody.style.transition = spring ? 'transform .4s cubic-bezier(.2,1.3,.35,1), opacity .25s' : '';
+    overlayBody.style.transform = ''; overlayBody.style.opacity = '';
+    overlayEl.style.transition = spring ? 'transform .4s cubic-bezier(.2,1.3,.35,1), border-radius .3s' : '';
+    overlayEl.style.transform = ''; overlayEl.style.borderRadius = '';
+    overlayEl.classList.remove('dragging-down');
+    if(spring) setTimeout(() => { overlayBody.style.transition = ''; overlayEl.style.transition = ''; }, 420);
+  };
   overlayEl.addEventListener('touchstart', e => {
-    const t = e.touches[0];
-    track = e.touches.length === 1 && !e.target.closest('.tbl-wrap, .pre, .diagram-frame, textarea, input, button, a');   // waagerecht scrollbare Flächen ausnehmen
-    sx = t.clientX; sy = t.clientY; st = Date.now();
+    if(e.touches.length !== 1){ t = null; return; }
+    const p = e.touches[0];
+    t = {x:p.clientX, y:p.clientY, at:Date.now(), mode:null, ok:!e.target.closest('.tbl-wrap, .pre, textarea, input, .lb')};
+  }, {passive:true});
+  overlayEl.addEventListener('touchmove', e => {
+    if(!t || !t.ok || e.touches.length !== 1) return;
+    const p = e.touches[0], dx = p.clientX - t.x, dy = p.clientY - t.y;
+    if(!t.mode){
+      if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if(String(window.getSelection && window.getSelection())){ t.mode = 'none'; return; }
+      if(Math.abs(dx) > Math.abs(dy) * 1.5) t.mode = 'h';
+      else if(dy > 0 && overlayEl.scrollTop <= 0) t.mode = 'v';
+      else t.mode = 'none';
+    }
+    if(t.mode === 'h'){
+      const atEdge = (dx < 0 && currentIndex >= filtered.length - 1) || (dx > 0 && currentIndex <= 0);
+      overlayBody.style.transition = 'none';
+      overlayBody.style.transform = 'translateX(' + (dx * (atEdge ? .22 : 1)) + 'px)';                  // am Ende der Liste zieht es gummiartig zurück
+      overlayBody.style.opacity = String(1 - Math.min(.55, Math.abs(dx) / 480));
+    }else if(t.mode === 'v'){
+      overlayEl.classList.add('dragging-down'); overlayEl.style.transition = 'none';
+      overlayEl.style.transform = 'translateY(' + dy + 'px) scale(' + (1 - Math.min(.07, dy / 2800)).toFixed(4) + ')';
+      overlayEl.style.borderRadius = Math.min(30, dy / 5) + 'px';
+    }
   }, {passive:true});
   overlayEl.addEventListener('touchend', e => {
-    if(!track) return; track = false;
-    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-    if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || Date.now() - st > 600) return;
-    if(window.getSelection && String(window.getSelection())) return;                  // gerade Text markiert
-    document.getElementById(dx < 0 ? 'nextBtn' : 'prevBtn').click();
+    if(!t || !t.ok){ t = null; return; }
+    const p = e.changedTouches[0], dx = p.clientX - t.x, dy = p.clientY - t.y, dt = Math.max(1, Date.now() - t.at), m = t.mode; t = null;
+    if(m === 'h'){
+      const go = Math.abs(dx) > 90 || (Math.abs(dx) > 40 && Math.abs(dx) / dt > .5);
+      const delta = dx < 0 ? 1 : -1, ok = currentIndex + delta >= 0 && currentIndex + delta < filtered.length;
+      if(go && ok){
+        if(still()){ reset(false); stepRule(delta); return; }
+        overlayBody.style.transition = 'transform .14s ease-in, opacity .14s'; overlayBody.style.transform = 'translateX(' + (delta > 0 ? -70 : 70) + 'px)'; overlayBody.style.opacity = '0';
+        setTimeout(() => { reset(false); stepRule(delta); }, 130);
+      }else reset(!still());
+    }else if(m === 'v'){
+      if(dy > 130 || (dy > 50 && dy / dt > .6)){
+        if(still()){ reset(false); closeDetail(true); return; }
+        overlayEl.style.transition = 'transform .26s cubic-bezier(.4,0,1,1)'; overlayEl.style.transform = 'translateY(105%)'; RH.haptic(8);
+        setTimeout(() => closeDetail(true), 240);
+      }else reset(!still());
+    }
   }, {passive:true});
+  overlayEl.addEventListener('touchcancel', () => { t = null; reset(!still()); }, {passive:true});
 })();
 
 // ---- Start ----
