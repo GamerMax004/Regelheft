@@ -54,7 +54,7 @@
   <section id="pRun" class="is-hidden">
     <div class="p-top"><button class="p-quit" id="pQuit" type="button">Beenden</button><div class="p-progress" id="pProg" role="progressbar" aria-label="Fortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pBar"></i></div><span class="p-num" id="pNum" aria-live="polite"></span></div>
     <div class="p-card" id="pCard" role="button" tabindex="0" aria-label="Karte umdrehen">
-      <div class="p-front" id="pFront"><span class="cat-pill" id="pCat"></span><h3 id="pTitle"></h3><div class="p-hint">Tippen oder Leertaste zum Umdrehen</div></div>
+      <div class="p-front" id="pFront"><span class="cat-pill" id="pCat"></span><h3 id="pTitle"></h3><div class="p-hint" aria-hidden="true"><span data-icon="rotate" data-size="22"></span></div></div>
       <div class="p-back is-hidden" id="pBack">
         <h3 id="pTitle2"></h3>
         <div class="overlay-body p-body" id="pBody"></div>
@@ -62,7 +62,6 @@
         <a class="link p-open" id="pOpen" href="index.html">Im Regelheft öffnen</a>
       </div>
     </div>
-    <p class="p-swipehint is-hidden" id="pSwipeHint">Oder wische die Karte: nach rechts = gewusst, nach links = nochmal.</p>
     <div class="p-actions is-hidden" id="pActions">
       <button class="p-btn again" id="pAgain" type="button" aria-keyshortcuts="ArrowLeft"><span data-icon="rotate" data-size="20"></span>Nochmal</button>
       <button class="p-btn know" id="pKnow" type="button" aria-keyshortcuts="ArrowRight"><span data-icon="check" data-size="20"></span>Gewusst</button>

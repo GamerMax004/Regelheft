@@ -35,7 +35,7 @@
 <main id="main" tabindex="-1">
 <div class="page page--konto u-root">
   <h2 class="page-title">Mein Konto</h2>
-  <p class="u-empty" id="kontoLoading">Lade …</p>
+  <div class="u-skel" id="kontoLoading" role="status" aria-label="Lädt"><i></i><i></i><i></i></div>
   <div class="u-hidden" id="kontoApp">
 
     <div class="u-hero">
@@ -76,12 +76,12 @@
 
     <div class="u-acc u-danger" id="kDanger">
       <button type="button" class="u-acc-h" aria-expanded="false"><span data-icon="trash" data-size="18" style="display:inline-flex"></span><span class="u-grow">Konto löschen</span><span class="u-chev" data-icon="chevron-down" data-size="18"></span></button>
-      <div class="u-acc-b">
+      <div class="u-acc-b"><div class="u-acc-in">
         <div class="u-sub" style="margin-bottom:12px">Konto, Chats und Anmeldungen werden unwiderruflich gelöscht. Ein laufendes Abo wird beendet.</div>
         <input class="u-in" id="delPw" type="password" autocomplete="current-password" placeholder="Passwort zur Bestätigung">
         <div class="u-msg err" id="delErr" role="alert"></div>
         <button class="u-btn danger solid block" id="delGo" type="button" style="margin-top:10px">Endgültig löschen</button>
-      </div>
+      </div></div>
     </div>
   </div>
 </div>

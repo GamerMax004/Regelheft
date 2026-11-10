@@ -24,3 +24,28 @@
 ## ⚖️ Entscheidungen
 - ⚖️ „Aktuelles“ erscheint nur noch einmal pro Neuigkeit (Text/Datum ändern → erscheint wieder). `?news=1` öffnet es immer.
 - ⚖️ Heft-Look bleibt Standard und unverändert.
+
+
+---
+
+# Zweiter Durchgang – Gesten, Animationen, Dashboard und Konto (9. Nov 2026)
+
+## 🟣 Gesten
+- 🟣 Regel-Detail: von oben nach unten ziehen schließt (Fenster folgt dem Finger, Liste dahinter scheint durch); links/rechts wischen = nächste/vorherige Regel, am Ende zieht es gummiartig zurück
+- 🟣 Üben: Karte folgt dem Finger, wird grau und leicht unscharf, ein Haken bzw. Pfeil blendet ein – kein Text mehr; rastet bei der Schwelle spürbar ein
+- 🟣 Skizzen antippen = Vollbild: zwei Finger zoomen, Doppeltippen zoomt, ziehen verschiebt, nach unten wegwischen schließt
+- 🟣 Gesten zeigen sich selbst: einmalig deutet die Regel das Wischen an, die Lernkarte macht es dreimal vor (bis man es einmal benutzt hat)
+
+## 🔄 Animationen
+- 🔄 Regel wächst aus der angetippten Karte heraus und schrumpft beim Schließen wieder hinein
+- 🔄 Gleiten beim Blättern, federnde Rückkehr, einheitliche Feder-Kurve, Druck-Effekt auf Karten/Knöpfe
+- 🔄 Dashboard/Konto: gleitende Tab-Markierung, Inhalt blendet ein, Balken wachsen, Zahlen zählen hoch, Auf-/Zuklapper gleiten, iOS-Schalter mit federndem Daumen, Ladegerüst statt „Lade …“
+- 🔄 Alles aus bei „Bewegung reduzieren“
+
+## ⚖️ Entscheidungen
+- ⚖️ Erklärtexte zum Wischen entfernt; „Nochmal/Gewusst“ und „Vorherige/Nächste“ sind auf dem Handy unsichtbar, bleiben aber für Tastatur, Maus und VoiceOver erhalten
+- ⚖️ Kopfzeile zeigt auf schmalen Handys nur „Regelheft“
+- ⚖️ Haptik nur wo der Browser sie erlaubt (Android); iPhone-Safari erlaubt sie nicht
+
+## 🔴 Fehler dabei
+- 🔴 Endlosschleife in der Wisch-Aufräumfunktion (Beobachter löste sich selbst aus) – im Test gefunden und behoben
