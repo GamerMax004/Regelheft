@@ -53,11 +53,7 @@
     tb.onclick = () => { const m = nextMode(savedMode()); setMode(m); if(RH.toast) RH.toast('Darstellung: ' + MODES[m].name); };
     const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'heft-btn'; hb.id = 'heftBtn';
     hb.onclick = () => applyHeft(heftNow() === 'on' ? 'off' : 'on', true);
-    // Hauptpunkt „Meine Kurse“ in der Kopfzeile (ausgeblendet, wenn Üben im Dashboard abgeschaltet ist)
-    const kl = document.createElement('a'); kl.className = 'nav-kurse' + (/kurse.html$/.test(location.pathname) ? ' on' : ''); kl.href = 'kurse.html'; kl.innerHTML = '<span class="nk-l">Meine&nbsp;</span>Kurse';
-    if(/kurse.html$/.test(location.pathname)) kl.setAttribute('aria-current', 'page');
-    if(RH.configReady) RH.configReady.then(() => { if(RH.feat && !RH.feat('practice')) kl.remove(); });
-    host.parentNode.insertBefore(wrap, host); wrap.appendChild(kl); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
+    host.parentNode.insertBefore(wrap, host); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
     applyHeft(heftNow(), false);
     applyTheme(themeNow(), false);
     // Ohne eigene Auswahl dem Gerät folgen (z. B. wenn abends auf Dunkel umgestellt wird)

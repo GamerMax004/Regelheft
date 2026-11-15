@@ -213,13 +213,6 @@ html:not([data-heft="on"]){ accent-color:var(--accent); }
 }
 
 /* ---------- 12. Hauptpunkt „Meine Kurse“ (Kopfzeile, Startseite, Üben) ---------- */
-.nav-kurse{ display:inline-flex; align-items:center; min-height:36px; padding:0 14px; border-radius:99px; background:var(--accent-soft); color:var(--accent-fg); font-size:.875rem; font-weight:600; text-decoration:none; white-space:nowrap; transition:transform .16s ease-out, background-color .2s; }
-.nav-kurse:hover{ filter:brightness(.97); }
-.nav-kurse:active{ transform:scale(.96); }
-.nav-kurse.on{ background:var(--accent); color:#fff; }
-@media (max-width:520px){ .nav-kurse .nk-l{ display:none; } .nav-kurse{ padding:0 12px; } }
-html[data-heft="on"] .nav-kurse{ background:var(--marker); color:var(--pen); font-family:var(--font); font-size:1rem; }
-html[data-heft="on"] .nav-kurse.on{ background:var(--pen); color:var(--paper); }
 .k-hero-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .k-hero-row .page-title{ display:flex; align-items:center; gap:10px; }
 .k-hero-row .pc-badge{ font-size:.75rem; }

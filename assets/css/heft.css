@@ -256,9 +256,13 @@ html[data-heft="on"] .overlay-head{
   padding:10px max(14px, calc((100% - 680px) / 2));
   background:var(--paper); background-image:none; border-bottom:1.5px solid var(--pen-soft);
 }
-html[data-heft="on"] .overlay-head .back, html[data-heft="on"] .head-actions .icon-btn, html[data-heft="on"] .fav-star{
+html[data-heft="on"] .overlay-head .back, html[data-heft="on"] .head-actions .icon-btn{
   flex:none; width:42px; height:42px; border:1.5px solid var(--pen-soft); border-radius:12px; background:transparent; color:var(--pen); margin:0;
 }
+/* Merk-Sterne: nur der Stern, ohne Rahmen und ohne Hintergrund */
+html[data-heft="on"] .fav-star, html[data-heft="on"] .fav-star:hover, html[data-heft="on"] .fav-star:active, html[data-heft="on"] .fav-star:focus{ border:0; background:transparent; box-shadow:none; outline:none; color:var(--muted); }
+html[data-heft="on"] .fav-star.on{ color:var(--star); }
+html[data-heft="on"] .fav-star:focus-visible{ outline:2px solid var(--pen); outline-offset:-2px; }
 html[data-heft="on"] .overlay-head .back:hover, html[data-heft="on"] .head-actions .icon-btn:hover{ background:var(--marker); border-color:var(--pen); }
 html[data-heft="on"] .overlay-head .headcat{
   flex:0 1 auto; min-width:0; max-width:calc(100% - 190px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;

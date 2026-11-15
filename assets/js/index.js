@@ -239,11 +239,11 @@ function openDetail(id, opts){
   currentIndex = idx;
   showCurrent();
   if(!wasOpen){
-    clearTimeout(closeTimer); overlayEl.classList.remove('closing'); overlayEl.style.cssText = '';
+    clearTimeout(closeTimer); overlayEl.classList.remove('closing', 'opening'); overlayEl.style.cssText = '';
     if(opts.from && !still()){                                     // wächst aus der Karte heraus, auf die getippt wurde
       const b = opts.from.getBoundingClientRect();
       overlayEl.style.transformOrigin = (b.left + b.width / 2) + 'px ' + (b.top + b.height / 2) + 'px';
-      overlayEl.classList.add('opening'); setTimeout(() => overlayEl.classList.remove('opening'), 400);
+      overlayEl.classList.add('opening');                          // bleibt bis zum Schließen, sonst startet die Eingangs-Animation nach dem Entfernen erneut
     }
   }
   overlayEl.classList.add('open');
@@ -291,7 +291,7 @@ const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || nul
 function hideOverlay(){
   const instant = instantClose; instantClose = false;
   lockBackground(false);
-  const finish = () => { overlayEl.classList.remove('open', 'closing'); overlayEl.style.cssText = ''; };
+  const finish = () => { overlayEl.classList.remove('open', 'closing', 'opening'); overlayEl.style.cssText = ''; };
   clearTimeout(closeTimer);
   if(instant || still() || !overlayEl.classList.contains('open')) finish();
   else {

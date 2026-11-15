@@ -5,7 +5,7 @@
    • Karteikarten mit Wiederholung in Abständen – auch eigene Karten
    • Podcast mit Lena & Max (normal oder „zum Einschlafen“ mit Schlaftimer)
    • Zusammenfassung
-   Serie (🔥) und XP (⚡) pro Konto auf diesem Gerät.
+   Serie und XP pro Konto auf diesem Gerät.
    Kurse und Aufnahmen werden nur im Browser dieses Geräts gespeichert (IndexedDB).
    Server: /api/upload-url, /api/kurs, /api/tts im Worker (braucht GEMINI_API_KEY).
    ============================================================ */
@@ -63,7 +63,7 @@
   const streakNow = () => { const s = stats(); return s.last === today() || s.last === yesterday() ? s.streak : 0; };
   function drawStats(){
     const el = $('kStats'); if(!el) return;
-    el.innerHTML = '<span title="Tage in Folge gelernt">🔥 <b>' + streakNow() + '</b></span><span title="Erfahrungspunkte">⚡ <b>' + stats().xp + '</b></span>';
+    el.innerHTML = '<span title="Tage in Folge gelernt">' + icon('flame', 17) + '<b>' + streakNow() + '</b></span><span title="Erfahrungspunkte">' + icon('zap', 17) + '<b>' + stats().xp + '</b></span>';
   }
   // Text mit Index/Hochzahl: R_i → R<sub>i</sub>, x^2 → x<sup>2</sup>
   const fx = t => esc(t)
@@ -101,9 +101,9 @@
   async function route(){
     stopAudio();
     const u = RH.user();
-    if(!u){ sec.innerHTML = '<div class="k-gate"><div class="k-gate-ic" aria-hidden="true">📚</div><h3>Deine eigenen Kurse</h3><p class="page-lead">Lade deine Unterlagen hoch – daraus entstehen ein Lernpfad, Karteikarten und ein Podcast.</p><a class="ai-btn" href="anmeldung.html?next=kurse.html">Anmelden</a></div>'; return; }
+    if(!u){ sec.innerHTML = '<div class="k-gate"><div class="k-gate-ic" aria-hidden="true">' + icon('library', 44) + '</div><h3>Deine eigenen Kurse</h3><p class="page-lead">Lade deine Unterlagen hoch – daraus entstehen ein Lernpfad, Karteikarten und ein Podcast.</p><a class="ai-btn" href="anmeldung.html?next=kurse.html">Anmelden</a></div>'; return; }
     if(RH.cfg().billing.enabled && !RH.isPro() && !RH.isPlus() && !u.admin){
-      sec.innerHTML = '<div class="k-gate"><div class="k-gate-ic" aria-hidden="true">👑</div><h3>Meine Kurse gibt es mit Plus oder Pro</h3><p class="page-lead">Mit Plus erstellst du Kurse zu Themen aus dem Regelheft – mit Lernpfad, Karteikarten, Regeln, Test und Podcast. Mit Pro lädst du zusätzlich eigene Lerndateien hoch (PDF, Fotos, GoodNotes; bis zu ' + MAX_FILES + ' pro Kurs).</p><a class="ai-btn" href="pro.html">Plus und Pro ansehen</a></div>';
+      sec.innerHTML = '<div class="k-gate"><div class="k-gate-ic" aria-hidden="true">' + icon('crown', 44, true) + '</div><h3>Meine Kurse gibt es mit Plus oder Pro</h3><p class="page-lead">Mit Plus erstellst du Kurse zu Themen aus dem Regelheft – mit Lernpfad, Karteikarten, Regeln, Test und Podcast. Mit Pro lädst du zusätzlich eigene Lerndateien hoch (PDF, Fotos, GoodNotes; bis zu ' + MAX_FILES + ' pro Kurs).</p><a class="ai-btn" href="pro.html">Plus und Pro ansehen</a></div>';
       return;
     }
     if(view.name === 'kurs'){
@@ -139,7 +139,7 @@
         '<h3 class="k-h">Neuen Kurs erstellen</h3>' +
         '<div class="pc-seg k-mode" role="radiogroup" aria-label="Woraus?"><button type="button" role="radio" data-m="upload" aria-checked="' + (mode === 'upload') + '" class="' + (mode === 'upload' ? 'on' : '') + '">Eigene Unterlagen' + (canUpload() ? '' : ' <span class="pc-badge">Pro</span>') + '</button><button type="button" role="radio" data-m="topic" aria-checked="' + (mode === 'topic') + '" class="' + (mode === 'topic' ? 'on' : '') + '">Thema aus dem Regelheft</button></div>' +
         (mode === 'upload'
-          ? '<label class="k-drop" id="kDrop"><input type="file" id="kFile" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.heic,.heif,.txt,.md,.goodnotes"><span class="k-drop-ic" aria-hidden="true">📄</span><b>Dateien hierher ziehen oder antippen</b><small>PDF (bis 50 MB) · Fotos von Mitschriften · GoodNotes · Text · höchstens ' + MAX_FILES + ' Dateien</small></label>' +
+          ? '<label class="k-drop" id="kDrop"><input type="file" id="kFile" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.heic,.heif,.txt,.md,.goodnotes"><span class="k-drop-ic" aria-hidden="true">' + icon('file-text', 38) + '</span><b>Dateien hierher ziehen oder antippen</b><small>PDF (bis 50 MB) · Fotos von Mitschriften · GoodNotes · Text · höchstens ' + MAX_FILES + ' Dateien</small></label>' +
             (pending.length ? '<p class="k-filecount">' + pending.length + ' von ' + MAX_FILES + ' Dateien</p>' : '') +
             '<ul class="k-chips" id="kList">' + pending.map((f, i) => '<li>' + esc(f.name) + ' <button type="button" data-i="' + i + '" aria-label="Entfernen">×</button></li>').join('') + '</ul>' +
             '<textarea class="pc-input k-notes" id="kNotes" rows="3" placeholder="Optional: eigene Notizen oder Text einfügen …">' + esc(custom) + '</textarea>'
@@ -150,14 +150,14 @@
       '</div>';
     const courses = list.length ? '<div class="k-courses">' + list.map(k => {
         const due = dueOf(k);
-        return '<button type="button" class="k-card" data-id="' + esc(k.id) + '"><span class="k-card-em" aria-hidden="true">' + esc(k.emoji) + '</span>' +
+        return '<button type="button" class="k-card" data-id="' + esc(k.id) + '"><span class="k-card-em" aria-hidden="true">' + icon('book', 26) + '</span>' +
           '<span class="k-card-tx"><b>' + esc(k.title) + '</b><small>' + plural(lessonsOf(k).length, 'Lektion', 'Lektionen') + ' · ' + plural(k.flashcards.length, 'Karte', 'Karten') + ' · ' + plural((k.rules || []).length, 'Regel', 'Regeln') + (due ? ' · <strong>' + due + ' fällig</strong>' : '') + '</small>' +
           '<span class="k-bar"><i style="width:' + Math.round(progressOf(k) * 100) + '%"></i></span></span><span class="k-chev" aria-hidden="true">›</span></button>';
       }).join('') + '</div>' : '';
     const today =
       '<section class="k-today" aria-label="Heute">' +
-        '<div class="k-goal">' + ring(dx / GOAL, dx + ' von ' + GOAL + ' XP heute') + '<div><small>Tagesziel</small><b>' + Math.min(dx, GOAL) + ' / ' + GOAL + ' XP</b><span>' + (dx >= GOAL ? 'Geschafft – stark! 🎉' : 'Noch ' + (GOAL - dx) + ' XP') + '</span></div></div>' +
-        '<div class="k-tstats"><div><b>🔥 ' + st + '</b><small>' + (st === 1 ? 'Tag' : 'Tage') + ' in Folge</small></div><div><b>⚡ ' + stats().xp + '</b><small>XP gesamt</small></div><div><b>🃏 ' + dueAll.length + '</b><small>fällig</small></div></div>' +
+        '<div class="k-goal">' + ring(dx / GOAL, dx + ' von ' + GOAL + ' XP heute') + '<div><small>Tagesziel</small><b>' + Math.min(dx, GOAL) + ' / ' + GOAL + ' XP</b><span>' + (dx >= GOAL ? 'Geschafft – stark!' : 'Noch ' + (GOAL - dx) + ' XP') + '</span></div></div>' +
+        '<div class="k-tstats"><div><b>' + icon('flame', 18) + st + '</b><small>' + (st === 1 ? 'Tag' : 'Tage') + ' in Folge</small></div><div><b>' + icon('zap', 18) + stats().xp + '</b><small>XP gesamt</small></div><div><b>' + icon('layers', 18) + dueAll.length + '</b><small>fällig</small></div></div>' +
         '<div class="k-tact">' +
           (dueAll.length ? '<button type="button" class="ai-btn" id="kDueAll">' + plural(dueAll.length, 'fällige Karte', 'fällige Karten') + ' lernen' + (dueCourses > 1 ? ' · ' + dueCourses + ' Kurse' : '') + '</button>' : '') +
           (next ? '<button type="button" class="ai-btn' + (dueAll.length ? ' ghost' : '') + '" id="kNext" data-id="' + esc(next.k.id) + '">Weiter: ' + esc(next.l.title) + '</button>' : '') +
@@ -165,8 +165,8 @@
       '</section>';
     sec.innerHTML = (STANDALONE ? '' : '<div class="k-top"><span class="k-stats" id="kStats"></span></div>') +
       (list.length
-        ? today + '<div class="k-sec-h"><h3 class="k-h">Deine Kurse</h3><button type="button" class="k-add-btn" id="kToNew">＋ Neuer Kurs</button></div>' + courses + form
-        : '<div class="k-intro"><div class="k-intro-ic" aria-hidden="true">📚</div><h3>Dein erster Kurs</h3><p>Lade Unterlagen hoch oder wähle ein Thema – daraus entstehen ein Lernpfad, Karteikarten, Regeln, ein Test und ein Podcast.</p></div>' + form);
+        ? today + '<div class="k-sec-h"><h3 class="k-h">Deine Kurse</h3><button type="button" class="k-add-btn" id="kToNew">' + icon('plus', 16) + 'Neuer Kurs</button></div>' + courses + form
+        : '<div class="k-intro"><div class="k-intro-ic" aria-hidden="true">' + icon('library', 44) + '</div><h3>Dein erster Kurs</h3><p>Lade Unterlagen hoch oder wähle ein Thema – daraus entstehen ein Lernpfad, Karteikarten, Regeln, ein Test und ein Podcast.</p></div>' + form);
     drawStats();
     sec.querySelector('.k-mode').onclick = e => { const b = e.target.closest('[data-m]');
       if(b && b.dataset.m === 'upload' && !canUpload()){ $('kMsg').innerHTML = 'Eigene Lerndateien hochladen gibt es mit <a class="link" href="pro.html">Pro</a>. Mit Plus erstellst du Kurse zu Themen aus dem Regelheft.'; return; }
@@ -325,7 +325,7 @@
     const due = dueOf(k), pct = Math.round(progressOf(k) * 100);
     sec.innerHTML =
       '<div class="k-nav"><button type="button" class="k-back" id="kBack"><span aria-hidden="true">‹</span> Kurse</button><span class="k-stats" id="kStats"></span></div>' +
-      '<div class="k-head"><span class="k-head-em" aria-hidden="true">' + esc(k.emoji) + '</span><div><h3>' + esc(k.title) + '</h3>' +
+      '<div class="k-head"><span class="k-head-em" aria-hidden="true">' + icon('book', 30) + '</span><div><h3>' + esc(k.title) + '</h3>' +
         '<p class="k-head-sub">' + plural(lessonsOf(k).length, 'Lektion', 'Lektionen') + ' · ' + plural(k.flashcards.length, 'Karte', 'Karten') + ' · ' + plural(k.rules.length, 'Regel', 'Regeln') + ' · ' + pct + ' % geschafft</p></div></div>' +
       '<div class="k-tabs" role="tablist">' + Object.entries(KTABS).map(([t, l]) => '<button type="button" role="tab" data-t="' + t + '" aria-selected="' + (t === tab) + '" class="' + (t === tab ? 'on' : '') + '">' + l + (t === 'karten' && due ? ' <span class="k-dot">' + due + '</span>' : '') + '</button>').join('') + '</div>' +
       '<div id="kBody"></div>' +
@@ -344,7 +344,7 @@
   function renderInfo(k, body){ body.innerHTML = '<div class="k-summary">' + esc(k.summary).replace(/\n/g, '<br>') + '</div>'; }
 
   /* ---------- Lernpfad ---------- */
-  const ICONS = ['⭐', '📘', '🧠', '🎯', '💡', '🏋️'];
+  const NODE_ICONS = ['star', 'target', 'lightbulb', 'book', 'pencil', 'layers'];
   function renderPath(k, body){
     const all = lessonsOf(k), first = all.findIndex(l => !(l.key in k.done));
     let i = 0, h = '';
@@ -353,12 +353,12 @@
       u.lessons.forEach(l => {
         const n = i++, done = all[n].key in k.done, cur = n === first, locked = !done && !cur;
         h += '<div class="k-node-wrap" style="transform:translateX(' + Math.round(Math.sin(n * 1.1) * 70) + 'px)">' + (cur ? '<span class="k-start">Start</span>' : '') +
-          '<button type="button" class="k-node ' + (done ? 'done' : cur ? 'cur' : '') + '" data-n="' + n + '" aria-label="' + esc(l.title) + (done ? ' (geschafft)' : locked ? ' (gesperrt)' : '') + '"' + (locked ? ' aria-disabled="true"' : '') + '>' + (done ? '✔' : locked ? '🔒' : ICONS[n % ICONS.length]) + '</button>' +
+          '<button type="button" class="k-node ' + (done ? 'done' : cur ? 'cur' : '') + '" data-n="' + n + '" aria-label="' + esc(l.title) + (done ? ' (geschafft)' : locked ? ' (gesperrt)' : '') + '"' + (locked ? ' aria-disabled="true"' : '') + '>' + (done ? icon('check', 30) : locked ? icon('lock', 26) : icon(NODE_ICONS[n % NODE_ICONS.length], 28)) + '</button>' +
           '<span class="k-node-l">' + esc(l.title) + '</span></div>';
       });
       h += '</div>';
     });
-    if(first === -1) h += '<div class="k-trophy" aria-hidden="true">🏆</div><p class="page-lead" style="text-align:center">Ganzer Pfad geschafft! Lektionen kannst du jederzeit wiederholen.</p>';
+    if(first === -1) h += '<div class="k-trophy" aria-hidden="true">' + icon('trophy', 56) + '</div><p class="page-lead" style="text-align:center">Ganzer Pfad geschafft! Lektionen kannst du jederzeit wiederholen.</p>';
     body.innerHTML = h;
     body.onclick = e => { const b = e.target.closest('.k-node'); if(!b) return; const n = +b.dataset.n; if(n !== first && !(all[n].key in k.done)) return; lesson(k, all[n]); };
   }
@@ -373,7 +373,7 @@
     function draw(){
       const q = s.queue[0], ok = s.checked && q.opts[s.sel].ok;
       const text = q.type === 'fill_blank' ? fx(q.question.replace(/_{2,}/, '\u0000')).replace('\u0000', '<span class="k-blank">' + (s.sel != null ? fx(q.opts[s.sel].t) : '&nbsp;') + '</span>') : fx(q.question);
-      ov.innerHTML = '<div class="k-l-top"><button type="button" class="k-l-x" id="kLx" aria-label="Lektion beenden">✕</button><div class="p-progress"><i style="width:' + (s.right / s.total * 100) + '%"></i></div><span class="k-hearts" aria-label="' + s.hearts + ' Herzen">❤️ ' + s.hearts + '</span></div>' +
+      ov.innerHTML = '<div class="k-l-top"><button type="button" class="k-l-x" id="kLx" aria-label="Lektion beenden">' + icon('x', 22) + '</button><div class="p-progress"><i style="width:' + (s.right / s.total * 100) + '%"></i></div><span class="k-hearts" aria-label="' + s.hearts + ' Herzen">' + icon('heart', 18, true) + s.hearts + '</span></div>' +
         '<div class="k-l-body"><div class="p-label">' + (KIND[q.type] || 'Frage') + '</div><div class="k-q">' + text + '</div><div class="k-opts' + (q.opts.length === 2 ? ' two' : '') + '">' +
         q.opts.map((o, i) => { let c = s.sel === i ? 'sel' : ''; if(s.checked) c = o.ok ? 'right' : s.sel === i ? 'wrong' : ''; return '<button type="button" class="k-opt ' + c + '" data-i="' + i + '"' + (s.checked ? ' disabled' : '') + '><span class="k-key">' + (i + 1) + '</span><span>' + fx(o.t) + '</span></button>'; }).join('') + '</div></div>' +
         '<div class="k-l-foot ' + (s.checked ? (ok ? 'ok' : 'bad') : '') + '"><div class="k-l-fi"><div class="k-fb" role="status">' +
@@ -398,8 +398,8 @@
       const acc = Math.round(s.total / (s.total + s.miss) * 100), mins = Math.max(1, Math.round((Date.now() - s.t0) / 60000));
       let xp = 0;
       if(won){ xp = (l.key in k.done ? 5 : 10) + (s.miss ? 0 : 5); k.done[l.key] = Math.max(k.done[l.key] || 0, acc); save(k); addXp(xp); }
-      ov.innerHTML = '<div class="k-l-body k-res"><div class="k-res-em" aria-hidden="true">' + (won ? (s.miss ? '🎉' : '🏅') : '💔') + '</div><h3>' + (won ? (s.miss ? 'Lektion geschafft!' : 'Perfekt – ohne Fehler!') : 'Keine Herzen mehr') + '</h3><p class="page-lead">' + (won ? esc(l.title) : 'Kein Problem – probier es gleich nochmal.') + '</p>' +
-        (won ? '<div class="k-res-st"><div><small>XP</small><b>⚡ +' + xp + '</b></div><div><small>Genauigkeit</small><b>🎯 ' + acc + '%</b></div><div><small>Zeit</small><b>⏱ ' + mins + ' min</b></div></div>' : '') + '</div>' +
+      ov.innerHTML = '<div class="k-l-body k-res"><div class="k-res-em" aria-hidden="true">' + (won ? (s.miss ? icon('sparkles', 72) : icon('award', 72)) : icon('heart-crack', 72)) + '</div><h3>' + (won ? (s.miss ? 'Lektion geschafft!' : 'Perfekt – ohne Fehler!') : 'Keine Herzen mehr') + '</h3><p class="page-lead">' + (won ? esc(l.title) : 'Kein Problem – probier es gleich nochmal.') + '</p>' +
+        (won ? '<div class="k-res-st"><div><small>XP</small><b>' + icon('zap', 18) + '+' + xp + '</b></div><div><small>Genauigkeit</small><b>' + icon('target', 18) + acc + '%</b></div><div><small>Zeit</small><b>' + icon('timer', 18) + mins + ' min</b></div></div>' : '') + '</div>' +
         '<div class="k-l-foot"><div class="k-l-fi">' + (won ? '<span></span>' : '<button type="button" class="ai-btn ghost" id="kRe">Nochmal</button>') + '<button type="button" class="ai-btn" id="kEnd">Weiter</button></div></div>';
       $('kEnd').onclick = close; $('kEnd').focus();
       if(!won) $('kRe').onclick = () => { document.removeEventListener('keydown', key); ov.remove(); document.body.classList.remove('k-noscroll'); lesson(k, l); };
@@ -419,7 +419,7 @@
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   const ruleOf = (k, id) => id && (k.rules || []).find(r => r.id === id);
   // Rückseite beim Lernen: Antwort + (falls verknüpft) die Regel als Merkkasten
-  const backOf = (k, c) => { const r = ruleOf(k, c.ruleId); return r && !c.fromRule ? c.back + '\n! 📐 ' + r.title + ': ' + r.text : c.back; };
+  const backOf = (k, c) => { const r = ruleOf(k, c.ruleId); return r && !c.fromRule ? c.back + '\n! ' + r.title + ': ' + r.text : c.back; };
   const ruleOptions = (k, sel) => '<option value="">Keine Regel</option>' + k.rules.map(r => '<option value="' + esc(r.id) + '"' + (r.id === sel ? ' selected' : '') + '>' + esc(r.title) + '</option>').join('');
 
   function renderCards(k, body){
@@ -431,7 +431,7 @@
       '<div class="k-cards-top"><div><b class="k-big">' + due.length + '</b> <span>fällig von ' + k.flashcards.length + ' Karten</span>' +
         (!due.length && isFinite(nextDue) ? '<small class="k-next">Nächste ' + new Date(nextDue).toLocaleString('de-DE', {weekday:'long', hour:'2-digit', minute:'2-digit'}) + '</small>' : '') + '</div>' +
         '<div class="btn-row"><button type="button" class="ai-btn" id="kLearn"' + (due.length ? '' : ' disabled') + '>Jetzt lernen</button><button type="button" class="ai-btn ghost" id="kAll">Alle üben</button></div></div>' +
-      '<div class="k-list-h"><div class="pc-seg k-filter" role="radiogroup" aria-label="Anzeigen"><button type="button" role="radio" data-f="alle" class="on" aria-checked="true">Alle ' + k.flashcards.length + '</button><button type="button" role="radio" data-f="own" aria-checked="false">Eigene ' + own + '</button><button type="button" role="radio" data-f="due" aria-checked="false">Fällig ' + due.length + '</button></div><span class="k-add-row"><button type="button" class="k-add-btn alt" id="kAiNew" aria-expanded="false" aria-controls="kAi">Von der KI</button><button type="button" class="k-add-btn" id="kNew" aria-expanded="false" aria-controls="kForm">＋ Neue Karte</button></span></div>' +
+      '<div class="k-list-h"><div class="pc-seg k-filter" role="radiogroup" aria-label="Anzeigen"><button type="button" role="radio" data-f="alle" class="on" aria-checked="true">Alle ' + k.flashcards.length + '</button><button type="button" role="radio" data-f="own" aria-checked="false">Eigene ' + own + '</button><button type="button" role="radio" data-f="due" aria-checked="false">Fällig ' + due.length + '</button></div><span class="k-add-row"><button type="button" class="k-add-btn alt" id="kAiNew" aria-expanded="false" aria-controls="kAi">Von der KI</button><button type="button" class="k-add-btn" id="kNew" aria-expanded="false" aria-controls="kForm">' + icon('plus', 16) + 'Neue Karte</button></span></div>' +
       '<div class="k-form is-hidden" id="kForm">' +
         '<h4 class="k-form-h" id="kFormH">Eigene Karte</h4>' +
         '<label class="k-lbl" for="kF">Vorderseite</label><input class="pc-input" id="kF" maxlength="300" placeholder="Frage oder Aufgabe">' +
@@ -446,11 +446,11 @@
       const now = Date.now(), cards = k.flashcards.filter(c => filter === 'own' ? c.own : filter === 'due' ? (c.due || 0) <= now : true);
       list.innerHTML = cards.length ? cards.map(c => { const r = ruleOf(k, c.ruleId);
         return '<div class="k-c"><div><b>' + fx(c.front) + '</b><span>' + fx(c.back) + '</span>' +
-          ((c.own || c.gen || r) ? '<span class="k-tags">' + (c.own ? '<i class="k-tag">Eigene</i>' : '') + (c.gen ? '<i class="k-tag">Von der KI</i>' : '') + (r ? '<i class="k-tag rule">📐 ' + esc(r.title) + '</i>' : '') + '</span>' : '') + '</div>' +
+          ((c.own || c.gen || r) ? '<span class="k-tags">' + (c.own ? '<i class="k-tag">Eigene</i>' : '') + (c.gen ? '<i class="k-tag">Von der KI</i>' : '') + (r ? '<i class="k-tag rule">' + icon('ruler', 13) + esc(r.title) + '</i>' : '') + '</span>' : '') + '</div>' +
           '<span class="k-c-st" title="Lernstufe ' + (c.box || 0) + ' von 5" aria-label="Lernstufe ' + (c.box || 0) + ' von 5">' + '●'.repeat(c.box || 0) + '○'.repeat(5 - (c.box || 0)) + '</span>' +
           (c.own || c.gen ? '<button type="button" class="k-c-act" data-edit="' + c.id + '" aria-label="Karte bearbeiten">Bearbeiten</button>' : '') +
           '<button type="button" class="k-c-del" data-id="' + c.id + '" aria-label="Karte löschen">Löschen</button></div>'; }).join('')
-        : '<p class="k-empty">' + (filter === 'own' ? 'Noch keine eigenen Karten – schreib oben deine erste.' : 'Gerade ist nichts fällig. 🎉') + '</p>';
+        : '<p class="k-empty">' + (filter === 'own' ? 'Noch keine eigenen Karten – schreib oben deine erste.' : 'Gerade ist nichts fällig.') + '</p>';
     }
     drawList();
     sec.querySelector('.k-filter').onclick = e => { const b = e.target.closest('[data-f]'); if(!b) return; filter = b.dataset.f;
@@ -503,7 +503,7 @@
       const box = $('kAi'), byTitle = t => k.rules.find(r => r.title.trim().toLowerCase() === String(t || '').trim().toLowerCase());
       box.innerHTML = '<h4 class="k-form-h">' + got.length + ' neue Karten</h4><p class="k-form-p">Häkchen weg bei Karten, die du nicht willst.</p>' +
         '<div class="k-pick">' + got.map((c, i) => { const r = byTitle(c.rule);
-          return '<label class="k-pick-i"><input type="checkbox" data-i="' + i + '" checked><span><b>' + fx(c.front) + '</b><span>' + fx(c.back) + '</span>' + (r ? '<i class="k-tag rule">📐 ' + esc(r.title) + '</i>' : '') + '</span></label>'; }).join('') + '</div>' +
+          return '<label class="k-pick-i"><input type="checkbox" data-i="' + i + '" checked><span><b>' + fx(c.front) + '</b><span>' + fx(c.back) + '</span>' + (r ? '<i class="k-tag rule">' + icon('ruler', 13) + esc(r.title) + '</i>' : '') + '</span></label>'; }).join('') + '</div>' +
         '<div class="k-form-act"><button type="button" class="ai-btn ghost" id="kAiNo">Verwerfen</button><button type="button" class="ai-btn" id="kAiOk">' + got.length + ' übernehmen</button></div>';
       const count = () => box.querySelectorAll('.k-pick input:checked').length;
       box.querySelector('.k-pick').onchange = () => { const n = count(); $('kAiOk').textContent = n + ' übernehmen'; $('kAiOk').disabled = !n; };
@@ -544,7 +544,7 @@
     const cardFor = r => k.flashcards.find(c => c.fromRule && c.ruleId === r.id);
     const linked = r => k.flashcards.filter(c => c.ruleId === r.id).length;
     body.innerHTML =
-      '<div class="k-list-h"><b class="k-count">' + plural(k.rules.length, 'Regel', 'Regeln') + '</b><button type="button" class="k-add-btn" id="kRNew" aria-expanded="false" aria-controls="kRForm">＋ Neue Regel</button></div>' +
+      '<div class="k-list-h"><b class="k-count">' + plural(k.rules.length, 'Regel', 'Regeln') + '</b><button type="button" class="k-add-btn" id="kRNew" aria-expanded="false" aria-controls="kRForm">' + icon('plus', 16) + 'Neue Regel</button></div>' +
       '<div class="k-form is-hidden" id="kRForm">' +
         '<h4 class="k-form-h" id="kRH">Eigene Regel</h4>' +
         '<label class="k-lbl" for="kRT">Name</label><input class="pc-input" id="kRT" maxlength="120" placeholder="z. B. Satz des Pythagoras">' +
@@ -557,7 +557,7 @@
         ? '<div class="k-rules">' + k.rules.map(r => { const c = cardFor(r), n = linked(r);
             return '<article class="k-rule"><div class="k-rule-top"><h4>' + esc(r.title) + '</h4>' + (r.own ? '<i class="k-tag">Eigene</i>' : '') + '</div>' +
               '<p>' + fx(r.text) + '</p>' + (r.example ? '<p class="k-rule-ex"><span>Beispiel</span>' + fx(r.example) + '</p>' : '') +
-              '<div class="k-rule-act">' + (c ? '<span class="k-ok">✓ Als Karte' + (n > 1 ? ' · ' + (n - 1) + ' weitere' : '') + '</span>' : '<button type="button" class="mini" data-card="' + r.id + '">＋ Als Karte</button>' + (n ? '<span class="k-ok">' + n + ' Karte' + (n > 1 ? 'n' : '') + '</span>' : '')) +
+              '<div class="k-rule-act">' + (c ? '<span class="k-ok">' + icon('check', 14) + 'Als Karte' + (n > 1 ? ' · ' + (n - 1) + ' weitere' : '') + '</span>' : '<button type="button" class="mini" data-card="' + r.id + '">' + icon('plus', 14) + 'Als Karte</button>' + (n ? '<span class="k-ok">' + n + ' Karte' + (n > 1 ? 'n' : '') + '</span>' : '')) +
               '<span class="k-sp"></span><button type="button" class="k-c-act" data-edit="' + r.id + '">Bearbeiten</button><button type="button" class="k-c-del" data-del="' + r.id + '">Löschen</button></div></article>'; }).join('') + '</div>'
         : '<p class="k-empty">Noch keine Regeln. Schreib oben deine erste – sie kommt auf Wunsch gleich als Karteikarte in den Kurs.</p>');
     const toCard = r => ({id: uid(), front: 'Wie lautet die Regel „' + r.title + '“?', back: r.text + (r.example ? '\n! Beispiel: ' + r.example : ''), box: 0, due: 0, own: !!r.own, ruleId: r.id, fromRule: true});
@@ -636,7 +636,7 @@
     host.innerHTML = '<div class="k-sc-bar" role="toolbar" aria-label="Nebenrechnung">' +
         INKS.map(([c, l]) => '<button type="button" class="k-sc-c' + (c === tool ? ' on' : '') + '" data-c="' + c + '" aria-label="' + l + '" aria-pressed="' + (c === tool) + '"><i style="background:' + (c === 'ink' ? 'var(--ink)' : c) + '"></i></button>').join('') +
         '<button type="button" class="k-sc-b" data-a="erase" aria-pressed="false">Radierer</button>' +
-        '<span class="k-sp"></span><button type="button" class="k-sc-b" data-a="undo" aria-label="Rückgängig">↶</button><button type="button" class="k-sc-b" data-a="clear">Leeren</button></div>' +
+        '<span class="k-sp"></span><button type="button" class="k-sc-b" data-a="undo" aria-label="Rückgängig">' + icon('undo', 16) + '</button><button type="button" class="k-sc-b" data-a="clear">Leeren</button></div>' +
       '<canvas class="k-sc-canvas" aria-label="Zeichenfläche für Nebenrechnungen"></canvas>' +
       '<p class="k-sc-hint">' + (penKnown() ? 'Mit dem Stift schreiben – der Finger zeichnet hier nicht, damit die Hand aufliegen kann.' : 'Mit Stift, Finger oder Maus rechnen. Ein Apple Pencil wird automatisch erkannt.') + ' Wird nicht bewertet.</p>';
     const cv = host.querySelector('canvas'), ctx = cv.getContext('2d');
@@ -700,14 +700,14 @@
     const answered = () => items.filter(x => x.sel != null).length;
     function tick(){
       const el = ov.querySelector('.k-timer'); if(!el) return;
-      if(end){ const left = Math.max(0, (end - Date.now()) / 1000); el.textContent = '⏱ ' + fmtTime(left); el.classList.toggle('warn', left < 60); if(left <= 0) finish(true); }
-      else el.textContent = '⏱ ' + fmtTime((Date.now() - t0) / 1000);
+      if(end){ const left = Math.max(0, (end - Date.now()) / 1000); el.innerHTML = icon('timer', 16) + fmtTime(left); el.classList.toggle('warn', left < 60); if(left <= 0) finish(true); }
+      else el.innerHTML = icon('timer', 16) + fmtTime((Date.now() - t0) / 1000);
     }
     function draw(){
       const it = items[i], q = it.q, last = i === items.length - 1;
       const text = q.type === 'fill_blank' ? fx(q.question.replace(/_{2,}/, '\u0000')).replace('\u0000', '<span class="k-blank">' + (it.sel != null ? fx(it.opts[it.sel].t) : '&nbsp;') + '</span>') : fx(q.question);
-      ov.innerHTML = '<div class="k-l-top"><button type="button" class="k-l-x" id="kLx" aria-label="Test abbrechen">✕</button><div class="p-progress"><i style="width:' + (answered() / items.length * 100) + '%"></i></div>' +
-        '<button type="button" class="k-pen-btn' + (padOpen ? ' on' : '') + '" id="kPenBtn" aria-pressed="' + padOpen + '" title="Nebenrechnung">✏️<span> Nebenrechnung</span></button><span class="k-timer" aria-live="off"></span></div>' +
+      ov.innerHTML = '<div class="k-l-top"><button type="button" class="k-l-x" id="kLx" aria-label="Test abbrechen">' + icon('x', 22) + '</button><div class="p-progress"><i style="width:' + (answered() / items.length * 100) + '%"></i></div>' +
+        '<button type="button" class="k-pen-btn' + (padOpen ? ' on' : '') + '" id="kPenBtn" aria-pressed="' + padOpen + '" title="Nebenrechnung">' + icon('pencil', 16) + '<span> Nebenrechnung</span></button><span class="k-timer" aria-live="off"></span></div>' +
         '<div class="k-l-body' + (padOpen ? ' with-pad' : '') + '"><div class="k-qnav" role="tablist" aria-label="Fragen">' + items.map((x, n) => '<button type="button" role="tab" data-q="' + n + '" aria-selected="' + (n === i) + '" class="' + (n === i ? 'on ' : '') + (x.sel != null ? 'ans' : '') + '" aria-label="Frage ' + (n + 1) + (x.sel != null ? ' (beantwortet)' : '') + '">' + (n + 1) + '</button>').join('') + '</div>' +
         '<div class="k-ex-grid"><div class="k-ex-main"><div class="p-label">Frage ' + (i + 1) + ' von ' + items.length + ' · ' + (KIND[q.type] || 'Frage') + '</div><div class="k-q">' + text + '</div><div class="k-opts' + (it.opts.length === 2 ? ' two' : '') + '">' +
         it.opts.map((o, n) => '<button type="button" class="k-opt ' + (it.sel === n ? 'sel' : '') + '" data-i="' + n + '" aria-pressed="' + (it.sel === n) + '"><span class="k-key">' + (n + 1) + '</span><span>' + fx(o.t) + '</span></button>').join('') + '</div></div>' +
@@ -739,7 +739,7 @@
         '<div class="k-grade-big g' + g[1] + '"><span>' + g[1] + '</span></div><h3>Note ' + g[1] + ' – ' + g[2] + '</h3><p class="page-lead">' + right + ' von ' + items.length + ' richtig</p>' +
         '<div class="k-res-st"><div><small>Ergebnis</small><b>' + pct + ' %</b></div><div><small>Zeit</small><b>' + fmtTime(secs) + '</b></div><div><small>XP</small><b>+' + xp + '</b></div></div>' +
         '<h4 class="k-review-h">Alle Lösungen</h4><ol class="k-review">' + items.map(x => { const ok = x.sel != null && x.opts[x.sel].ok, r = x.opts.find(o => o.ok);
-          return '<li class="' + (ok ? 'ok' : 'bad') + '"><b>' + fx(x.q.question) + '</b>' + (ok ? '<span class="k-rv-a">✓ ' + fx(r.t) + '</span>' : '<span class="k-rv-a">✗ ' + (x.sel == null ? 'Nicht beantwortet' : fx(x.opts[x.sel].t)) + '</span><span class="k-rv-c">Richtig: ' + fx(r.t) + '</span>') + (x.q.explanation ? '<span class="k-rv-e">' + fx(x.q.explanation) + '</span>' : '') + '</li>'; }).join('') + '</ol></div>' +
+          return '<li class="' + (ok ? 'ok' : 'bad') + '"><b>' + fx(x.q.question) + '</b>' + (ok ? '<span class="k-rv-a">' + icon('check', 14) + fx(r.t) + '</span>' : '<span class="k-rv-a">' + icon('x', 14) + (x.sel == null ? 'Nicht beantwortet' : fx(x.opts[x.sel].t)) + '</span><span class="k-rv-c">Richtig: ' + fx(r.t) + '</span>') + (x.q.explanation ? '<span class="k-rv-e">' + fx(x.q.explanation) + '</span>' : '') + '</li>'; }).join('') + '</ol></div>' +
         '<div class="k-l-foot"><div class="k-l-fi">' + (wrong.length ? '<button type="button" class="ai-btn ghost" id="kWrongCards">' + plural(wrong.length, 'Fehler', 'Fehler') + ' als Karten lernen</button>' : '<span></span>') + '<button type="button" class="ai-btn" id="kEnd">Fertig</button></div></div>';
       $('kEnd').onclick = close; $('kEnd').focus();
       if(wrong.length) $('kWrongCards').onclick = () => {
@@ -748,7 +748,7 @@
           .filter(c => !have.has(c.front.trim().toLowerCase()));
         k.flashcards = add.concat(k.flashcards); save(k);
         RH.toast && RH.toast(add.length ? plural(add.length, 'Karte', 'Karten') + ' hinzugefügt' : 'Diese Karten gibt es schon');
-        $('kWrongCards').disabled = true; $('kWrongCards').textContent = '✓ Bei den Karten';
+        $('kWrongCards').disabled = true; $('kWrongCards').innerHTML = icon('check', 16) + 'Bei den Karten';
       };
     }
     function key(e){
@@ -832,8 +832,8 @@
       const blob = await db.audio(key()).catch(() => null);
       body.innerHTML =
         '<div class="pc-player' + (calm ? ' night' : '') + '">' +
-          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? '🌙' : esc(k.emoji)) + '</div><div><h3>' + esc(pod.title) + '</h3><p>Lena & Max · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
-          '<div class="pc-seg" role="radiogroup" aria-label="Version"><button type="button" role="radio" aria-checked="' + !calm + '" data-m="0" class="' + (calm ? '' : 'on') + '">🎧 Normal</button><button type="button" role="radio" aria-checked="' + calm + '" data-m="1" class="' + (calm ? 'on' : '') + '">🌙 Zum Einschlafen</button></div>' +
+          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? icon('moon', 30) : icon('headphones', 30)) + '</div><div><h3>' + esc(pod.title) + '</h3><p>Lena & Max · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
+          '<div class="pc-seg" role="radiogroup" aria-label="Version"><button type="button" role="radio" aria-checked="' + !calm + '" data-m="0" class="' + (calm ? '' : 'on') + '">' + icon('headphones', 16) + 'Normal</button><button type="button" role="radio" aria-checked="' + calm + '" data-m="1" class="' + (calm ? 'on' : '') + '">' + icon('moon', 16) + 'Zum Einschlafen</button></div>' +
           '<div id="pcCtl"></div>' +
         '</div>' +
         '<details class="pc-script"><summary>Mitlesen</summary><div id="pcLines">' + pod.lines.map((l, i) => '<button type="button" class="pc-line ' + (l.speaker === 'Max' ? 'max' : 'lena') + '" data-i="' + i + '"><b>' + esc(l.speaker) + '</b><span>' + esc(l.text) + '</span></button>').join('') + '</div></details>';
@@ -846,7 +846,7 @@
     }
     function showRecord(err){
       $('pcCtl').innerHTML = (err ? '<p class="pc-err">' + esc(err) + '</p>' : '') +
-        '<button type="button" class="pc-rec" id="pcRec">🎙️ ' + (calm ? 'Einschlaf-Version' : 'Podcast') + ' aufnehmen</button>' +
+        '<button type="button" class="pc-rec" id="pcRec">' + icon('mic', 18) + (calm ? 'Einschlaf-Version' : 'Podcast') + ' aufnehmen</button>' +
         '<p class="pc-small">Einmalig, dauert ca. ' + (Math.ceil(chunkLines(pod.lines, 1500).length / 3) * (calm ? 55 : 40)) + ' Sek. Danach ist die Aufnahme auf diesem Gerät gespeichert.</p>';
       $('pcRec').onclick = async () => {
         const L = loader($('pcCtl'), '', true);
@@ -864,17 +864,17 @@
       audio.preload = 'auto'; audio.loop = calm;
       player = {audio, timer:null, end:null};
       $('pcCtl').innerHTML =
-        '<div class="pc-row"><button type="button" class="pc-b" id="pcBk" aria-label="15 Sekunden zurück">↺ 15</button><button type="button" class="pc-play" id="pcPlay" aria-label="Abspielen">▶</button><button type="button" class="pc-b" id="pcFw" aria-label="15 Sekunden vor">15 ↻</button>' +
+        '<div class="pc-row"><button type="button" class="pc-b" id="pcBk" aria-label="15 Sekunden zurück">' + icon('rotate', 16) + '15</button><button type="button" class="pc-play" id="pcPlay" aria-label="Abspielen">' + icon('play', 24, true) + '</button><button type="button" class="pc-b" id="pcFw" aria-label="15 Sekunden vor">15' + icon('rotate-cw', 16) + '</button>' +
         '<select class="pc-sel" id="pcRate" aria-label="Geschwindigkeit"><option value="0.85">0,85×</option><option value="1" selected>1×</option><option value="1.15">1,15×</option><option value="1.3">1,3×</option></select></div>' +
         '<div class="pc-seek"><span id="pcCur">0:00</span><input type="range" id="pcPos" min="0" max="1000" value="0" aria-label="Position"><span id="pcDur">0:00</span></div>' +
-        '<div class="pc-row pc-sleep"><label>😴 Schlaftimer <select class="pc-sel" id="pcSleep"><option value="0">Aus</option><option value="10">10 min</option><option value="20">20 min</option><option value="30"' + (calm ? ' selected' : '') + '>30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="end">Ende der Folge</option></select></label>' +
-        '<label><input type="checkbox" id="pcLoop"' + (calm ? ' checked' : '') + '> 🔁 Wiederholen</label>' +
-        '<button type="button" class="pc-b" id="pcDark">🌑 Bildschirm dunkel</button><button type="button" class="pc-b" id="pcRedo" title="Aufnahme löschen und neu erstellen">↻ Neu</button></div>' +
+        '<div class="pc-row pc-sleep"><label>' + icon('timer', 16) + 'Schlaftimer <select class="pc-sel" id="pcSleep"><option value="0">Aus</option><option value="10">10 min</option><option value="20">20 min</option><option value="30"' + (calm ? ' selected' : '') + '>30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="end">Ende der Folge</option></select></label>' +
+        '<label><input type="checkbox" id="pcLoop"' + (calm ? ' checked' : '') + '> ' + icon('repeat', 16) + 'Wiederholen</label>' +
+        '<button type="button" class="pc-b" id="pcDark">' + icon('monitor', 16) + 'Bildschirm dunkel</button><button type="button" class="pc-b" id="pcRedo" title="Aufnahme löschen und neu erstellen">' + icon('rotate-cw', 16) + 'Neu</button></div>' +
         '<p class="pc-small" id="pcSleepT"></p>';
       const play = $('pcPlay'), pos = $('pcPos');
       const ui = () => {
         if(!play.isConnected) return;
-        play.textContent = audio.paused ? '▶' : '⏸'; play.setAttribute('aria-label', audio.paused ? 'Abspielen' : 'Pause');
+        { const st = audio.paused ? 'p' : 'r'; if(play.dataset.s !== st){ play.dataset.s = st; play.innerHTML = icon(audio.paused ? 'play' : 'pause', 24, true); } } play.setAttribute('aria-label', audio.paused ? 'Abspielen' : 'Pause');
         $('pcCur').textContent = fmt(audio.currentTime); $('pcDur').textContent = fmt(audio.duration);
         if(audio.duration) pos.value = Math.round(audio.currentTime / audio.duration * 1000);
         const f = audio.duration ? audio.currentTime / audio.duration : 0; let cur = 0;
@@ -908,7 +908,7 @@
           const left = (player.end - Date.now()) / 1000;
           if($('pcSleepT')) $('pcSleepT').textContent = 'Schlaftimer: noch ' + fmt(Math.max(0, left)) + ' · wird am Ende leiser';
           if(left <= 60) audio.volume = Math.max(0, left / 60);
-          if(left <= 0){ audio.pause(); audio.volume = 1; clearInterval(player.timer); player.end = null; if($('pcSleepT')) $('pcSleepT').textContent = 'Gute Nacht 🌙'; const n = $('pcNight'); if(n) n.remove(); }
+          if(left <= 0){ audio.pause(); audio.volume = 1; clearInterval(player.timer); player.end = null; if($('pcSleepT')) $('pcSleepT').textContent = 'Gute Nacht'; const n = $('pcNight'); if(n) n.remove(); }
         }, 1000);
       }
       $('pcSleep').onchange = e => sleep(e.target.value);
@@ -916,7 +916,7 @@
       $('pcDark').onclick = () => {
         if(audio.paused) audio.play();
         const n = document.createElement('div'); n.id = 'pcNight'; n.setAttribute('role', 'button'); n.tabIndex = 0;
-        n.innerHTML = '<div aria-hidden="true">🌙</div><p id="pcNightT"></p><small>Tippen zum Beenden</small>';
+        n.innerHTML = '<div aria-hidden="true">' + icon('moon', 56) + '</div><p id="pcNightT"></p><small>Tippen zum Beenden</small>';
         n.onclick = () => n.remove(); n.onkeydown = e => { if(e.key === 'Enter' || e.key === 'Escape') n.remove(); };
         document.body.appendChild(n); n.focus(); ui();
       };

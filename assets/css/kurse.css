@@ -431,3 +431,28 @@ html[data-heft="on"] :is(.k-today,.k-review){ background:var(--paper); border:1.
 html[data-theme="dark"] .k-sc-canvas{ --k-grid:rgba(235,235,245,.08); }
 html[data-heft="on"] .k-sc-canvas{ background-color:var(--paper); --k-grid:var(--grid); border:1.5px solid var(--pen-soft); }
 .k-sc-hint{ margin:0; font-size:.8125rem; color:var(--muted); }
+
+
+/* ---- SVG-Icons statt Emojis (Linienstil wie bei Üben / KI-Hilfe, Farbe = Textfarbe) ---- */
+.k-stats span, .k-hearts, .k-timer, .k-ok, .k-tag, .k-rv-a, .k-add-btn, .k-pen-btn, .k-sc-b, .pc-b, .pc-rec, .pc-seg button, .pc-sleep label,
+.k-res-st b, .k-tstats b, .k-promo b{ display:inline-flex; align-items:center; gap:6px; }
+.k-tstats b, .k-res-st b{ display:flex; justify-content:center; }
+.k-timer{ justify-content:flex-end; }
+.k-tag.rule{ gap:4px; }
+.k-ok .ic{ color:var(--teal); }
+.k-rv-a{ display:flex; }
+.k-stats .ic{ color:var(--accent); }
+.k-tstats .ic{ color:var(--accent); }
+.k-hearts .ic{ color:var(--danger); }
+.k-l-x{ display:grid; place-items:center; }
+.k-node{ display:grid; place-items:center; }
+.k-card-em, .k-head .k-head-em, .pc-cover, .k-promo-ic{ color:var(--accent-fg); }
+.k-gate-ic, .k-intro-ic, .k-trophy, .k-res-em, .k-drop-ic{ display:flex; justify-content:center; color:var(--accent); margin-bottom:6px; }
+.k-drop{ align-items:center; }
+.k-drop-ic{ margin-bottom:0; color:var(--accent-fg); }
+.pc-play{ display:grid; place-items:center; }
+.pc-play .ic{ margin-left:2px; }
+.pc-sleep label{ display:inline-flex; }
+#pcNight div{ display:flex; justify-content:center; }
+.k-pen-btn .ic{ flex:none; }
+html[data-heft="on"] :is(.k-card-em,.k-head .k-head-em,.pc-cover,.k-promo-ic,.k-gate-ic,.k-intro-ic,.k-trophy,.k-res-em,.k-stats .ic,.k-tstats .ic){ color:var(--pen); }
