@@ -361,6 +361,7 @@ function updatePractice(){
   const gated = RH.needsPro('practice'), locked = gated && !RH.hasAccess('practice');
   const hidden = !RH.feat('practice') || (gated && !RH.user());       // ohne Bezahl-Version: ohne Konto gar nicht sichtbar
   practiceSq.style.display = hidden ? 'none' : '';
+  const ks = document.getElementById('kurseSq'); if(ks) ks.style.display = RH.feat('practice') ? '' : 'none';
   practiceSq.href = locked ? 'pro.html' : 'ueben.html';
   practiceSq.classList.toggle('has-crown', locked);
   document.getElementById('practiceCrown').classList.toggle('is-hidden', !locked);

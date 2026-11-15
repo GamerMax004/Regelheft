@@ -33,7 +33,7 @@
     applyTheme(mode === 'auto' ? (sysDark() ? 'dark' : 'light') : mode, false);
   }
   /* ---------- Heft-Look an/aus (Karopapier) ---------- */
-  const heftNow = () => root.getAttribute('data-heft') === 'off' ? 'off' : 'on';
+  const heftNow = () => root.getAttribute('data-heft') === 'on' ? 'on' : 'off';
   function applyHeft(h, save){
     root.setAttribute('data-heft', h);
     if(save){ try{ localStorage.setItem('regelheft-heft', h); }catch(e){} }
@@ -53,7 +53,11 @@
     tb.onclick = () => { const m = nextMode(savedMode()); setMode(m); if(RH.toast) RH.toast('Darstellung: ' + MODES[m].name); };
     const hb = document.createElement('button'); hb.type = 'button'; hb.className = 'heft-btn'; hb.id = 'heftBtn';
     hb.onclick = () => applyHeft(heftNow() === 'on' ? 'off' : 'on', true);
-    host.parentNode.insertBefore(wrap, host); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
+    // Hauptpunkt „Meine Kurse“ in der Kopfzeile (ausgeblendet, wenn Üben im Dashboard abgeschaltet ist)
+    const kl = document.createElement('a'); kl.className = 'nav-kurse' + (/kurse.html$/.test(location.pathname) ? ' on' : ''); kl.href = 'kurse.html'; kl.innerHTML = '<span class="nk-l">Meine&nbsp;</span>Kurse';
+    if(/kurse.html$/.test(location.pathname)) kl.setAttribute('aria-current', 'page');
+    if(RH.configReady) RH.configReady.then(() => { if(RH.feat && !RH.feat('practice')) kl.remove(); });
+    host.parentNode.insertBefore(wrap, host); wrap.appendChild(kl); wrap.appendChild(hb); wrap.appendChild(tb); wrap.appendChild(host);
     applyHeft(heftNow(), false);
     applyTheme(themeNow(), false);
     // Ohne eigene Auswahl dem Gerät folgen (z. B. wenn abends auf Dunkel umgestellt wird)
@@ -73,6 +77,7 @@
         + (tier === 'pro' ? '<span class="acct-chip-plan">' + icon('crown', 13, true) + 'Pro</span>' : tier === 'plus' ? '<span class="acct-chip-plan">Plus</span>' : '') + '</button>'
         + '<div class="acct-menu" id="acctMenu" role="menu"><div class="am-head"><span class="u-av">' + ini + '</span><div class="am-head-tx"><b>' + esc(user.username) + '</b>' + planBadge + '</div></div>'
         + (user.admin ? '<a href="dashboard.html" role="menuitem">' + icon('dashboard', 18) + 'Dashboard</a>' : '')
+        + '<a href="kurse.html" role="menuitem">' + icon('layers', 18) + 'Meine Kurse</a>'
         + '<a href="konto.html" role="menuitem">' + icon('user', 18) + 'Mein Konto</a>'
         + (bill && !user.admin && !user.pro ? '<a href="pro.html" role="menuitem" class="am-pro">' + icon('crown', 18, true) + (user.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>' : '')
         + '<button type="button" class="am-it am-out" id="acctLogout" role="menuitem">' + icon('logout', 18) + 'Abmelden</button></div>';

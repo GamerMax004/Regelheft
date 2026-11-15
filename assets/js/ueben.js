@@ -71,6 +71,7 @@
     if(!deck.length){ $('pMsg').textContent = source === '__fav' ? 'Deine Merkliste ist noch leer. Tippe in einer Regel auf den Stern, um sie hier zu üben.' : 'Für diese Auswahl gibt es keine Karten.'; return; }
     $('pMsg').textContent = '';
     $('pSetup').classList.add('is-hidden'); $('pDone').classList.add('is-hidden'); $('pRun').classList.remove('is-hidden');
+    if(window.PodcastUI) window.PodcastUI.hide();
     window.scrollTo(0, 0);
     show();
   }
@@ -99,6 +100,7 @@
     $('pDiagSec').classList.toggle('is-hidden', !r.diagram);
     $('pDiag').innerHTML = r.diagram || '';
     $('pOpen').href = 'index.html?from=ueben#' + encodeURIComponent(r.id);
+    $('pOpen').classList.toggle('is-hidden', !!r.ai);   // KI-Lernkarten haben keine Regel im Heft
     $('pFront').classList.add('is-hidden'); $('pBack').classList.remove('is-hidden'); $('pActions').classList.remove('is-hidden');
     RH.zoomable($('pDiag'), r.title);
     // Die Rückseite enthält Links und Knöpfe: die Karte ist jetzt eine Gruppe, kein Knopf mehr
@@ -115,7 +117,8 @@
     const r = deck[idx];
     const box = good ? Math.min(3, (boxes[r.id] || 0) + 1) : 0;
     if(good) known++; else missed.push(r);
-    if(logged()){ boxes[r.id] = box; RH.api('/api/cards', {body:{id:r.id, box}}).catch(() => {}); }
+    if(logged() && !r.ai){ boxes[r.id] = box; RH.api('/api/cards', {body:{id:r.id, box}}).catch(() => {}); }
+    if(r.onRate) r.onRate(good);   // eigene Kurs-Karteikarten merken sich ihren Lernstand selbst
     idx++;
     if(idx >= deck.length) finish(); else show();
   }
@@ -125,7 +128,7 @@
     if($('pRun').classList.contains('is-hidden') || !flipped) return;
     if(e.key === 'ArrowRight') rate(true); else if(e.key === 'ArrowLeft') rate(false);
   });
-  $('pQuit').onclick = () => { $('pRun').classList.add('is-hidden'); $('pSetup').classList.remove('is-hidden'); renderSetup(); };
+  $('pQuit').onclick = () => { $('pRun').classList.add('is-hidden'); backToStart(); };
 
   /* ---------- Wischen: Die Karte folgt dem Finger, wird dabei leicht grau und unscharf, ein Symbol blendet ein.
      Rechts = gewusst, links = nochmal. Beim ersten Mal „zeigt“ die Karte die Geste selbst (bis man sie einmal benutzt hat). ---------- */
@@ -214,20 +217,35 @@
     window.scrollTo(0, 0);
   }
   $('pRepeat').onclick = () => start(shuffle(missed.slice()));
-  $('pNew').onclick = () => { $('pDone').classList.add('is-hidden'); $('pSetup').classList.remove('is-hidden'); renderSetup(); window.scrollTo(0, 0); };
+  $('pNew').onclick = () => { $('pDone').classList.add('is-hidden'); backToStart(); window.scrollTo(0, 0); };
+  // Zurück dorthin, wo die Runde gestartet wurde (Karteikarten-Auswahl oder Podcast)
+  function backToStart(){
+    if(deck[0] && deck[0].ai && window.PodcastUI){ window.PodcastUI.show(); return; }
+    $('pSetup').classList.remove('is-hidden'); if($('pTabs')) $('pTabs').classList.remove('is-hidden'); renderSetup();
+  }
+
+  /* ---------- Schnittstelle für den Podcast-Bereich (podcast.js): KI-Lernkarten üben ---------- */
+  window.Practice = {
+    start(cards, topic){
+      start(cards.map((c, i) => ({ id: 'ai' + i, ai: true, category: topic, title: c.front, body: c.back, diagram: null, onRate: c.onRate })));
+    },
+    hideSetup(){ ['pSetup','pRun','pDone'].forEach(i => $(i).classList.add('is-hidden')); },
+    showSetup(){ $('pSetup').classList.remove('is-hidden'); renderSetup(); }
+  };
 
   /* ---------- Start: Lernstand und Merkliste laden ---------- */
+  const KURSE = !!document.body.dataset.kurse;   // kurse.html: nur die Karteikarten-Runde, Zugang regelt kurse.js
   function proGate(){
-    if(!RH.needsPro('practice') || RH.hasAccess('practice')) return false;
-    ['pSetup','pRun','pDone'].forEach(i => $(i).classList.add('is-hidden')); $('pPro').classList.remove('is-hidden');
+    if(KURSE || !RH.needsPro('practice') || RH.hasAccess('practice')) return false;
+    ['pSetup','pRun','pDone','pTabs','pcSec'].forEach(i => $(i) && $(i).classList.add('is-hidden')); $('pPro').classList.remove('is-hidden');
     $('pProText').textContent = logged() ? 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro.' : 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro. Melde dich an, um Pro zu holen.';
     $('pProBtns').innerHTML = (logged() ? '' : '<a class="ai-btn ghost" href="anmeldung.html?next=ueben.html">Anmelden</a>') + '<a class="ai-btn" href="pro.html">Pro ansehen</a>';
     return true;
   }
   Promise.all([RH.configReady, RH.ready]).then(proGate);
   RH.configReady.then(() => {
-    if(RH.feat('practice')) return;
-    ['pSetup','pRun','pDone'].forEach(i => $(i).classList.add('is-hidden')); $('pOff').classList.remove('is-hidden');
+    if(KURSE || RH.feat('practice')) return;
+    ['pSetup','pRun','pDone','pTabs','pcSec'].forEach(i => $(i) && $(i).classList.add('is-hidden')); $('pOff').classList.remove('is-hidden');
   });
   renderSetup();
   RH.ready.then(async () => {

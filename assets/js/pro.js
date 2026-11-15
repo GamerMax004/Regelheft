@@ -17,6 +17,7 @@
     const head = (t, s) => '<li class="tier-h">' + RH.esc(t) + (s ? ' <small>' + RH.esc(s) + '</small>' : '') + '</li>';
     const pro = [];
     if(f.practice) pro.push(li('Üben mit Karteikarten: Regeln abfragen und den Lernstand speichern'));
+    if(f.practice) pro.push(li('Meine Kurse mit eigenen Lerndateien (PDF, Fotos, GoodNotes – bis zu 5 pro Kurs): Lernpfad, Karteikarten, Regeln, Test und Podcast'));
     if(f.notes) pro.push(li('Eigene Notizen zu jeder Regel (Eselsbrücken, Beispiele)'));
     pro.push(li('KI-Aufgabenhilfe ohne Tageslimit' + (c.freeAiPerDay >= 0 ? ' (kostenlos: ' + c.freeAiPerDay + ' Chats pro Tag)' : '')));
     let out = [];
@@ -25,6 +26,8 @@
       pl.push(li('KI-Aufgabenhilfe mit ' + c.plusAiPerDay + ' Chats pro Tag (kostenlos: ' + c.freeAiPerDay + ')'));
       if(f.notes) pl.push(li('Eigene Notizen zu jeder Regel (Eselsbrücken, Beispiele)', !pf.notes));
       if(f.practice) pl.push(li('Üben mit Karteikarten' + (pf.practice ? '' : ' (nur mit Pro)'), !pf.practice));
+      if(f.practice) pl.push(li('Meine Kurse zu Themen aus dem Regelheft: Lernpfad, Karteikarten, Regeln, Test und Podcast'));
+      if(f.practice) pl.push(li('Eigene Lerndateien hochladen (nur mit Pro)', true));
       out = [head('Plus', 'mehr Limit, günstiger'), ...pl.filter((_, i) => true), head('Pro', 'alles ohne Limit'), ...pro];
     }else out = pro;
     out.push(li('Jederzeit kündbar, keine versteckten Kosten'));

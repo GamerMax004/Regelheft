@@ -58,3 +58,41 @@ NEU (3.11.2026): Dashboard, Team-Zugriff, Plus/Pro schenken
   schenken, aber keine Einstellungen ändern.
 - Registrierung schickt keine Code-Mail mehr; der Code kommt nur über "Code senden" im Dialog danach.
 - Firmenname überall: Scherer Development Excellence.
+
+
+------------------------------------------------------------
+NEU (15.11.2026): Üben → Meine Kurse (Pro)
+------------------------------------------------------------
+- Auf der Seite "Üben" gibt es zwei Tabs: Karteikarten (wie bisher) | Meine Kurse (Pro).
+- Kurs erstellen aus eigenen Unterlagen (PDF bis 50 MB, Fotos von Mitschriften, GoodNotes, Text) oder aus einem Regelheft-Thema.
+  Die Dateien lädt der Browser direkt zu Google hoch (kein Größenlimit von Cloudflare); nach der Erstellung werden sie dort gelöscht.
+- Jeder Kurs hat: Lernpfad mit Lektionen (Fragen, Herzen, XP), Karteikarten mit Wiederholung in Abständen (+ eigene Karten),
+  Podcast mit Lena & Max (Gemini-Stimmen, "Normal" oder "Zum Einschlafen" mit Schlaftimer) und eine Zusammenfassung.
+- Serie (🔥) und XP (⚡) pro Konto. Kurse, Fortschritt und Aufnahmen werden nur im Browser des Geräts gespeichert.
+- Pro: Ist die Bezahlung eingeschaltet, brauchen Kurse Pro (Server prüft das). Ohne Bezahlung kann jedes Konto sie nutzen.
+- Neue Dateien: assets/js/kurse.js, assets/css/kurse.css, assets/js/vendor/fflate.js (GoodNotes entpacken).
+  Geändert: ueben.html, assets/js/ueben.js, worker.js.
+- Worker: die neue worker.js (bzw. Regelheft-KI-Proxy.txt) in Cloudflare einfügen und deployen.
+  Nötig ist das Secret GEMINI_API_KEY. Neue Endpunkte: /api/upload-url, /api/kurs, /api/tts.
+- Lokal testen: Dokumente/regelheft-lokaltest/start.bat (eigenes Testkonto, siehe LOKAL-TESTEN.txt dort).
+
+NEU (15.11.2026): iOS-/SwiftUI-Look
+- assets/css/swiftui.css wird auf jeder Seite zuletzt geladen (nach apple.css).
+- Normaler Look (Heft-Look aus): Systemschrift, iOS-Farben, grauer Hintergrund mit weißen Karten, Suchfeld wie in iOS, Kapsel-Chips, Segment-Schalter, Glas-Leisten.
+- Heft-Look bleibt wie er ist; Datei löschen + <link> entfernen = alter Look zurück.
+- Hochladen: assets/css/swiftui.css und alle .html-Dateien.
+- Standard ist jetzt der iOS-Look; der Heft-Look ist per 📖-Knopf einschaltbar (assets/js/theme-init.js, layout.js – bitte mit hochladen).
+
+NEU (15.11.2026): Regeln in „Meine Kurse“
+- Jeder Kurs hat den Bereich „Regeln“: die KI schreibt die wichtigsten Regeln aus den Unterlagen, dazu eigene Regeln (Name, Regel, Beispiel).
+- Eigene Regel → auf Wunsch gleich als Karteikarte. Eigene Karten können mit einer Regel verknüpft werden; die Regel steht beim Lernen auf der Rückseite.
+- Worker (Regelheft-KI-Proxy.txt / worker.js) neu deployen, sonst bekommen neue Kurse keine KI-Regeln. Hochladen: ueben.html, assets/js/kurse.js, assets/css/kurse.css.
+- KI-Karten: Kurs → Karten → „Von der KI“ (Anzahl, Art, Schwerpunkt) → Vorschau → auswählen → übernehmen. Neuer Worker-Pfad /api/karten (Worker neu deployen).
+
+NEU (15.11.2026): „Meine Kurse“ als eigene Seite
+- Neue Seite kurse.html (Hauptpunkt in der Kopfzeile, im Konto-Menü und neben der Suche). Üben zeigt nur noch einen Link dorthin.
+- Startansicht: Tagesziel (30 XP), Serie, alle fälligen Karten aus allen Kursen auf einmal lernen, „Weiter“ mit der nächsten Lektion.
+- Neuer Bereich „Test“ pro Kurs: Fragen aus dem ganzen Kurs, optional mit Zeitlimit, Note 1–6 am Ende, alle Lösungen, Fehler als Karteikarten übernehmen.
+- Zugang: Plus = Kurse zu Regelheft-Themen (kein Hochladen eigener Dateien). Pro = eigene Lerndateien, höchstens 5 pro Kurs. Der Worker prüft das ebenfalls (KURS_MAX_FILES).
+- Hochladen: kurse.html, ueben.html, index.html, pro.html, alle .html (Versionsnummern), assets/js/kurse.js, ueben.js, layout.js, index.js, pro.js, assets/css/kurse.css, swiftui.css. Worker neu deployen.
+- Test: „✏️ Nebenrechnung“ – Karo-Zeichenfläche pro Frage (Stift, 3 Farben, Radierer, Rückgängig, Leeren). Sobald ein Stift (Apple Pencil) erkannt wird, geht sie automatisch auf und Finger/Handballen zeichnen nicht mehr. Wird nicht bewertet.
