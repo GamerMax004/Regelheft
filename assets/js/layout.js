@@ -123,7 +123,7 @@
     const social = FOOTER.social.map(s => ({...s, href: fill(s.href)})).filter(s => usable(s.href) && ICONS[s.icon]);
     const f = RH.cfg().features;
     const links = FOOTER.links.map(l => ({...l, href: fill(l.href), label: fill(l.label)})).filter(l => usable(l.href) && l.label
-      && !(l.href === 'ki.html' && f.ai === false) && !(l.href === 'ueben.html' && f.practice === false)
+      && !(l.href === 'ki.html' && f.ai === false) && !(l.href === 'kurse.html' && f.practice === false)
       && !(l.billing && !RH.cfg().billing.enabled));
     const link = l => {
       const x = ext(l.href) ? ' target="_blank" rel="noopener noreferrer"' : '';

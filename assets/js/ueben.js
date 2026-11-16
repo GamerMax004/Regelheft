@@ -36,7 +36,7 @@
       };
     }else{
       st.classList.remove('is-hidden');
-      st.innerHTML = 'Tipp: Mit einem <a class="link" href="anmeldung.html?next=ueben.html">Konto</a> merkt sich das Regelheft, welche Regeln du schon sicher kannst.';
+      st.innerHTML = 'Tipp: Mit einem <a class="link" href="anmeldung.html?next=kurse.html">Konto</a> merkt sich das Regelheft, welche Regeln du schon sicher kannst.';
     }
   }
   function pick(group, b){
@@ -239,7 +239,7 @@
     if(KURSE || !RH.needsPro('practice') || RH.hasAccess('practice')) return false;
     ['pSetup','pRun','pDone','pTabs','pcSec'].forEach(i => $(i) && $(i).classList.add('is-hidden')); $('pPro').classList.remove('is-hidden');
     $('pProText').textContent = logged() ? 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro.' : 'Der Übungsmodus mit Karteikarten ist Teil von Regelheft Pro. Melde dich an, um Pro zu holen.';
-    $('pProBtns').innerHTML = (logged() ? '' : '<a class="ai-btn ghost" href="anmeldung.html?next=ueben.html">Anmelden</a>') + '<a class="ai-btn" href="pro.html">Pro ansehen</a>';
+    $('pProBtns').innerHTML = (logged() ? '' : '<a class="ai-btn ghost" href="anmeldung.html?next=kurse.html">Anmelden</a>') + '<a class="ai-btn" href="pro.html">Pro ansehen</a>';
     return true;
   }
   Promise.all([RH.configReady, RH.ready]).then(proGate);

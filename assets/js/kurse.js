@@ -72,7 +72,7 @@
     .replace(/\^\{([^}]{1,12})\}/g, '<sup>$1</sup>')
     .replace(/([A-Za-z0-9)])\^(-?[0-9a-z]{1,3})\b/g, '$1<sup>$2</sup>');
 
-  /* ================= Tabs: Karteikarten | Meine Kurse (nur, wenn Kurse als Tab auf ueben.html laufen) ================= */
+  /* ================= Tabs: Karteikarten | Meine Kurse (Altlast: Kurse laufen jetzt immer allein auf kurse.html) ================= */
   let active = STANDALONE ? 'pod' : 'cards';
   function setTab(t){
     active = t;
@@ -277,7 +277,7 @@
       await db.put(k);
       pending = []; custom = ''; topic = null;
       view = {name:'kurs', id:k.id, tab:'pfad'}; route();
-    }catch(e){ renderList(e.message || 'Das hat nicht geklappt. Bitte nochmal versuchen.'); }
+    }catch(e){ renderList(e.message || 'Das hat nicht geklappt. Bitte nochmal versuchen.').then(() => { const m = $('kMsg'); if(m) m.scrollIntoView({block:'center'}); }); }   // Fehlermeldung immer sichtbar machen
     finally{ L.stop(); }
   }
 

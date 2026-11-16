@@ -286,7 +286,7 @@ function showCurrent(){
 
 
 // Kam man über einen Link aus der KI-Seite (oder dem Dashboard)? Dann führt der Zurück-Pfeil dorthin zurück (zum Chat).
-const FROM = {ki:'ki.html', dashboard:'dashboard.html', ueben:'ueben.html'};
+const FROM = {ki:'ki.html', dashboard:'dashboard.html', ueben:'kurse.html'};
 const fromTarget = FROM[new URLSearchParams(location.search).get('from')] || null;
 function hideOverlay(){
   const instant = instantClose; instantClose = false;
@@ -356,17 +356,9 @@ clearBtn.addEventListener('click', () => {
 // ---- KI-Knopf: Link zur KI-Seite (ohne Konto: gesperrt, führt zur Anmeldung) ----
 // ---- KI-Knopf neben der Suche (ohne Konto: gesperrt, führt zur Anmeldung) ----
 const aiSq = document.getElementById('aiSq');
-const practiceSq = document.getElementById('practiceSq'), shareBtn = document.getElementById('shareBtn');
+const shareBtn = document.getElementById('shareBtn');
 function updatePractice(){
-  const gated = RH.needsPro('practice'), locked = gated && !RH.hasAccess('practice');
-  const hidden = !RH.feat('practice') || (gated && !RH.user());       // ohne Bezahl-Version: ohne Konto gar nicht sichtbar
-  practiceSq.style.display = hidden ? 'none' : '';
-  const ks = document.getElementById('kurseSq'); if(ks) ks.style.display = RH.feat('practice') ? '' : 'none';
-  practiceSq.href = locked ? 'pro.html' : 'ueben.html';
-  practiceSq.classList.toggle('has-crown', locked);
-  document.getElementById('practiceCrown').classList.toggle('is-hidden', !locked);
-  practiceSq.title = locked ? 'Üben (mit Pro)' : 'Üben mit Karteikarten';
-  practiceSq.setAttribute('aria-label', locked ? 'Üben mit Karteikarten (mit Pro)' : 'Üben mit Karteikarten');
+  const ks = document.getElementById('kurseSq'); if(ks) ks.style.display = RH.feat('practice') ? '' : 'none';   // Meine Kurse (ersetzt das frühere Üben)
 }
 RH.onAuth(() => updatePractice());
 function applyFeatureUI(){

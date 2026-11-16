@@ -27,7 +27,7 @@
 .acct-menu{ top:calc(100% + 10px); }
 @media (max-width:420px){ .top{ padding-left:14px; padding-right:10px; } }
 
-/* Suchzeile: [KI] [Suche] [Üben] */
+/* Suchzeile: [KI] [Suche] [Kurse] */
 .searchbar{ padding:10px 14px; gap:8px; background:var(--glass); border-bottom:1px solid var(--border); }
 .searchbar .searchwrap input{ height:48px; padding-top:0; padding-bottom:0; }
 .sq-btn{
@@ -70,7 +70,7 @@
 .sq-btn{ overflow:hidden; transition:width .22s ease, margin .22s ease, opacity .15s ease, border-color .15s ease, background .15s ease; }
 /* Nur auf dem Handy klappen die Knöpfe beim Tippen ein (mehr Platz für die Suche). Am Laptop/PC bleiben sie IMMER klickbar. */
 @media (max-width:719px){ .searchbar:focus-within .sq-btn{ width:0; min-width:0; padding:0; border-width:0; opacity:0; pointer-events:none; } }
-@media (max-width:719px){ .searchbar:focus-within #aiSq{ margin-right:-8px; } .searchbar:focus-within #practiceSq{ margin-left:-8px; } }
+@media (max-width:719px){ .searchbar:focus-within #aiSq{ margin-right:-8px; } .searchbar:focus-within #kurseSq{ margin-left:-8px; } }
 @media (prefers-reduced-motion:reduce){ .sq-btn{ transition:none; } }
 
 /* ============================================================

@@ -166,7 +166,7 @@
   /* ---------- Einstellungen (nur Besitzer) ---------- */
   const FEATURE_LABELS = {
     ai: 'KI-Aufgabenhilfe', registration: 'Registrierung', favorites: 'Merkliste', recent: 'Zuletzt geöffnet', notes: 'Notizen',
-    practice: 'Üben (Karteikarten)', share: 'Regeln als Bild teilen', darkmode: 'Dunkelmodus', stats: 'Statistik'
+    practice: 'Meine Kurse', share: 'Regeln als Bild teilen', darkmode: 'Dunkelmodus', stats: 'Statistik'
   };
   const PROV_LABELS = {scher: 'ScherAI', gemini: 'Gemini', groq: 'Groq'};
   async function viewSet(){
@@ -191,8 +191,8 @@
       + acc('Bezahlung', 'crown',
           '<div class="u-tech">' + tick(SYS.stripe && SYS.stripe.secret, 'Stripe-Key') + tick(SYS.stripe && SYS.stripe.webhook, 'Webhook-Secret') + tick(SYS.stripe && SYS.stripe.priceMonth, 'Pro Monat (STRIPE_PRO_PRICE_MONTH)') + tick(SYS.stripe && SYS.stripe.priceYear, 'Pro Jahr (STRIPE_PRO_PRICE_YEAR)') + tick(SYS.stripe && SYS.stripe.plusMonth, 'Plus Monat (STRIPE_PLUS_PRICE_MONTH)') + tick(SYS.stripe && SYS.stripe.plusYear, 'Plus Jahr (STRIPE_PLUS_PRICE_YEAR)') + tick(SYS.stripe && SYS.stripe.siteUrl, 'SITE_URL') + Object.entries(data.priceErrors || {}).map(([k, v]) => tick(false, 'Stripe meldet bei ' + k + ': ' + v)).join('') + '<div style="height:8px"></div></div>'
         + sw('bl_on', S.billing.enabled, 'Bezahlung aktiv', SYS.stripe && SYS.stripe.ready ? 'Stripe ist bereit' : 'Stripe noch nicht vollständig eingerichtet')
-        + sw('bl_prac', S.billing.proFeatures.practice, 'Üben nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
-        + sw('bl_plus_prac', S.billing.plusFeatures.practice, 'Üben auch mit Plus') + sw('bl_plus_note', S.billing.plusFeatures.notes, 'Notizen auch mit Plus')
+        + sw('bl_prac', S.billing.proFeatures.practice, 'Meine Kurse nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
+        + sw('bl_plus_prac', S.billing.plusFeatures.practice, 'Meine Kurse auch mit Plus') + sw('bl_plus_note', S.billing.plusFeatures.notes, 'Notizen auch mit Plus')
         + sw('bl_year', S.billing.yearly, 'Jahrestarif anbieten') + sw('bl_ku', S.billing.kleinunternehmer, 'Kleinunternehmer (§ 19 UStG)') + sw('bl_promo', S.billing.promo, 'Gutscheincodes erlauben')
         + '<div style="height:10px"></div>' + fld('bl_free', 'Gratis: KI-Chats pro Tag', S.billing.freeAiPerDay, '3', 'number') + fld('bl_plus_ai', 'Plus: KI-Chats pro Tag', S.billing.plusAiPerDay, '15', 'number')
         + area('bl_note_t', 'Hinweis auf der Pro-Seite', S.billing.note, '', 2))

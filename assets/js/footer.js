@@ -21,7 +21,7 @@ const FOOTER = {
     // Nur sichtbar, wenn die Bezahlung im Dashboard eingeschaltet ist (rechtlich nötig):
     { label: "AGB",              href: "agb.html",     billing: true },
     { label: "Widerruf",         href: "widerruf.html", billing: true }
-    // Weitere Links: { label: "Üben", href: "ueben.html" }  ·  { label: "Aktuelles", href: "index.html?news=1" }
+    // Weitere Links: { label: "Meine Kurse", href: "kurse.html" }  ·  { label: "Aktuelles", href: "index.html?news=1" }
   ],
 
   backToTop: true,                             // Knopf „Nach oben“

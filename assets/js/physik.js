@@ -1,5 +1,5 @@
 /* Regelheft Physik – Regeldaten.
-   Wird von index.html, ki.html, ueben.html und dashboard.html geladen.
+   Wird von index.html, ki.html und dashboard.html geladen.
    Jede Regel: id (p + Nummer, nie doppelt, nie wiederverwenden), title, page, category, body, diagram (null oder SVG).
    "plain" und "excerpt" (für Suche und Vorschau) erzeugt fach.js automatisch aus "body".
 

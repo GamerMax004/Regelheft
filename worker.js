@@ -3,6 +3,7 @@
 // Reihenfolge/An-Aus der Anbieter, Mitteilung, Funktionsschalter usw. stellst du im Dashboard unter "Einstellungen" ein.
 // ADMIN_USER (dein Benutzername = Dashboard-Zugriff), D1-Binding "DB",
 // optional DEBUG=1 (zeigt Fehlerdetails in der Meldung), GEMINI_MODELS, GROQ_MODELS (kommagetrennt, überschreibt die Listen unten), RATE_LIMIT
+// „Meine Kurse“ (Lernpfad, Karteikarten, Podcast, Datei-Upload) braucht zusätzlich GEMINI_API_KEY und das Feature „practice“ im Dashboard.
 const SYSTEM = `Du bist die Aufgabenhilfe im „Regelheft {FACH}“ eines Schülers. Du siehst ein Foto und/oder einen Text mit einer {AUFGABE}.
 Deine Aufgabe: Erkenne, welche {THEMEN} die Aufgabe braucht ({BEISPIELE}), und wähle dazu die passenden Regeln aus der folgenden Liste. Verwende NUR IDs aus dieser Liste. Die Liste enthält zu jeder Regel Titel, Kategorie und einen kurzen Textanfang als Stichwort-Hilfe.
 Löse die Aufgabe NICHT vollständig; nenne nur kurz den Ansatz und warum die Regeln helfen.
@@ -164,8 +165,9 @@ const DEFAULT_SETTINGS = {
   features: Object.fromEntries(FEATURES.map(f => [f, true])),
   ai: { order: ["scher", "gemini", "groq"], enabled: { scher: true, gemini: true, groq: true }, rateLimit: 20, extra: "" },
   social: { discord: null, instagram: null },   // null = Standard aus config.js
-  billing: { enabled: false, proFeatures: { practice: true, notes: true }, freeAiPerDay: 3, yearly: true, kleinunternehmer: true, promo: false, note: "" },
+  billing: { enabled: false, proFeatures: { practice: true, notes: true }, freeAiPerDay: 3, plusAiPerDay: 15, plusFeatures: { practice: false, notes: true }, yearly: true, kleinunternehmer: true, promo: false, note: "" },
   auth: { requireEmail: true, requireVerified: true, google: true },
+  staff: [],   // Benutzernamen mit Zugriff aufs Dashboard (Team); nur der Besitzer (ADMIN_USER) kann sie ändern
 };
 const str = (v, n) => String(v == null ? "" : v).slice(0, n);
 const okUrl = v => { v = String(v || "").trim(); return !v || /^https:\/\/[^\s]+$/.test(v) || /^[a-z0-9_-]+\.html(\?[^\s#]*)?(#[\w-]+)?$/i.test(v) ? v.slice(0, 300) : ""; };
@@ -190,10 +192,12 @@ function cleanSettings(x) {
     rateLimit: Math.min(200, Math.max(1, parseInt(ai.rateLimit, 10) || 20)), extra: str(ai.extra, 600) };
   const b = x.billing || {}, pf = b.proFeatures || {};
   const fpd = Number.isFinite(+b.freeAiPerDay) ? Math.min(100, Math.max(0, Math.floor(+b.freeAiPerDay))) : 3;
-  o.billing = { enabled: b.enabled === true, proFeatures: { practice: pf.practice !== false, notes: pf.notes !== false }, freeAiPerDay: fpd,
+  const plf = b.plusFeatures || {}, pad = Number.isFinite(+b.plusAiPerDay) && b.plusAiPerDay !== "" && b.plusAiPerDay != null ? Math.min(500, Math.max(0, Math.floor(+b.plusAiPerDay))) : 15;
+  o.billing = { enabled: b.enabled === true, proFeatures: { practice: pf.practice !== false, notes: pf.notes !== false }, freeAiPerDay: fpd, plusAiPerDay: pad, plusFeatures: { practice: plf.practice === true, notes: plf.notes !== false },
     yearly: b.yearly !== false, kleinunternehmer: b.kleinunternehmer !== false, promo: b.promo === true, note: str(b.note, 300) };
   const au = x.auth || {};
   o.auth = { requireEmail: au.requireEmail !== false, requireVerified: au.requireVerified !== false, google: au.google !== false };
+  o.staff = (Array.isArray(x.staff) ? x.staff : []).map(n => String(n || "").trim()).filter((n, i, a) => /^[A-Za-z0-9_.-]{3,20}$/.test(n) && a.findIndex(m => m.toLowerCase() === n.toLowerCase()) === i).slice(0, 20);
   const so = x.social || {};
   const su = v => { v = String(v || "").trim(); return /^https:\/\/[^\s]+$/.test(v) ? v.slice(0, 200) : (v === "" ? "" : null); };
   o.social = { discord: so.discord == null ? null : su(so.discord), instagram: so.instagram == null ? null : su(so.instagram) };
@@ -212,6 +216,14 @@ async function getSettings(env) {
   return settingsCache.v;
 }
 
+async function saveSettings(env, obj) {
+  const c = cleanSettings(obj);
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT NOT NULL)").run();
+  await env.DB.prepare("INSERT INTO settings(k, v) VALUES('site', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(JSON.stringify(c)).run();
+  settingsCache = { t: Date.now(), v: c };
+  return c;
+}
+
 const enc = new TextEncoder();
 const hex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
 const rand = n => hex(crypto.getRandomValues(new Uint8Array(n)));
@@ -228,6 +240,13 @@ function limited(key, max) {
 }
 const isAdmin = (env, name) => !!env.ADMIN_USER && String(name).toLowerCase() === String(env.ADMIN_USER).trim().toLowerCase();
 
+// Rollen: owner = ADMIN_USER (alles), admin = owner oder Team-Mitglied (Dashboard ohne Einstellungen)
+async function roleOf(env, name) {
+  const owner = isAdmin(env, name);
+  if (owner) return { admin: true, owner: true };
+  const cfg = await getSettings(env);
+  return { admin: (cfg.staff || []).some(n => n.toLowerCase() === String(name).toLowerCase()), owner: false };
+}
 async function newSession(env, uid) {
   const token = rand(32), now = Date.now();
   await env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now).run();
@@ -240,7 +259,7 @@ async function getUser(req, env) {
   if (!t) return null;
   const row = await env.DB.prepare("SELECT u.id, u.username FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?")
     .bind(await sha256(t), Date.now()).first();
-  return row ? { id: row.id, username: row.username, admin: isAdmin(env, row.username) } : null;
+  return row ? { id: row.id, username: row.username, ...(await roleOf(env, row.username)) } : null;
 }
 
 async function handleAI(env, user, body, json, cfg) {
@@ -257,10 +276,10 @@ async function handleAI(env, user, body, json, cfg) {
     const info = await userInfo(env, user);
     if (cfg.auth.requireEmail && cfg.auth.requireVerified && mailReady(env) && !info.emailVerified) return json({ error: "Bitte bestätige zuerst deine E-Mail-Adresse.", code: "verify_required" }, 403);
     if (billingOn(env, cfg) && !info.pro) {
-      const day = berlinDay(), limit = cfg.billing.freeAiPerDay;
+      const day = berlinDay(), limit = info.plus ? cfg.billing.plusAiPerDay : cfg.billing.freeAiPerDay;
       const used = (await env.DB.prepare("SELECT COUNT(*) AS n FROM ai_chats WHERE user_id = ? AND day = ?").bind(user.id, day).first()).n;
       const known = cid ? await env.DB.prepare("SELECT 1 AS x FROM ai_chats WHERE user_id = ? AND day = ? AND cid = ?").bind(user.id, day, cid).first() : null;
-      if (!known && used >= limit) return json({ error: limit > 0 ? `Dein Tageslimit von ${limit} KI-Chats ist erreicht. Morgen geht es weiter, oder hol dir Pro für unbegrenzte Chats.` : "Die KI-Aufgabenhilfe ist mit Pro verfügbar.", code: "limit", quota: { used, limit } }, 429);
+      if (!known && used >= limit) return json({ error: limit > 0 ? `Dein Tageslimit von ${limit} KI-Chats ist erreicht. Morgen geht es weiter, oder hol dir ${info.plus || !plusReady(env) ? "Pro für unbegrenzte Chats." : "Plus oder Pro für mehr Chats."}` : `Die KI-Aufgabenhilfe gibt es mit einem Abo (${plusReady(env) ? "Plus oder Pro" : "Pro"}).`, code: "limit", quota: { used, limit } }, 429);
       quota = { used, limit, known: !!known, day };
     }
   }
@@ -303,9 +322,8 @@ async function handleAI(env, user, body, json, cfg) {
   return json({ ...res, title, model, provider, skipped, quota: q });
 }
 
-
 // ============================================================
-// MEINE KURSE (Üben-Seite, Pro): aus einem Regelheft-Thema oder eigenen Unterlagen (PDF, Fotos, GoodNotes)
+// MEINE KURSE (Pro/Plus): aus einem Regelheft-Thema oder eigenen Unterlagen (PDF, Fotos, GoodNotes)
 // macht die KI einen Kurs: Zusammenfassung, Podcast (Lena & Max), Karteikarten und einen Lernpfad mit Übungen.
 // Braucht GEMINI_API_KEY (Text, Dateien und Stimmen kommen von Gemini).
 //   POST /api/upload-url { name, size }                    → { uploadUrl, mimeType }  (der Browser lädt die Datei direkt zu Google)
@@ -478,19 +496,20 @@ function slowJson(headers, task, env) {
   return new Response(readable, { headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 }
 
-
 // ============================================================
 // BEZAHLUNG (Stripe), E-MAIL-BESTÄTIGUNG, GOOGLE-LOGIN
 // Secrets/Variablen im Worker:
-//   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH (optional STRIPE_PRICE_YEAR)
+//   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRO_PRICE_MONTH (optional STRIPE_PRO_PRICE_YEAR; die alten Namen STRIPE_PRICE_MONTH/_YEAR gehen weiterhin)
+//   Plus-Tarif (optional, günstiger, mit Limit): STRIPE_PLUS_PRICE_MONTH und/oder STRIPE_PLUS_PRICE_YEAR
 //   SITE_URL (z. B. https://regelheft.onrender.com)
 //   RESEND_API_KEY oder BREVO_API_KEY + MAIL_FROM ("Regelheft <noreply@deine-domain.de>")
 //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
 // ============================================================
 const siteUrl = env => String(env.SITE_URL || "").trim().replace(/\/+$/, "");
-const billingReady = env => !!(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PRICE_MONTH && siteUrl(env));
+const billingReady = env => !!(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET && (env.STRIPE_PRO_PRICE_MONTH || env.STRIPE_PRICE_MONTH) && siteUrl(env));
 const mailReady = env => !!((env.RESEND_API_KEY || env.BREVO_API_KEY) && env.MAIL_FROM);
 const googleReady = env => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && siteUrl(env));
+const plusReady = env => !!(env.STRIPE_PLUS_PRICE_MONTH || env.STRIPE_PLUS_PRICE_YEAR);   // Plus-Tarif nur anbieten, wenn mindestens ein Plus-Preis eingetragen ist
 const billingOn = (env, cfg) => cfg.billing.enabled && billingReady(env);
 const berlinDay = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
 
@@ -508,7 +527,7 @@ function ensureSchema(env) {
     q("CREATE TABLE IF NOT EXISTS oauth_codes(code TEXT PRIMARY KEY, sub TEXT, email TEXT, created_at INTEGER)"),
     q("CREATE TABLE IF NOT EXISTS ai_chats(user_id INTEGER NOT NULL, day TEXT NOT NULL, cid TEXT NOT NULL, PRIMARY KEY(user_id, day, cid))"),
     q("CREATE TABLE IF NOT EXISTS consents(user_id INTEGER NOT NULL, kind TEXT NOT NULL, ts INTEGER NOT NULL)"),
-  ]).catch(e => { schemaDone = null; throw e; });
+  ]).then(() => env.DB.prepare("ALTER TABLE subs ADD COLUMN grant_plan TEXT").run().catch(() => {})).catch(e => { schemaDone = null; throw e; });
   return schemaDone;
 }
 
@@ -544,7 +563,7 @@ async function verifyStripeSig(raw, header, secret) {
   const mac = hex(await crypto.subtle.sign("HMAC", key, enc.encode(t + "." + raw)));
   return sigs.some(s => same(mac, s));
 }
-const planOf = (env, priceId) => priceId && priceId === env.STRIPE_PRICE_YEAR ? "year" : "month";
+const planOf = (env, priceId) => !priceId ? "month" : priceId === env.STRIPE_PLUS_PRICE_YEAR ? "plus_year" : priceId === env.STRIPE_PLUS_PRICE_MONTH ? "plus_month" : priceId === (env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR) ? "year" : "month";
 async function saveSub(env, uid, sub) {
   const item = sub.items?.data?.[0];
   const end = (sub.current_period_end ?? item?.current_period_end ?? 0) * 1000;
@@ -576,29 +595,49 @@ async function handleStripeEvent(env, ev) {
 async function proState(env, uid) {
   const r = await env.DB.prepare("SELECT * FROM subs WHERE user_id = ?").bind(uid).first();
   const now = Date.now();
-  let pro = false, until = null;
+  let pro = false, plus = false, until = null;
   if (r) {
-    if (r.grant_until && r.grant_until > now) { pro = true; until = r.grant_until; }
-    if (["active", "trialing", "past_due"].includes(r.status) && r.period_end > now) { pro = true; until = Math.max(until || 0, r.period_end); }
+    if (r.grant_until && r.grant_until > now) { if (r.grant_plan === "plus") plus = true; else pro = true; until = r.grant_until; }   // geschenkt: Plus oder Pro
+    if (["active", "trialing", "past_due"].includes(r.status) && r.period_end > now) {
+      if (String(r.plan || "").startsWith("plus")) plus = true; else pro = true;
+      until = Math.max(until || 0, r.period_end);
+    }
   }
-  return { pro, until, status: r ? r.status : null, cancelAtEnd: !!(r && r.cancel_at_period_end), plan: r ? r.plan : null, hasCustomer: !!(r && r.customer_id), hasSub: !!(r && r.subscription_id && ["active", "trialing", "past_due"].includes(r.status)), grant: !!(r && r.grant_until && r.grant_until > now) };
+  if (pro) plus = false;
+  return { pro, plus, until, status: r ? r.status : null, cancelAtEnd: !!(r && r.cancel_at_period_end), plan: r ? r.plan : null, hasCustomer: !!(r && r.customer_id), hasSub: !!(r && r.subscription_id && ["active", "trialing", "past_due"].includes(r.status)), grant: !!(r && r.grant_until && r.grant_until > now), grantPlan: r && r.grant_until > now ? (r.grant_plan === "plus" ? "plus" : "pro") : null };
 }
 async function isPro(env, user) { return user.admin || (await proState(env, user.id)).pro; }
+// Darf der Nutzer die Funktion f ("notes" | "practice") nutzen? Frei, wenn sie nicht an Pro gebunden ist; sonst mit Pro, oder mit Plus, falls Plus sie enthält.
+async function hasFeature(env, cfg, user, f) {
+  if (!cfg.billing.proFeatures[f] || user.admin) return true;
+  const st = await proState(env, user.id);
+  return st.pro || (st.plus && cfg.billing.plusFeatures[f] === true);
+}
 async function userInfo(env, u) {
   const e = await env.DB.prepare("SELECT email, verified FROM emails WHERE user_id = ?").bind(u.id).first();
   const p = await proState(env, u.id);
   const pw = await env.DB.prepare("SELECT salt FROM users WHERE id = ?").bind(u.id).first();
-  return { hasPassword: !(pw && pw.salt === "oauth"), username: u.username, admin: !!u.admin, email: e ? e.email : null, emailVerified: !!(e && e.verified), pro: p.pro || !!u.admin, proUntil: p.until, plan: p.plan, cancelAtEnd: p.cancelAtEnd };
+  return { hasPassword: !(pw && pw.salt === "oauth"), username: u.username, admin: !!u.admin, owner: !!u.owner, email: e ? e.email : null, emailVerified: !!(e && e.verified), pro: p.pro || !!u.admin, plus: p.plus && !u.admin, proUntil: p.until, plan: p.plan, cancelAtEnd: p.cancelAtEnd };
 }
 let priceCache = { t: 0, v: null };
+// Diagnose fürs Dashboard: warum lassen sich Preise nicht laden? (Fehlertext von Stripe je Preis)
+async function priceErrors(env) {
+  const out = {};
+  const ids = { "Pro Monat": (env.STRIPE_PRO_PRICE_MONTH || env.STRIPE_PRICE_MONTH), "Pro Jahr": (env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR), "Plus Monat": env.STRIPE_PLUS_PRICE_MONTH, "Plus Jahr": env.STRIPE_PLUS_PRICE_YEAR };
+  await Promise.all(Object.entries(ids).filter(([, v]) => v).map(async ([k, v]) => {
+    try { await stripe(env, "GET", "/v1/prices/" + encodeURIComponent(clean(v))); } catch (e) { out[k] = String(e.message || e).slice(0, 200); }
+  }));
+  return out;
+}
 async function planList(env, cfg) {
   if (priceCache.v && Date.now() - priceCache.t < 600000) return priceCache.v;
-  const ids = [["month", env.STRIPE_PRICE_MONTH], ...(cfg.billing.yearly && env.STRIPE_PRICE_YEAR ? [["year", env.STRIPE_PRICE_YEAR]] : [])];
+  const ids = [...(env.STRIPE_PLUS_PRICE_MONTH ? [["plus_month", env.STRIPE_PLUS_PRICE_MONTH]] : []), ...(cfg.billing.yearly && env.STRIPE_PLUS_PRICE_YEAR ? [["plus_year", env.STRIPE_PLUS_PRICE_YEAR]] : []),
+    ["month", (env.STRIPE_PRO_PRICE_MONTH || env.STRIPE_PRICE_MONTH)], ...(cfg.billing.yearly && (env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR) ? [["year", (env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR)]] : [])];
   const out = [];
   for (const [id, pid] of ids) {
     try {
-      const p = await stripe(env, "GET", "/v1/prices/" + pid);
-      out.push({ id, amount: p.unit_amount, currency: p.currency, interval: p.recurring?.interval || (id === "year" ? "year" : "month") });
+      const p = await stripe(env, "GET", "/v1/prices/" + encodeURIComponent(clean(pid)));
+      out.push({ id, amount: p.unit_amount, currency: p.currency, interval: p.recurring?.interval || (id.endsWith("year") ? "year" : "month") });
     } catch (e) {}
   }
   if (out.length) priceCache = { t: Date.now(), v: out };
@@ -619,7 +658,7 @@ async function sendMail(env, to, subject, text, html) {
     if (!r.ok) throw new Error("Brevo " + r.status + " " + (await r.text()).slice(0, 160));
   }
 }
-const mailHtml = (title, bodyHtml) => `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#14181f"><h2 style="margin:0 0 12px">${title}</h2>${bodyHtml}<p style="color:#6b7280;font-size:12px;margin-top:28px">Regelheft Mathematik · Gölitzer Development</p></div>`;
+const mailHtml = (title, bodyHtml) => `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#14181f"><h2 style="margin:0 0 12px">${title}</h2>${bodyHtml}<p style="color:#6b7280;font-size:12px;margin-top:28px">Regelheft Mathematik · Gölitzer Development · ein Angebot von Scherer Development Excellence</p></div>`;
 const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[A-Za-z]{2,}$/;
 async function startEmailVerify(env, user, emailRaw) {
   const email = String(emailRaw || "").trim().toLowerCase();
@@ -741,8 +780,8 @@ export default {
       const off = () => json({ error: "Diese Funktion ist gerade deaktiviert." }, 403);
       if (GET && path === "/api/config") {   // öffentlich: was die Webseite anzeigen/erlauben soll
         const r = json({ maintenance: cfg.maintenance, announcement: cfg.announcement, news: cfg.news, features: cfg.features, social: cfg.social,
-          billing: { enabled: billingOn(env, cfg), proFeatures: cfg.billing.proFeatures, freeAiPerDay: cfg.billing.freeAiPerDay, yearly: cfg.billing.yearly && !!env.STRIPE_PRICE_YEAR, kleinunternehmer: cfg.billing.kleinunternehmer, note: cfg.billing.note },
-          auth: { requireEmail: cfg.auth.requireEmail, verifyActive: cfg.auth.requireEmail && cfg.auth.requireVerified && mailReady(env), mailActive: mailReady(env), google: cfg.auth.google && googleReady(env) } });
+          billing: { enabled: billingOn(env, cfg), proFeatures: cfg.billing.proFeatures, freeAiPerDay: cfg.billing.freeAiPerDay, plusAvailable: plusReady(env), plusAiPerDay: cfg.billing.plusAiPerDay, plusFeatures: cfg.billing.plusFeatures, yearly: cfg.billing.yearly && !!(env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR), kleinunternehmer: cfg.billing.kleinunternehmer, note: cfg.billing.note },
+          auth: { requireEmail: cfg.auth.requireEmail, verifyActive: cfg.auth.requireEmail && cfg.auth.requireVerified && mailReady(env), mailActive: mailReady(env), mailProvider: env.RESEND_API_KEY ? "Resend" : env.BREVO_API_KEY ? "Brevo" : null, google: cfg.auth.google && googleReady(env) } });
         r.headers.set("Cache-Control", "public, max-age=20");
         return r;
       }
@@ -773,7 +812,7 @@ export default {
         }
         await env.DB.prepare("DELETE FROM oauth_codes WHERE code = ?").bind(gc).run();
         const u = await env.DB.prepare("SELECT id, username FROM users WHERE id = ?").bind(uid).first();
-        const uu = { id: u.id, username: u.username, admin: isAdmin(env, u.username) };
+        const uu = { id: u.id, username: u.username, ...(await roleOf(env, u.username)) };
         return json({ token: await newSession(env, uid), user: await userInfo(env, uu) });
       }
       if (POST && path === "/api/register") {
@@ -790,12 +829,9 @@ export default {
         if (await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(name).first()) return json({ error: "Dieser Benutzername ist schon vergeben." }, 409);
         const salt = rand(16), r = await env.DB.prepare("INSERT INTO users(username,salt,pw_hash,created_at) VALUES(?,?,?,?)").bind(name, salt, await hashPw(pw, salt), Date.now()).run();
         const uid = r.meta.last_row_id;
-        let sent = false;
-        if (mail) {
-          try { const m = await startEmailVerify(env, { id: uid }, mail); sent = !!m.ok && !m.noMail; }
-          catch (e) { await env.DB.prepare("INSERT OR IGNORE INTO emails(user_id,email,verified,created_at) VALUES(?,?,0,?)").bind(uid, mail, Date.now()).run(); }
-        }
-        return json({ token: await newSession(env, uid), user: await userInfo(env, { id: uid, username: name, admin: isAdmin(env, name) }), needsVerify: sent && cfg.auth.requireVerified });
+        // Keine Code-Mail beim Registrieren: den Code verschickt erst der Dialog "Code senden" direkt danach.
+        if (mail) await env.DB.prepare("INSERT OR IGNORE INTO emails(user_id,email,verified,created_at) VALUES(?,?,0,?)").bind(uid, mail, Date.now()).run();
+        return json({ token: await newSession(env, uid), user: await userInfo(env, { id: uid, username: name, ...(await roleOf(env, name)) }), needsVerify: false });
       }
       if (POST && path === "/api/login") {
         if (limited("log" + ip, 10)) return json({ error: "Zu viele Versuche. Bitte warte ein paar Minuten." }, 429);
@@ -803,14 +839,14 @@ export default {
         if (u && u.salt === "oauth") return json({ error: "Dieses Konto wurde mit Google erstellt. Bitte nutze „Mit Google anmelden“." }, 401);
         const h = await hashPw(String(body.password || ""), u ? u.salt : "x");
         if (!u || !same(h, u.pw_hash)) return json({ error: "Benutzername oder Passwort falsch." }, 401);
-        return json({ token: await newSession(env, u.id), user: await userInfo(env, { id: u.id, username: u.username, admin: isAdmin(env, u.username) }) });
+        return json({ token: await newSession(env, u.id), user: await userInfo(env, { id: u.id, username: u.username, ...(await roleOf(env, u.username)) }) });
       }
       if (POST && path === "/api/log") {   // öffentliche Statistik: Suchbegriffe und geöffnete Regeln
         if (!cfg.features.stats) return json({ ok: true });
         if (limited("ev" + ip, 80)) return json({ ok: true });
         const kind = body.kind === "open" ? "open" : body.kind === "search" ? "search" : null;
         let v = String(body.value || "").trim().toLowerCase().replace(/\s+/g, " ").slice(0, 60);
-        if (!kind || v.length < (kind === "open" ? 2 : 2) || (kind === "open" && !/^[rp]\d{1,4}$/.test(v))) return json({ ok: true });
+        if (!kind || v.length < (kind === "open" ? 2 : 2) || (kind === "open" && !/^r\d{1,4}$/.test(v))) return json({ ok: true });
         await env.DB.prepare("INSERT INTO events(kind,value,ts) VALUES(?,?,?)").bind(kind, v, Date.now()).run();
         if (Math.random() < 0.02) await env.DB.prepare("DELETE FROM events WHERE ts < ?").bind(Date.now() - 365 * 864e5).run();   // Statistik nach 12 Monaten löschen
         return json({ ok: true });
@@ -835,9 +871,9 @@ export default {
         let quota = null;
         if (billingOn(env, cfg) && !user.admin && !st.pro) {
           const used = (await env.DB.prepare("SELECT COUNT(*) AS n FROM ai_chats WHERE user_id = ? AND day = ?").bind(user.id, berlinDay()).first()).n;
-          quota = { used, limit: cfg.billing.freeAiPerDay };
+          quota = { used, limit: st.plus ? cfg.billing.plusAiPerDay : cfg.billing.freeAiPerDay };
         }
-        return json({ enabled: billingOn(env, cfg), pro: st.pro || user.admin, until: st.until, status: st.status, cancelAtEnd: st.cancelAtEnd, plan: st.plan, canManage: st.hasCustomer, hasSub: st.hasSub, grant: st.grant, quota });
+        return json({ enabled: billingOn(env, cfg), pro: st.pro || user.admin, plus: st.plus && !user.admin, until: st.until, status: st.status, cancelAtEnd: st.cancelAtEnd, plan: st.plan, canManage: st.hasCustomer, hasSub: st.hasSub, grant: st.grant, quota });
       }
       if (POST && path === "/api/billing/checkout") {
         if (!billingOn(env, cfg)) return json({ error: "Die Bezahlung ist gerade nicht verfügbar." }, 503);
@@ -846,8 +882,9 @@ export default {
         const info = await userInfo(env, user);
         if (mailReady(env) && cfg.auth.requireVerified && !info.emailVerified) return json({ error: "Bitte bestätige zuerst deine E-Mail-Adresse.", code: "verify_required" }, 403);
         const st = await proState(env, user.id);
-        if (st.hasSub) return json({ error: "Du hast schon ein aktives Pro-Abo. Du kannst es unter „Mein Konto“ verwalten.", code: "already" }, 409);
-        const plan = body.plan === "year" && cfg.billing.yearly && env.STRIPE_PRICE_YEAR ? "year" : "month";
+        if (st.hasSub) return json({ error: "Du hast schon ein aktives Abo. Du kannst es unter „Mein Konto“ verwalten, dort kannst du auch den Tarif wechseln.", code: "already" }, 409);
+        const priceFor = { month: (env.STRIPE_PRO_PRICE_MONTH || env.STRIPE_PRICE_MONTH), year: cfg.billing.yearly && (env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR), plus_month: env.STRIPE_PLUS_PRICE_MONTH, plus_year: cfg.billing.yearly && env.STRIPE_PLUS_PRICE_YEAR };
+        const plan = priceFor[body.plan] ? body.plan : "month";
         const prev = await env.DB.prepare("SELECT customer_id FROM subs WHERE user_id = ?").bind(user.id).first();
         const now = Date.now();
         await env.DB.batch([
@@ -858,13 +895,13 @@ export default {
         try {
           sess = await stripe(env, "POST", "/v1/checkout/sessions", {
             mode: "subscription", locale: "de",
-            line_items: [{ price: plan === "year" ? env.STRIPE_PRICE_YEAR : env.STRIPE_PRICE_MONTH, quantity: 1 }],
+            line_items: [{ price: priceFor[plan], quantity: 1 }],
             client_reference_id: String(user.id),
             ...(prev && prev.customer_id ? { customer: prev.customer_id } : (info.email ? { customer_email: info.email } : {})),
             success_url: siteUrl(env) + "/pro.html?ok=1", cancel_url: siteUrl(env) + "/pro.html?cancel=1",
             metadata: { user_id: String(user.id), plan }, subscription_data: { metadata: { user_id: String(user.id), plan } },
             allow_promotion_codes: cfg.billing.promo ? "true" : undefined,
-            custom_text: { submit: { message: "Mit dem Klick auf die Schaltfläche gehst du eine Zahlungsverpflichtung ein. Das Abo verlängert sich automatisch und ist jederzeit unter „Mein Konto“ kündbar." } },
+            custom_text: { submit: { message: "Mit dem Klick auf die Schaltfläche gehst du eine Zahlungsverpflichtung ein. Das Abo verlängert sich automatisch und ist jederzeit unter „Mein Konto“ kündbar. Rechnungsstellung durch Scherer Development Excellence; die Belastung erscheint in der Regel unter Stripe." } },
           });
         } catch (e) { return json({ error: "Die Bezahlseite konnte nicht geöffnet werden." + (env.DEBUG === "1" ? " [" + e.message + "]" : "") }, 502); }
         return json({ url: sess.url });
@@ -885,14 +922,15 @@ export default {
         try { sub = await stripe(env, "POST", "/v1/subscriptions/" + row.subscription_id, { cancel_at_period_end: cancel ? "true" : "false" }); }
         catch (e) { return json({ error: "Das hat leider nicht geklappt. Bitte versuche es später noch einmal." + (env.DEBUG === "1" ? " [" + e.message + "]" : "") }, 502); }
         await saveSub(env, user.id, sub);
-        const info = await userInfo(env, user), end = new Date((sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? 0) * 1000).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+        const info = await userInfo(env, user), tn = info.plan && String(info.plan).startsWith("plus") ? "Plus" : "Pro", end = new Date((sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? 0) * 1000).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
         if (cancel && info.email && mailReady(env)) {   // Kündigungsbestätigung
           try { await sendMail(env, info.email, "Bestätigung deiner Kündigung", `Hallo ${user.username},
 
-deine Kündigung von Regelheft Pro ist bei uns eingegangen. Du kannst Pro noch bis zum ${end} nutzen, danach endet das Abo.
+deine Kündigung von Regelheft ${tn} ist bei uns eingegangen. Du kannst ${tn} noch bis zum ${end} nutzen, danach endet das Abo.
 
-Gölitzer Development`,
-            mailHtml("Kündigung bestätigt", `<p>Hallo ${user.username},</p><p>deine Kündigung von <b>Regelheft Pro</b> ist bei uns eingegangen.</p><p>Du kannst Pro noch bis zum <b>${end}</b> nutzen, danach endet das Abo.</p>`)); } catch (e) {}
+Gölitzer Development
+ein Angebot von Scherer Development Excellence`,
+            mailHtml("Kündigung bestätigt", `<p>Hallo ${user.username},</p><p>deine Kündigung von <b>Regelheft ${tn}</b> ist bei uns eingegangen.</p><p>Du kannst ${tn} noch bis zum <b>${end}</b> nutzen, danach endet das Abo.</p>`)); } catch (e) {}
         }
         return json({ ok: true, user: await userInfo(env, user) });
       }
@@ -929,6 +967,7 @@ Gölitzer Development`,
           env.DB.prepare("DELETE FROM consents WHERE user_id = ?").bind(user.id),
           env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
         ]);
+        if ((cfg.staff || []).some(n => n.toLowerCase() === user.username.toLowerCase())) await saveSettings(env, { ...cfg, staff: cfg.staff.filter(n => n.toLowerCase() !== user.username.toLowerCase()) });
         return json({ ok: true });
       }
       // Merkliste (Stern): speichert nur die Regel-Kennungen (r1, r2 …) pro Konto
@@ -941,7 +980,7 @@ Gölitzer Development`,
         }
         if (POST) {
           const id = String(body.id || "");
-          if (!/^[rp]\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
+          if (!/^r\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
           if (limited("fav" + user.id, 120)) return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
           if (body.on === false) await env.DB.prepare("DELETE FROM favs WHERE user_id = ? AND rule_id = ?").bind(user.id, id).run();
           else await env.DB.prepare("INSERT OR IGNORE INTO favs(user_id, rule_id, created_at) VALUES(?,?,?)").bind(user.id, id, Date.now()).run();
@@ -959,7 +998,7 @@ Gölitzer Development`,
         if (POST) {
           if (body.clear === true) { await env.DB.prepare("DELETE FROM recent WHERE user_id = ?").bind(user.id).run(); return json({ ok: true }); }
           const id = String(body.id || "");
-          if (!/^[rp]\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
+          if (!/^r\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
           if (limited("rec" + user.id, 240)) return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
           await env.DB.batch([
             env.DB.prepare("INSERT INTO recent(user_id, rule_id, opened_at) VALUES(?,?,?) ON CONFLICT(user_id, rule_id) DO UPDATE SET opened_at = excluded.opened_at").bind(user.id, id, Date.now()),
@@ -971,7 +1010,7 @@ Gölitzer Development`,
       // Notizen zu Regeln (privat, nur für das eigene Konto)
       if (path === "/api/notes") {
         if (!cfg.features.notes) return off();
-        if (billingOn(env, cfg) && cfg.billing.proFeatures.notes && !(await isPro(env, user))) return json({ error: "Notizen gibt es mit Pro.", code: "pro_required" }, 402);
+        if (billingOn(env, cfg) && !(await hasFeature(env, cfg, user, "notes"))) return json({ error: cfg.billing.plusFeatures.notes && plusReady(env) ? "Notizen gibt es mit Plus oder Pro." : "Notizen gibt es mit Pro.", code: "pro_required" }, 402);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS notes(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, body TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
           const rs = await env.DB.prepare("SELECT rule_id, body FROM notes WHERE user_id = ? LIMIT 400").bind(user.id).all();
@@ -980,7 +1019,7 @@ Gölitzer Development`,
         }
         if (POST) {
           const id = String(body.id || "");
-          if (!/^[rp]\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
+          if (!/^r\d{1,4}$/.test(id)) return json({ error: "Ungültige Regel." }, 400);
           if (limited("note" + user.id, 120)) return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
           const text = String(body.text == null ? "" : body.text).trim().slice(0, 2000);
           if (!text) { await env.DB.prepare("DELETE FROM notes WHERE user_id = ? AND rule_id = ?").bind(user.id, id).run(); return json({ ok: true }); }
@@ -996,7 +1035,7 @@ Gölitzer Development`,
       // Übungsmodus: Lernstand pro Regel (0 = noch nicht sicher … 3 = sicher)
       if (path === "/api/cards") {
         if (!cfg.features.practice) return off();
-        if (billingOn(env, cfg) && cfg.billing.proFeatures.practice && !(await isPro(env, user))) return json({ error: "Der Übungsmodus gehört zu Pro.", code: "pro_required" }, 402);
+        if (billingOn(env, cfg) && !(await hasFeature(env, cfg, user, "practice"))) return json({ error: cfg.billing.plusFeatures.practice && plusReady(env) ? "Der Übungsmodus gehört zu Plus und Pro." : "Der Übungsmodus gehört zu Pro.", code: "pro_required" }, 402);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS cards(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, box INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
           const rs = await env.DB.prepare("SELECT rule_id, box FROM cards WHERE user_id = ? LIMIT 500").bind(user.id).all();
@@ -1006,13 +1045,13 @@ Gölitzer Development`,
         if (POST) {
           if (body.reset === true) { await env.DB.prepare("DELETE FROM cards WHERE user_id = ?").bind(user.id).run(); return json({ ok: true }); }
           const id = String(body.id || ""), box = Number(body.box);
-          if (!/^[rp]\d{1,4}$/.test(id) || !Number.isInteger(box) || box < 0 || box > 3) return json({ error: "Ungültige Angabe." }, 400);
+          if (!/^r\d{1,4}$/.test(id) || !Number.isInteger(box) || box < 0 || box > 3) return json({ error: "Ungültige Angabe." }, 400);
           if (limited("card" + user.id, 300)) return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
           await env.DB.prepare("INSERT INTO cards(user_id, rule_id, box, updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id, rule_id) DO UPDATE SET box = excluded.box, updated_at = excluded.updated_at").bind(user.id, id, box, Date.now()).run();
           return json({ ok: true });
         }
       }
-      // Üben → Meine Kurse (Pro): Uploads, Kurs-Erstellung und Stimmen
+      // Meine Kurse (Plus/Pro): Uploads, Kurs-Erstellung und Stimmen
       if (POST && (path === "/api/upload-url" || path === "/api/kurs" || path === "/api/karten" || path === "/api/tts")) {
         if (!cfg.features.practice) return off();
         // Plus: Kurse aus Regelheft-Themen, KI-Karten, Podcast – aber keine eigenen Dateien. Pro: eigene Dateien, höchstens KURS_MAX_FILES pro Kurs.
@@ -1097,29 +1136,51 @@ Gölitzer Development`,
       if (path.startsWith("/api/admin")) {
         if (!user.admin) return json({ error: "Nur für den Admin." }, 403);
         const db = env.DB;
+        const ownerOnly = () => user.owner ? null : json({ error: "Nur für den Besitzer." }, 403);
         if (GET && path === "/api/admin/settings") {
+          const no = ownerOnly(); if (no) return no;
           const n = async q => (await env.DB.prepare(q).first()).n;
           return json({ settings: cfg, keys: { scher: !!env.SCHER_API_KEY, gemini: !!env.GEMINI_API_KEY, groq: !!env.GROQ_API_KEY },
-            system: { stripe: { ready: billingReady(env), secret: !!env.STRIPE_SECRET_KEY, webhook: !!env.STRIPE_WEBHOOK_SECRET, priceMonth: !!env.STRIPE_PRICE_MONTH, priceYear: !!env.STRIPE_PRICE_YEAR, siteUrl: !!siteUrl(env) },
+            system: { stripe: { ready: billingReady(env), secret: !!env.STRIPE_SECRET_KEY, webhook: !!env.STRIPE_WEBHOOK_SECRET, priceMonth: !!(env.STRIPE_PRO_PRICE_MONTH || env.STRIPE_PRICE_MONTH), priceYear: !!(env.STRIPE_PRO_PRICE_YEAR || env.STRIPE_PRICE_YEAR), plusMonth: !!env.STRIPE_PLUS_PRICE_MONTH, plusYear: !!env.STRIPE_PLUS_PRICE_YEAR, siteUrl: !!siteUrl(env) },
               mail: { ready: mailReady(env), provider: env.RESEND_API_KEY ? "Resend" : env.BREVO_API_KEY ? "Brevo" : null, from: !!env.MAIL_FROM },
               google: { ready: googleReady(env), id: !!env.GOOGLE_CLIENT_ID, secret: !!env.GOOGLE_CLIENT_SECRET } },
+            priceErrors: env.STRIPE_SECRET_KEY ? await priceErrors(env) : {},
             stats: { proActive: await n("SELECT COUNT(*) AS n FROM subs WHERE (status IN ('active','trialing','past_due') AND period_end > " + Date.now() + ") OR grant_until > " + Date.now()),
               verified: await n("SELECT COUNT(*) AS n FROM emails WHERE verified = 1"), users: await n("SELECT COUNT(*) AS n FROM users") } });
         }
-        if (POST && path === "/api/admin/pro") {   // Pro schenken / entziehen (z. B. zum Testen)
+        if (POST && path === "/api/admin/pro") {   // Plus oder Pro schenken / entziehen
           const name = String(body.username || "").trim();
-          const t = await env.DB.prepare("SELECT id FROM users WHERE username = ?").bind(name).first();
+          const t = await env.DB.prepare("SELECT id FROM users WHERE username = ? COLLATE NOCASE").bind(name).first();
           if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          const plan = body.plan === "plus" ? "plus" : "pro";
           const days = Math.min(3650, Math.max(0, Math.floor(+body.days || 0)));
           const until = body.revoke === true || !days ? 0 : Date.now() + days * 864e5;
-          await env.DB.prepare("INSERT INTO subs(user_id, grant_until, updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET grant_until = excluded.grant_until, updated_at = excluded.updated_at").bind(t.id, until || null, Date.now()).run();
-          return json({ ok: true, until: until || null });
+          await env.DB.prepare("INSERT INTO subs(user_id, grant_until, grant_plan, updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET grant_until = excluded.grant_until, grant_plan = excluded.grant_plan, updated_at = excluded.updated_at").bind(t.id, until || null, until ? plan : null, Date.now()).run();
+          return json({ ok: true, until: until || null, plan: until ? plan : null });
+        }
+        if (GET && path === "/api/admin/users") {   // Nutzerliste mit Tarif (Suche über ?q=)
+          const q = String(url.searchParams.get("q") || "").trim().slice(0, 30).replace(/[%_]/g, "");
+          const rs = await env.DB.prepare("SELECT u.id, u.username, u.created_at, e.email FROM users u LEFT JOIN emails e ON e.user_id = u.id " + (q ? "WHERE u.username LIKE ? OR e.email LIKE ? " : "") + "ORDER BY u.id DESC LIMIT 40").bind(...(q ? ["%" + q + "%", "%" + q + "%"] : [])).all();
+          const users = [];
+          for (const r of rs.results) {
+            const st = await proState(env, r.id), rl = await roleOf(env, r.username);
+            users.push({ username: r.username, email: r.email || null, created_at: r.created_at, tier: st.pro ? "pro" : st.plus ? "plus" : "free", grant: st.grant, until: st.until, cancelAtEnd: st.cancelAtEnd, staff: rl.admin && !rl.owner, owner: rl.owner });
+          }
+          return json({ users });
+        }
+        if (POST && path === "/api/admin/staff") {   // Team-Zugriff aufs Dashboard geben / entziehen (nur Besitzer)
+          const no = ownerOnly(); if (no) return no;
+          const name = String(body.username || "").trim();
+          const t = await env.DB.prepare("SELECT username FROM users WHERE username = ? COLLATE NOCASE").bind(name).first();
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          if (isAdmin(env, t.username)) return json({ error: "Das ist der Besitzer." }, 400);
+          const rest = (cfg.staff || []).filter(n => n.toLowerCase() !== t.username.toLowerCase());
+          const c2 = await saveSettings(env, { ...cfg, staff: body.remove === true ? rest : [...rest, t.username] });
+          return json({ ok: true, staff: c2.staff });
         }
         if (POST && path === "/api/admin/settings") {
-          const clean_ = cleanSettings(body.settings);
-          await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT NOT NULL)").run();
-          await env.DB.prepare("INSERT INTO settings(k, v) VALUES('site', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(JSON.stringify(clean_)).run();
-          settingsCache = { t: Date.now(), v: clean_ };
+          const no = ownerOnly(); if (no) return no;
+          const clean_ = await saveSettings(env, { ...body.settings, staff: cfg.staff });
           return json({ ok: true, settings: clean_ });
         }
         if (GET && path === "/api/admin/overview") {
@@ -1130,6 +1191,7 @@ Gölitzer Development`,
             topSearches: await all("SELECT value, COUNT(*) c FROM events WHERE kind='search' GROUP BY value ORDER BY c DESC, MAX(ts) DESC LIMIT 30"),
             topRules: await all("SELECT value, COUNT(*) c FROM events WHERE kind='open' GROUP BY value ORDER BY c DESC LIMIT 15"),
             newUsers: await all("SELECT username, created_at FROM users ORDER BY id DESC LIMIT 15"),
+            pro: await n("SELECT COUNT(*) c FROM subs WHERE ((status IN ('active','trialing','past_due') AND period_end > " + Date.now() + ") OR grant_until > " + Date.now() + ")"), staff: user.owner ? cfg.staff : undefined, owner: !!user.owner,
           });
         }
         if (GET && path === "/api/admin/chats") {

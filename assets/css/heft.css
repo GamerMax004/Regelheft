@@ -301,6 +301,9 @@ html[data-heft="on"] .p-btn{ background:transparent; border:2px solid var(--pen)
 html[data-heft="on"] .p-btn.know{ border-color:var(--pen-green); color:var(--pen-green); }
 html[data-heft="on"] .p-btn.again{ border-color:var(--pen-red); color:var(--pen-red); }
 html[data-heft="on"] .p-chip{ background:transparent; border:1.5px solid var(--pen-soft); color:var(--pen); font-weight:400; font-size:1rem; }
+/* Ausgewähltes Thema: gut sichtbar über den Aufbau (Haken + dicker Rahmen + Marker-Hintergrund), nicht nur über die Farbe */
+html[data-heft="on"] .p-chip.on, html[data-heft="on"] .p-chip[aria-checked="true"]{ background:var(--marker); border:2.5px solid var(--pen); color:var(--pen); font-weight:700; }
+html[data-heft="on"] .p-chip.on::before, html[data-heft="on"] .p-chip[aria-checked="true"]::before{ content:"✓"; margin-right:6px; font-weight:700; }
 html[data-heft="on"] .p-progress{ background:var(--grid-strong); }
 html[data-heft="on"] .p-progress i, html[data-heft="on"] .p-progress > *{ background:var(--pen-green); }
 html[data-heft="on"] .auth-card{ background:var(--paper-glass, var(--paper)); border:1.5px solid var(--pen-soft); box-shadow:none; }

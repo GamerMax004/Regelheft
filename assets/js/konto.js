@@ -25,7 +25,7 @@
     if(u.email){ mb.textContent = u.emailVerified ? 'Bestätigt' : 'Nicht bestätigt'; mb.className = 'u-badge ' + (u.emailVerified ? 'ok' : 'warn'); }
     $('kMailBtn').textContent = !u.email ? 'E-Mail angeben' : (u.emailVerified ? 'E-Mail ändern' : 'E-Mail bestätigen');
     if(!u.hasPassword){ $('delPw').type = 'text'; $('delPw').placeholder = 'Benutzernamen zur Bestätigung'; $('delPw').autocomplete = 'off'; }
-    $('kLinkKi').classList.toggle('u-hidden', !RH.feat('ai')); $('kLinkUeben').classList.toggle('u-hidden', !RH.feat('practice'));
+    $('kLinkKi').classList.toggle('u-hidden', !RH.feat('ai')); $('kLinkKurse').classList.toggle('u-hidden', !RH.feat('practice'));
 
     // Tarif
     let st = {}; try{ st = await RH.api('/api/billing/status'); }catch(e){}

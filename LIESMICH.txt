@@ -96,3 +96,9 @@ NEU (15.11.2026): „Meine Kurse“ als eigene Seite
 - Zugang: Plus = Kurse zu Regelheft-Themen (kein Hochladen eigener Dateien). Pro = eigene Lerndateien, höchstens 5 pro Kurs. Der Worker prüft das ebenfalls (KURS_MAX_FILES).
 - Hochladen: kurse.html, ueben.html, index.html, pro.html, alle .html (Versionsnummern), assets/js/kurse.js, ueben.js, layout.js, index.js, pro.js, assets/css/kurse.css, swiftui.css. Worker neu deployen.
 - Test: „✏️ Nebenrechnung“ – Karo-Zeichenfläche pro Frage (Stift, 3 Farben, Radierer, Rückgängig, Leeren). Sobald ein Stift (Apple Pencil) erkannt wird, geht sie automatisch auf und Finger/Handballen zeichnen nicht mehr. Wird nicht bewertet.
+
+- Das alte Üben (ueben.html) ist entfernt; es gibt nur noch „Meine Kurse“ (kurse.html). assets/js/ueben.js und ueben.css bleiben, weil Meine Kurse sie für die Karteikarten-Runde nutzt.
+  Löschen auf dem Server: ueben.html. Hochladen: alle .html, assets/js/{index,kurse,konto,layout,footer,pro,dashboard,ueben}.js, assets/css/{header,heft,kurse}.css.
+
+- worker.js: deine laufende Version (Plus-Tarif, Team/Dashboard-Rollen) plus die fehlenden Routen für „Meine Kurse“ (/api/upload-url, /api/kurs, /api/karten, /api/tts) und Fach-Unterstützung (Mathe/Physik) in der KI-Hilfe.
+  Im Cloudflare-Worker komplett ersetzen und deployen. Secret GEMINI_API_KEY muss gesetzt sein; im Dashboard muss „Üben/practice“ (= Meine Kurse) aktiv sein.
