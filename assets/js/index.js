@@ -119,13 +119,22 @@ function renderChips(){
     chipSig = sig;
     chipsEl.innerHTML = list.map(x => `<button type="button" class="chip" data-cat="${escapeAttr(x.cat)}" aria-pressed="false">${x.html}</button>`).join('');
     chipsEl.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => {
-      activeCat = el.getAttribute('data-cat');
+      const c = el.getAttribute('data-cat');
+      activeCat = (c === activeCat && c !== 'Alle') ? 'Alle' : c;   // gewählten Filter erneut antippen = schließen
       applyFilter({animate:true});
       el.scrollIntoView({block:'nearest', inline:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
     }));
     if(hadFocus !== null){ const again = Array.from(chipsEl.children).find(c => c.getAttribute('data-cat') === hadFocus); if(again) again.focus({preventScroll:true}); }
   }
-  chipsEl.querySelectorAll('.chip').forEach(el => { const on = el.getAttribute('data-cat') === activeCat; el.classList.toggle('active', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  chipsEl.querySelectorAll('.chip').forEach(el => {
+    const cat = el.getAttribute('data-cat'), on = cat === activeCat;
+    el.classList.toggle('active', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const x = el.querySelector('.chip-x');
+    if(on && cat !== 'Alle'){   // ✕ nur am gewählten Filter: Tippen schließt ihn
+      if(!x){ el.insertAdjacentHTML('beforeend', '<span class="chip-x" aria-hidden="true">' + icon('x', 14) + '</span>'); }
+      el.title = 'Filter entfernen';
+    }else{ if(x) x.remove(); el.removeAttribute('title'); }
+  });
 }
 
 const escapeAttr = RH.esc;

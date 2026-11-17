@@ -102,3 +102,13 @@ NEU (15.11.2026): „Meine Kurse“ als eigene Seite
 
 - worker.js: deine laufende Version (Plus-Tarif, Team/Dashboard-Rollen) plus die fehlenden Routen für „Meine Kurse“ (/api/upload-url, /api/kurs, /api/karten, /api/tts) und Fach-Unterstützung (Mathe/Physik) in der KI-Hilfe.
   Im Cloudflare-Worker komplett ersetzen und deployen. Secret GEMINI_API_KEY muss gesetzt sein; im Dashboard muss „Üben/practice“ (= Meine Kurse) aktiv sein.
+
+- Kurse gehören jetzt zum Konto und sind auf jedem Gerät da: Der Browser speichert weiter lokal (auch offline) und gleicht mit dem Worker ab (/api/kurse/…, Tabellen kurse_sync und kurse_stats werden automatisch angelegt). Kurse, Fortschritt, Karten, Serie und XP werden synchronisiert; Podcast-Aufnahmen bleiben auf dem Gerät und lassen sich dort neu erstellen.
+  Dafür die neue worker.js deployen. Bereits vorhandene Kurse auf dem Handy laden beim ersten Öffnen automatisch ins Konto hoch.
+- Design „Meine Kurse“ nach Apple HIG: Tab-Leiste unten am Handy (5 Bereiche), Überblick/Löschen über das Info-Symbol, Formular „Neuer Kurs“ nur auf Wunsch, 44-pt-Ziele.
+  Geändert: assets/css/kurse.css, assets/js/kurse.js, assets/js/icons.js, kurse.html, worker.js.
+
+- Filter-Chips: Der gewählte Filter zeigt ein ✕; Antippen schließt ihn (zurück zu „Alle“).
+- Heft-Look: Die Regelliste hat dieselben Seitenränder wie die normale Ansicht (mittig, max. 720 px).
+- Podcast: Jeder Kurs bekommt einmal einen zufälligen Podcast-Namen (wird mit dem Kurs gespeichert und synchronisiert); darunter steht der Folgentitel.
+  Geändert: assets/css/{heft,style,kurse}.css, assets/js/{index,kurse}.js.

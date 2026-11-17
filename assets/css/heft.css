@@ -149,7 +149,7 @@ html[data-heft="on"] .overlay-head{ box-sizing:border-box; height:4.5rem; paddin
 html[data-heft="on"] .overlay{ background-image:none; }
 
 /* Inhalt in voller Breite (damit das Raster überall gleich läuft), Text bleibt zentriert */
-html[data-heft="on"] .list{ max-width:none; padding:0 max(16px, calc((100% - 720px) / 2)) 96px max(26px, calc((100% - 720px) / 2 + 10px)); gap:0; }
+html[data-heft="on"] .list{ max-width:none; padding:0 max(16px, calc((100% - 720px) / 2 + 16px)) 96px max(26px, calc((100% - 720px) / 2 + 16px)); gap:0; }   /* gleiche Ränder wie die normale Ansicht */
 html[data-heft="on"] .overlay-body{ max-width:none; margin:0; padding:24px max(18px, calc((100% - 680px) / 2)) 72px; }
 
 /* Textzeilen: 1 Kästchen */
@@ -207,7 +207,8 @@ html[data-heft="on"] .chip{ border:1.5px solid var(--grid-strong); border-radius
 html[data-heft="on"] .chip.active{ background:var(--marker); color:var(--pen); border-color:var(--pen-soft); }
 html[data-heft="on"] .meta-row{ padding:12px 22px 4px; }
 /* Karten: Text auf ruhigem Grund, Raster nur am Rand sichtbar */
-html[data-heft="on"] .list{ padding:4px 14px 36px 22px; gap:8px; }
+/* Ränder und Breite wie in der normalen Ansicht: die Liste bleibt mittig (Regel weiter oben), hier nur der Abstand zwischen den Karten */
+html[data-heft="on"] .list{ gap:8px; }
 html[data-heft="on"] .rule-card{ background:var(--paper-glass); border:1px solid var(--grid-strong); border-bottom-width:2px; border-radius:10px; padding:12px 14px 12px; }
 html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ background:var(--marker); border-color:var(--pen-soft); }
 html[data-heft="on"] .rule-card h3{ font-size:1.25rem; text-decoration:none; background:linear-gradient(transparent 88%, var(--pen-green) 88%, var(--pen-green) 94%, transparent 94%) 0 0/100% 100% no-repeat; display:inline; }

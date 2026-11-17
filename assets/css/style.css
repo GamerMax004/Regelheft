@@ -573,3 +573,7 @@ mark{border-radius:6px;}
 .news-card{border-radius:28px;}
 .news-card button,.ai-btn{border-radius:16px;}
 .auth-in{border-radius:14px;}
+
+/* Gewählter Filter: ✕ zum Schließen */
+.chip{ display:inline-flex; align-items:center; gap:6px; }
+.chip .chip-x{ display:inline-flex; margin-right:-4px; }

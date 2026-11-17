@@ -456,3 +456,63 @@ html[data-heft="on"] .k-sc-canvas{ background-color:var(--paper); --k-grid:var(-
 #pcNight div{ display:flex; justify-content:center; }
 .k-pen-btn .ic{ flex:none; }
 html[data-heft="on"] :is(.k-card-em,.k-head .k-head-em,.pc-cover,.k-promo-ic,.k-gate-ic,.k-intro-ic,.k-trophy,.k-res-em,.k-stats .ic,.k-tstats .ic){ color:var(--pen); }
+
+/* =====================================================================
+   Überarbeitung nach Apple HIG (Struktur statt Farbe)
+   – Tab-Leiste (unten am Handy, Segment-Leiste am Tablet/Laptop), höchstens 5 Bereiche
+   – Formular „Neuer Kurs“ nur auf Wunsch (Progressive Disclosure)
+   – 44-pt-Ziele, ruhige Hierarchie, ein Akzent pro Bildschirm
+   ===================================================================== */
+.k-nav-r{ display:inline-flex; align-items:center; gap:10px; }
+.k-info{ width:44px; height:44px; display:grid; place-items:center; border:0; border-radius:50%; background:var(--bg-soft); color:var(--accent-fg); cursor:pointer; }
+.k-info:active{ transform:scale(.94); }
+.k-info:focus-visible, .k-tabs button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.k-head h3{ font-size:1.75rem; font-weight:700; }
+.k-head-sub{ font-size:.9375rem; }
+
+/* Tab-Leiste: Segmente gleich breit, gewählt = angehobene Fläche (nicht nur Farbe) */
+.k-tabs{ display:grid; grid-template-columns:repeat(5,1fr); gap:2px; padding:3px; overflow:visible; border-radius:12px; background:var(--bg-soft); margin-bottom:18px; }
+.k-tabs button{ position:relative; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:6px 8px; border:0; border-radius:10px; background:transparent; color:var(--muted); font-size:.9375rem; font-weight:600; }
+.k-tabs button.on{ background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.14), 0 0 0 .5px var(--border); }
+.k-tabs .k-dot{ position:absolute; top:3px; right:6px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; font-size:.6875rem; line-height:18px; text-align:center; }
+.k-manage{ margin-top:28px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+.k-manage small{ color:var(--muted); font-size:.8125rem; max-width:32ch; }
+.k-form-act{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.k-form-act .k-create{ flex:1 1 200px; margin-top:0; }
+.k-cancel{ min-height:44px; padding:0 16px; border:0; border-radius:99px; background:transparent; color:var(--accent-fg); font:inherit; font-size:1rem; font-weight:600; cursor:pointer; }
+
+/* Einheiten: gleichwertig, Reihenfolge nur über die Zahl – nicht über Farben */
+.k-unit, .k-unit.u1, .k-unit.u2, .k-unit.u3{ background:var(--accent); }
+/* „START“ darf das Label des vorherigen Knotens nicht überdecken */
+.k-node-wrap:has(.k-start){ margin-top:30px; }
+
+/* Listen und Zeilen: ≥ 44 pt hoch, Titel 17, Detail 15 */
+.k-courses .k-card{ min-height:68px; }
+.k-card-tx b{ font-size:1.0625rem; }
+.k-card small{ font-size:.9375rem; }
+.k-add-btn{ min-height:44px; }
+.k-opt, .pc-seg button, .k-l-x, .k-pen-btn{ min-height:44px; }
+.k-l-x{ min-width:44px; }
+
+/* Handy: Tab-Leiste unten, mit Symbol über dem Text (floating functional layer = einziges Glas-Element) */
+@media (max-width:700px){
+  #pcSec.has-tabbar{ padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px)); }
+  #pcSec .k-tabs{ position:fixed; left:0; right:0; bottom:0; z-index:30; gap:0; margin:0; padding:6px 6px calc(6px + env(safe-area-inset-bottom, 0px)); border-radius:0; background:color-mix(in srgb, var(--surface) 86%, transparent); -webkit-backdrop-filter:blur(20px) saturate(1.4); backdrop-filter:blur(20px) saturate(1.4); border-top:.5px solid var(--border); }
+  #pcSec .k-tabs > button{ flex-direction:column; gap:2px; min-height:52px; padding:4px 2px; border-radius:8px; font-size:.6875rem; }
+  #pcSec .k-tabs > button:is(.on,[aria-selected="true"]){ background:transparent; box-shadow:none; color:var(--accent-fg); }
+  #pcSec .k-tabs > button.on .k-tl{ font-weight:700; }
+  #pcSec .k-tabs > button.on .ic{ stroke-width:2.5; }
+  #pcSec .k-tabs .k-dot{ top:2px; right:calc(50% - 26px); }
+}
+@media (prefers-reduced-transparency:reduce){ .k-tabs{ background:var(--surface); -webkit-backdrop-filter:none; backdrop-filter:none; } }
+html[data-heft="on"] .k-tabs{ background:var(--paper); border:1.5px solid var(--pen-soft); }
+html[data-heft="on"] .k-tabs button{ color:var(--pen); }
+html[data-heft="on"] .k-tabs button.on{ background:var(--marker); color:var(--pen); box-shadow:none; }
+html[data-heft="on"] .k-info{ background:var(--paper); border:1.5px solid var(--pen-soft); color:var(--pen); }
+@media (max-width:700px){ html[data-heft="on"] .k-tabs{ border-width:1.5px 0 0; } }
+
+html:not([data-heft="on"]) #pcSec .k-tabs > button[aria-selected="false"]{ box-shadow:none; }
+/* Im Kurs selbst übernimmt dessen Titel die Rolle der Überschrift – der Seitenkopf würde nur Platz kosten */
+main:has(#pcSec.has-tabbar) #kHero{ display:none; }
+
+.pc-ep{ margin:2px 0 0; font-size:1rem; font-weight:600; color:var(--ink); }

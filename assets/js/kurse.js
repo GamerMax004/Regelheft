@@ -5,9 +5,9 @@
    • Karteikarten mit Wiederholung in Abständen – auch eigene Karten
    • Podcast mit Lena & Max (normal oder „zum Einschlafen“ mit Schlaftimer)
    • Zusammenfassung
-   Serie und XP pro Konto auf diesem Gerät.
-   Kurse und Aufnahmen werden nur im Browser dieses Geräts gespeichert (IndexedDB).
-   Server: /api/upload-url, /api/kurs, /api/tts im Worker (braucht GEMINI_API_KEY).
+   Kurse, Fortschritt, Serie und XP gehören zum Konto: Sie liegen im Browser (IndexedDB, auch offline) und werden mit dem Worker abgeglichen (/api/kurse/…),
+   damit sie auf jedem Gerät da sind. Nur die Podcast-Aufnahmen bleiben auf dem Gerät (zu groß) und lassen sich dort neu erstellen.
+   Server: /api/upload-url, /api/kurs, /api/karten, /api/tts, /api/kurse/… im Worker (braucht GEMINI_API_KEY).
    ============================================================ */
 (function(){
   const $ = id => document.getElementById(id);
@@ -43,7 +43,81 @@
     delAudio(k){ return this.run('audio', 'readwrite', s => s.delete(k)); }
   };
   const mine = list => list.filter(k => k.owner === (RH.user() && RH.user().username) && k.fach === FACH_ID).sort((a, b) => b.created - a.created);
-  const save = k => db.put(k).catch(() => {});
+  const save = k => { k.u = Date.now(); sync.queue(k); return db.put(k).catch(() => {}); };
+
+  /* ================= Abgleich mit dem Konto (Worker) ================= */
+  const sync = {
+    off: false, running: null, timers: {}, latest: {}, st: null,
+    me: () => RH.user() && RH.user().username,
+    tombKey(){ return 'regelheft-kurse-del-' + this.me(); },
+    tomb(){ try{ return JSON.parse(localStorage.getItem(this.tombKey())) || {}; }catch(e){ return {}; } },
+    setTomb(t){ try{ localStorage.setItem(this.tombKey(), JSON.stringify(t)); }catch(e){} },
+    fatal(e){ if(e && (e.status === 402 || e.status === 403 || e.status === 404)) this.off = true; },
+    async push(k){
+      try{ await RH.api('/api/kurse/item', {body:{id: k.id, updated: k.u || k.created || Date.now(), data: k}}); }
+      catch(e){ this.fatal(e); }
+    },
+    queue(k){   // kurz warten, damit schnelle Änderungen (Karten bewerten …) in einer Anfrage landen
+      if(this.off || !this.me() || k.owner !== this.me()) return;
+      this.latest[k.id] = k; clearTimeout(this.timers[k.id]);
+      this.timers[k.id] = setTimeout(() => { const x = this.latest[k.id]; delete this.latest[k.id]; if(x) this.push(x); }, 1500);
+    },
+    flush(){ Object.keys(this.latest).forEach(id => { clearTimeout(this.timers[id]); const x = this.latest[id]; delete this.latest[id]; this.push(x); }); },
+    async remove(id){
+      if(this.off || !this.me()) return;
+      const t = this.tomb(); t[id] = Date.now(); this.setTomb(t);
+      try{ await RH.api('/api/kurse/delete', {body:{id, updated: t[id]}}); const n = this.tomb(); delete n[id]; this.setTomb(n); }
+      catch(e){ this.fatal(e); }   // ohne Verbindung: bleibt als Merkzettel und wird beim nächsten Abgleich nachgeholt
+    },
+    queueStats(){
+      if(this.off || !this.me()) return; clearTimeout(this.st);
+      this.st = setTimeout(() => RH.api('/api/kurse/stats', {body:{data: stats()}}).catch(e => this.fatal(e)), 1500);
+    },
+    mergeStats(a, b){
+      if(!b) return a;
+      const o = {xp: Math.max(a.xp || 0, b.xp || 0), streak: 0, last: null, day: null, dayXp: 0};
+      const al = a.last || '', bl = b.last || '';
+      if(al > bl) { o.last = a.last; o.streak = a.streak; } else if(bl > al) { o.last = b.last; o.streak = b.streak; } else { o.last = a.last; o.streak = Math.max(a.streak || 0, b.streak || 0); }
+      const ad = a.day || '', bd = b.day || '';
+      if(ad > bd) { o.day = a.day; o.dayXp = a.dayXp; } else if(bd > ad) { o.day = b.day; o.dayXp = b.dayXp; } else { o.day = a.day; o.dayXp = Math.max(a.dayXp || 0, b.dayXp || 0); }
+      return o;
+    },
+    // gleicht lokal und Konto ab; true, wenn sich lokal etwas geändert hat
+    all(){
+      if(this.off || !this.me()) return Promise.resolve(false);
+      if(this.running) return this.running;
+      this.flush();
+      this.running = (async () => {
+        let changed = false;
+        try{
+          const me = this.me();
+          const tomb = this.tomb();
+          for(const id of Object.keys(tomb)){ try{ await RH.api('/api/kurse/delete', {body:{id, updated: tomb[id]}}); delete tomb[id]; }catch(e){ if(e.status === 402 || e.status === 403) throw e; } }
+          this.setTomb(tomb);
+          const srv = await RH.api('/api/kurse/sync');
+          const local = (await db.all().catch(() => [])).filter(k => k.owner === me);
+          const lmap = new Map(local.map(k => [k.id, k])), smap = new Map(srv.items.map(i => [i.id, i]));
+          for(const i of srv.items){
+            const l = lmap.get(i.id), lu = l ? (l.u || l.created || 0) : 0;
+            if(tomb[i.id]) continue;
+            if(i.deleted){ if(l && lu <= i.updated){ await db.del(i.id).catch(() => {}); changed = true; } continue; }
+            if(!l || lu < i.updated){
+              try{ const it = await RH.api('/api/kurse/item?id=' + encodeURIComponent(i.id)); if(it.data){ it.data.u = i.updated; it.data.owner = me; await db.put(it.data); changed = true; } }catch(e){ if(e.status !== 404) throw e; }
+            }
+          }
+          for(const l of local){
+            const i = smap.get(l.id), lu = l.u || l.created || 0;
+            if(!i || lu > i.updated){ if(!l.u){ l.u = lu; await db.put(l).catch(() => {}); } await this.push(l); }
+          }
+          const ls = stats(), merged = this.mergeStats(ls, srv.stats);
+          if(JSON.stringify(merged) !== JSON.stringify(Object.assign({xp:0, streak:0, last:null, day:null, dayXp:0}, ls))){ try{ localStorage.setItem(statsKey(), JSON.stringify(merged)); changed = true; }catch(e){} }
+          if(!srv.stats || JSON.stringify(srv.stats) !== JSON.stringify(merged)) await RH.api('/api/kurse/stats', {body:{data: merged}}).catch(() => {});
+        }catch(e){ this.fatal(e); }
+        return changed;
+      })().finally(() => { this.running = null; });
+      return this.running;
+    }
+  };
 
   /* ================= Serie & XP (pro Konto) ================= */
   const statsKey = () => 'regelheft-lernen-' + ((RH.user() && RH.user().username) || 'gast');
@@ -57,6 +131,7 @@
     if(s.day !== today()){ s.day = today(); s.dayXp = 0; }
     s.xp += n; s.dayXp += n;
     try{ localStorage.setItem(statsKey(), JSON.stringify(s)); }catch(e){}
+    sync.queueStats();
     drawStats();
   }
   const dayXp = () => { const s = stats(); return s.day === today() ? s.dayXp : 0; };
@@ -117,7 +192,7 @@
   /* ================= Liste & Erstellen ================= */
   const MAX_FILES = 5;   // Pro: eigene Lerndateien pro Kurs (prüft auch der Worker)
   const canUpload = () => { const u = RH.user(); return !RH.cfg().billing.enabled || RH.isPro() || !!(u && u.admin); };
-  let pending = [], mode = 'upload', topic = null, custom = '';
+  let pending = [], mode = 'upload', topic = null, custom = '', formOpen = false;
   const READABLE = /\.(pdf|png|jpe?g|webp|gif|heic|heif|txt|md|csv)$/i;
   const fmtMB = n => (n / 1048576).toLocaleString('de-DE', {maximumFractionDigits:1}) + ' MB';
   const progressOf = k => { const all = lessonsOf(k); return all.length ? Object.keys(k.done || {}).length / all.length : 0; };
@@ -128,7 +203,7 @@
     return '<svg class="k-ring" viewBox="0 0 64 64" role="img" aria-label="' + esc(label) + '"><circle cx="32" cy="32" r="' + r + '" class="k-ring-bg"/><circle cx="32" cy="32" r="' + r + '" class="k-ring-fg" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + (c * (1 - p)).toFixed(1) + '"/></svg>'; };
 
   async function renderList(msg){
-    view = {name:'list'};
+    view = {name:'list'}; sec.classList.remove('has-tabbar');
     if(!canUpload() && mode === 'upload') mode = 'topic';
     const list = mine(await db.all().catch(() => [])), now = Date.now();
     const dueAll = list.flatMap(k => k.flashcards.filter(c => (c.due || 0) <= now).map(c => ({k, c})));
@@ -145,9 +220,10 @@
             '<textarea class="pc-input k-notes" id="kNotes" rows="3" placeholder="Optional: eigene Notizen oder Text einfügen …">' + esc(custom) + '</textarea>'
           : '<div class="p-chips" id="kCats" role="radiogroup" aria-label="Thema">' + cats.map(c => '<button type="button" class="p-chip' + (topic === c ? ' on' : '') + '" role="radio" aria-checked="' + (topic === c) + '" data-c="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' +
             '<input class="pc-input k-topic" id="kTopic" type="text" maxlength="100" placeholder="… oder eigenes Thema, z. B. Satz des Pythagoras" value="' + esc(custom) + '">') +
-        '<button class="ai-btn k-create" id="kCreate" type="button">Kurs erstellen</button>' +
+        '<div class="k-form-act"><button class="ai-btn k-create" id="kCreate" type="button">Kurs erstellen</button>' + (list.length ? '<button type="button" class="k-cancel" id="kCancel">Abbrechen</button>' : '') + '</div>' +
         '<div class="u-msg" id="kMsg" role="status" aria-live="polite">' + (msg ? esc(msg) : '') + '</div>' +
       '</div>';
+    const showForm = !list.length || formOpen || pending.length || custom || topic || msg;
     const courses = list.length ? '<div class="k-courses">' + list.map(k => {
         const due = dueOf(k);
         return '<button type="button" class="k-card" data-id="' + esc(k.id) + '"><span class="k-card-em" aria-hidden="true">' + icon('book', 26) + '</span>' +
@@ -165,9 +241,10 @@
       '</section>';
     sec.innerHTML = (STANDALONE ? '' : '<div class="k-top"><span class="k-stats" id="kStats"></span></div>') +
       (list.length
-        ? today + '<div class="k-sec-h"><h3 class="k-h">Deine Kurse</h3><button type="button" class="k-add-btn" id="kToNew">' + icon('plus', 16) + 'Neuer Kurs</button></div>' + courses + form
+        ? today + '<div class="k-sec-h"><h3 class="k-h">Deine Kurse</h3><button type="button" class="k-add-btn" id="kToNew">' + icon('plus', 16) + 'Neuer Kurs</button></div>' + courses + (showForm ? form : '')
         : '<div class="k-intro"><div class="k-intro-ic" aria-hidden="true">' + icon('library', 44) + '</div><h3>Dein erster Kurs</h3><p>Lade Unterlagen hoch oder wähle ein Thema – daraus entstehen ein Lernpfad, Karteikarten, Regeln, ein Test und ein Podcast.</p></div>' + form);
     drawStats();
+    if(showForm){
     sec.querySelector('.k-mode').onclick = e => { const b = e.target.closest('[data-m]');
       if(b && b.dataset.m === 'upload' && !canUpload()){ $('kMsg').innerHTML = 'Eigene Lerndateien hochladen gibt es mit <a class="link" href="pro.html">Pro</a>. Mit Plus erstellst du Kurse zu Themen aus dem Regelheft.'; return; }
       if(b && b.dataset.m !== mode){ mode = b.dataset.m; custom = ''; renderList().then(() => $('kNewBox').scrollIntoView({block:'nearest'})); } };
@@ -188,7 +265,9 @@
       $('kTopic').onkeydown = e => { if(e.key === 'Enter') create(); };
     }
     $('kCreate').onclick = create;
-    if($('kToNew')) $('kToNew').onclick = () => { $('kNewBox').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'}); };
+    if($('kCancel')) $('kCancel').onclick = () => { formOpen = false; pending = []; custom = ''; topic = null; renderList(); };
+    }
+    if($('kToNew')) $('kToNew').onclick = () => { formOpen = true; renderList().then(() => { const b = $('kNewBox'); if(b) b.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'}); }); };
     if($('kDueAll')) $('kDueAll').onclick = () => {
       window.Practice.start(shuffle(dueAll).map(({k, c}) => ({front: c.front, back: backOf(k, c), onRate: good => {
         c.box = good ? Math.min(5, (c.box || 0) + 1) : 0;
@@ -274,8 +353,8 @@
       const k = Object.assign(j, {id: 'k' + uid(), owner: RH.user().username, fach: FACH_ID, created: Date.now(), done: {},
         rules: (j.rules || []).map(r => ({id: uid(), title: r.title, text: r.text, example: r.example || ''})),
         flashcards: j.flashcards.map(c => ({id: uid(), front: c.front, back: c.back, box: 0, due: 0}))});
-      await db.put(k);
-      pending = []; custom = ''; topic = null;
+      await save(k);
+      pending = []; custom = ''; topic = null; formOpen = false;
       view = {name:'kurs', id:k.id, tab:'pfad'}; route();
     }catch(e){ renderList(e.message || 'Das hat nicht geklappt. Bitte nochmal versuchen.').then(() => { const m = $('kMsg'); if(m) m.scrollIntoView({block:'center'}); }); }   // Fehlermeldung immer sichtbar machen
     finally{ L.stop(); }
@@ -317,31 +396,37 @@
 
   /* ================= Kursansicht ================= */
   const lessonsOf = k => k.units.flatMap((u, ui) => u.lessons.map((l, li) => Object.assign({}, l, {key: ui + '-' + li})));
-  const KTABS = {pfad:'Lernpfad', karten:'Karten', regeln:'Regeln', test:'Test', podcast:'Podcast', info:'Überblick'};
+  const KTABS = {pfad:'Lernpfad', karten:'Karten', regeln:'Regeln', test:'Test', podcast:'Podcast'};
+  const TAB_ICONS = {pfad:'target', karten:'layers', regeln:'ruler', test:'pencil', podcast:'headphones'};
 
   function renderKurs(k, tab){
     view = {name:'kurs', id:k.id, tab};
     k.rules = k.rules || [];
     const due = dueOf(k), pct = Math.round(progressOf(k) * 100);
     sec.innerHTML =
-      '<div class="k-nav"><button type="button" class="k-back" id="kBack"><span aria-hidden="true">‹</span> Kurse</button><span class="k-stats" id="kStats"></span></div>' +
+      '<div class="k-nav"><button type="button" class="k-back" id="kBack"><span aria-hidden="true">‹</span> Kurse</button><span class="k-nav-r"><span class="k-stats" id="kStats"></span><button type="button" class="k-info" id="kInfo" aria-label="Überblick und Kurs verwalten">' + icon('info', 22) + '</button></span></div>' +
       '<div class="k-head"><span class="k-head-em" aria-hidden="true">' + icon('book', 30) + '</span><div><h3>' + esc(k.title) + '</h3>' +
         '<p class="k-head-sub">' + plural(lessonsOf(k).length, 'Lektion', 'Lektionen') + ' · ' + plural(k.flashcards.length, 'Karte', 'Karten') + ' · ' + plural(k.rules.length, 'Regel', 'Regeln') + ' · ' + pct + ' % geschafft</p></div></div>' +
-      '<div class="k-tabs" role="tablist">' + Object.entries(KTABS).map(([t, l]) => '<button type="button" role="tab" data-t="' + t + '" aria-selected="' + (t === tab) + '" class="' + (t === tab ? 'on' : '') + '">' + l + (t === 'karten' && due ? ' <span class="k-dot">' + due + '</span>' : '') + '</button>').join('') + '</div>' +
-      '<div id="kBody"></div>' +
-      '<button type="button" class="pc-del" id="kDel">Kurs löschen</button>';
+      '<div class="k-tabs" role="tablist">' + Object.entries(KTABS).map(([t, l]) => '<button type="button" role="tab" data-t="' + t + '" aria-selected="' + (t === tab) + '" class="' + (t === tab ? 'on' : '') + '">' + icon(TAB_ICONS[t], 22) + '<span class="k-tl">' + l + '</span>' + (t === 'karten' && due ? '<span class="k-dot" aria-label="' + due + ' fällig">' + due + '</span>' : '') + '</button>').join('') + '</div>' +
+      '<div id="kBody"></div>';
+    sec.classList.add('has-tabbar');
     drawStats();
     $('kBack').onclick = () => { view = {name:'list'}; route(); };
     sec.querySelector('.k-tabs').onclick = e => { const b = e.target.closest('[data-t]'); if(b){ stopAudio(); renderKurs(k, b.dataset.t); } };
-    $('kDel').onclick = async () => {
-      if(!await RH.confirm({title:'Kurs löschen?', text:'„' + k.title + '“ mit Fortschritt, Karteikarten und Aufnahmen wird von diesem Gerät gelöscht.', ok:'Löschen', danger:true})) return;
-      await db.del(k.id).catch(() => {}); view = {name:'list'}; route();
-    };
+    $('kInfo').onclick = () => { stopAudio(); renderKurs(k, 'info'); };
+    if(tab === 'info') sec.querySelectorAll('.k-tabs [role=tab]').forEach(b => b.setAttribute('aria-selected', 'false'));
     (({pfad: renderPath, karten: renderCards, regeln: renderRules, test: renderTest, podcast: renderPodcast, info: renderInfo})[tab] || renderPath)(k, $('kBody'));
     window.scrollTo(0, 0);
   }
 
-  function renderInfo(k, body){ body.innerHTML = '<div class="k-summary">' + esc(k.summary).replace(/\n/g, '<br>') + '</div>'; }
+  function renderInfo(k, body){
+    body.innerHTML = '<h3 class="k-h">Überblick</h3><div class="k-summary">' + esc(k.summary).replace(/\n/g, '<br>') + '</div>' +
+      '<div class="k-manage"><button type="button" class="pc-del" id="kDel">Kurs löschen</button><small>Der Kurs wird mit Fortschritt, Karteikarten und Aufnahmen aus deinem Konto entfernt.</small></div>';
+    $('kDel').onclick = async () => {
+      if(!await RH.confirm({title:'Kurs löschen?', text:'„' + k.title + '“ mit Fortschritt, Karteikarten und Aufnahmen wird aus deinem Konto gelöscht.', ok:'Löschen', danger:true})) return;
+      await db.del(k.id).catch(() => {}); sync.remove(k.id); view = {name:'list'}; route();
+    };
+  }
 
   /* ---------- Lernpfad ---------- */
   const NODE_ICONS = ['star', 'target', 'lightbulb', 'book', 'pencil', 'layers'];
@@ -820,8 +905,13 @@
   }
   const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
 
+  const POD_NAMES = ['Lernkanal 42', 'Kopf an, Podcast an', 'Nachgefragt', 'Aha, so geht’s!', 'Die Lernrunde', 'Schlau am Küchentisch', 'Hauptsache verstanden', 'Plus eins, minus null', 'Frag Lena & Max', 'Zwischen Tafel und Tasse', 'Kurz erklärt', 'Der Klick-Moment', 'Heute schlauer', 'Pausenhof-Wissen', 'Rechnen, reden, rauskriegen'];
+  const podShow = k => {   // zufälliger Podcast-Name, einmal pro Kurs gewählt und mit dem Kurs gespeichert
+    if(!k.podcast.show){ k.podcast.show = POD_NAMES[Math.floor(Math.random() * POD_NAMES.length)]; save(k); }
+    return k.podcast.show;
+  };
   function renderPodcast(k, body){
-    const pod = k.podcast;
+    const pod = k.podcast, show = podShow(k);
     let calm = false; try{ calm = sessionStorage.getItem('regelheft-pod-calm') === '1'; }catch(e){}
     const key = () => k.id + ':' + (calm ? 'calm' : 'normal');
     const total = pod.lines.reduce((n, l) => n + l.text.length, 0) || 1, starts = [];
@@ -832,7 +922,7 @@
       const blob = await db.audio(key()).catch(() => null);
       body.innerHTML =
         '<div class="pc-player' + (calm ? ' night' : '') + '">' +
-          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? icon('moon', 30) : icon('headphones', 30)) + '</div><div><h3>' + esc(pod.title) + '</h3><p>Lena & Max · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
+          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? icon('moon', 30) : icon('headphones', 30)) + '</div><div><h3>' + esc(show) + '</h3><p class="pc-ep">' + esc(pod.title) + '</p><p>Lena & Max · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
           '<div class="pc-seg" role="radiogroup" aria-label="Version"><button type="button" role="radio" aria-checked="' + !calm + '" data-m="0" class="' + (calm ? '' : 'on') + '">' + icon('headphones', 16) + 'Normal</button><button type="button" role="radio" aria-checked="' + calm + '" data-m="1" class="' + (calm ? 'on' : '') + '">' + icon('moon', 16) + 'Zum Einschlafen</button></div>' +
           '<div id="pcCtl"></div>' +
         '</div>' +
@@ -921,7 +1011,7 @@
         document.body.appendChild(n); n.focus(); ui();
       };
       if('mediaSession' in navigator){
-        navigator.mediaSession.metadata = new MediaMetadata({title: pod.title, artist: 'Regelheft · ' + (calm ? 'Zum Einschlafen' : 'Lena & Max'), album: k.title});
+        navigator.mediaSession.metadata = new MediaMetadata({title: pod.title, artist: show + ' · ' + (calm ? 'Zum Einschlafen' : 'Lena & Max'), album: k.title});
         navigator.mediaSession.setActionHandler('play', () => audio.play());
         navigator.mediaSession.setActionHandler('pause', () => audio.pause());
         navigator.mediaSession.setActionHandler('seekbackward', () => audio.currentTime -= 15);
@@ -934,7 +1024,16 @@
   // Zuletzt gewählten Tab wiederherstellen; bei Anmeldung/Abmeldung neu zeichnen
   Promise.all([RH.configReady, RH.ready]).then(() => {
     let t = null; try{ t = sessionStorage.getItem('regelheft-ueben-tab'); }catch(e){}
-    if(STANDALONE){ const id = new URLSearchParams(location.search).get('kurs'); if(id) view = {name:'kurs', id, tab:'pfad'}; route(); return; }
+    if(STANDALONE){
+      const id = new URLSearchParams(location.search).get('kurs'); if(id) view = {name:'kurs', id, tab:'pfad'};
+      Promise.race([sync.all(), new Promise(r => setTimeout(r, 2500))]).catch(() => {}).then(() => route());
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'hidden') return sync.flush();
+        sync.all().then(ch => { if(ch && view.name === 'list' && !pending.length && !custom && !topic && !document.querySelector('.k-lesson')) route(); });
+      });
+      window.addEventListener('pagehide', () => sync.flush());
+      return;
+    }
     if(t === 'pod' && !tabs.classList.contains('is-hidden')) setTab('pod');
   });
   RH.onAuth(() => { if(active === 'pod' && !sec.classList.contains('is-hidden')) route(); });
