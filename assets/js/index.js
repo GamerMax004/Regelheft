@@ -35,12 +35,12 @@ function noteRecent(id){
   if(!RH.feat('recent')) return;
   if(!loggedIn()){ if(RH.isLoading()) RH.ready.then(() => noteRecent(id)); return; }
   recent = [id].concat(recent.filter(x => x !== id)).slice(0, 15);
-  if(activeCat === REC) favDirty = true;           // Reihenfolge erst nach dem Schließen aktualisieren
+  if(activeView === REC) favDirty = true;           // Reihenfolge erst nach dem Schließen aktualisieren
   RH.api('/api/recent', {body:{id}}).catch(() => {});
 }
 let favDirty = false;
 function refreshFavUI(){
-  if(activeCat === FAV){
+  if(activeView === FAV){
     // Liste erst neu aufbauen, wenn das Regel-Detail zu ist (sonst verschiebt sich „Vorherige/Nächste“)
     if(document.getElementById('overlay').classList.contains('open')) favDirty = true;
     else applyFilter();
@@ -100,42 +100,69 @@ function setStar(b, on){
 const categories = [];
 RULES.forEach(r => { if(!categories.includes(r.category)) categories.push(r.category); });
 
-let activeCat = "Alle";
+let activeView = null;            // Merkliste / Zuletzt / Notizen (immer nur eine Ansicht)
+const activeCats = new Set();    // gewählte Themen (mehrere möglich)
+const noFilter = () => !activeView && !activeCats.size;
+const resetFilters = () => { activeView = null; activeCats.clear(); };
 let query = "";
 let filtered = RULES.slice();
 let currentIndex = -1;
 
 const chipsEl = document.getElementById('chips');
-let chipSig = '';
-function renderChips(){
-  const list = [{cat:'Alle', html:'Alle'}];
-  if(canFav()) list.push({cat:FAV, html:icon('star',15,activeCat===FAV)+'Merkliste'});
-  if(canRecent()) list.push({cat:REC, html:icon('clock',15)+'Zuletzt'});
-  if(canNote()) list.push({cat:NOTE, html:icon('pencil',15)+'Notizen'});
-  categories.forEach(c => list.push({cat:c, html:escapeHtml(c)}));
-  const sig = list.map(x => x.cat).join('|') + '|' + (activeCat === FAV);
-  if(sig !== chipSig){
-    const hadFocus = chipsEl.contains(document.activeElement) ? document.activeElement.getAttribute('data-cat') : null;
-    chipSig = sig;
-    chipsEl.innerHTML = list.map(x => `<button type="button" class="chip" data-cat="${escapeAttr(x.cat)}" aria-pressed="false">${x.html}</button>`).join('');
-    chipsEl.querySelectorAll('.chip').forEach(el => el.addEventListener('click', () => {
-      const c = el.getAttribute('data-cat');
-      activeCat = (c === activeCat && c !== 'Alle') ? 'Alle' : c;   // gewählten Filter erneut antippen = schließen
-      applyFilter({animate:true});
-      el.scrollIntoView({block:'nearest', inline:'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
-    }));
-    if(hadFocus !== null){ const again = Array.from(chipsEl.children).find(c => c.getAttribute('data-cat') === hadFocus); if(again) again.focus({preventScroll:true}); }
-  }
-  chipsEl.querySelectorAll('.chip').forEach(el => {
-    const cat = el.getAttribute('data-cat'), on = cat === activeCat;
-    el.classList.toggle('active', on); el.setAttribute('aria-pressed', on ? 'true' : 'false');
-    const x = el.querySelector('.chip-x');
-    if(on && cat !== 'Alle'){   // ✕ nur am gewählten Filter: Tippen schließt ihn
-      if(!x){ el.insertAdjacentHTML('beforeend', '<span class="chip-x" aria-hidden="true">' + icon('x', 14) + '</span>'); }
-      el.title = 'Filter entfernen';
-    }else{ if(x) x.remove(); el.removeAttribute('title'); }
-  });
+const filterBtn = document.getElementById('filterBtn'), filterPanel = document.getElementById('filterPanel'), filterBackdrop = document.getElementById('filterBackdrop'), filterCount = document.getElementById('filterCount');
+let chipSig = null, panelSig = null;
+const viewLabel = v => v === FAV ? 'Merkliste' : v === REC ? 'Zuletzt geöffnet' : 'Notizen';
+const viewIcon = v => v === FAV ? icon('star', 15, true) : v === REC ? icon('clock', 15) : icon('pencil', 15);
+function viewList(){ const v = []; if(canFav()) v.push(FAV); if(canRecent()) v.push(REC); if(canNote()) v.push(NOTE); return v; }
+function buildPanel(){
+  const views = viewList(); panelSig = views.join('|');
+  filterPanel.innerHTML = '<div class="fp-head"><b>Filter</b><span class="fp-act"><button type="button" class="fp-reset" id="fpReset">Zurücksetzen</button><button type="button" class="fp-done" id="fpDone">Fertig</button></span></div>'
+    + (views.length ? '<div class="fp-sec">Ansicht</div><div class="fp-views" role="group" aria-label="Ansicht">' + views.map(v => '<button type="button" class="fp-view" role="checkbox" aria-checked="false" data-kind="view" data-key="' + escapeAttr(v) + '">' + viewIcon(v) + escapeHtml(viewLabel(v)) + '</button>').join('') + '</div>' : '')
+    + '<div class="fp-sec">Themen</div><div class="fp-list" role="group" aria-label="Themen">' + categories.map(c => '<button type="button" class="fp-row" role="checkbox" aria-checked="false" data-kind="cat" data-key="' + escapeAttr(c) + '"><span>' + escapeHtml(c) + '</span><span class="fp-check" aria-hidden="true">' + icon('check', 18) + '</span></button>').join('') + '</div>';
 }
+function syncPanel(){
+  if(panelSig !== viewList().join('|')) buildPanel();
+  filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); });
+}
+function renderChips(){   // links vom Filter-Knopf: nur die gewählten Filter, jeder mit ✕ zum Abwählen
+  const items = [];
+  if(activeView) items.push({kind:'view', key:activeView, label:viewLabel(activeView), html:viewIcon(activeView) + escapeHtml(viewLabel(activeView))});
+  categories.forEach(c => { if(activeCats.has(c)) items.push({kind:'cat', key:c, label:c, html:escapeHtml(c)}); });
+  const sig = items.map(i => i.kind + ':' + i.key).join('|');
+  if(sig !== chipSig){
+    chipSig = sig;
+    chipsEl.innerHTML = items.length
+      ? items.map(i => '<button type="button" class="chip active" data-kind="' + i.kind + '" data-key="' + escapeAttr(i.key) + '" aria-label="' + escapeAttr(i.label) + ' – Filter entfernen" title="Filter entfernen">' + i.html + '<span class="chip-x" aria-hidden="true">' + icon('x', 14) + '</span></button>').join('')
+      : '<span class="chips-all">Alle Regeln</span>';
+  }
+  filterCount.textContent = items.length || ''; filterCount.hidden = !items.length;
+  syncPanel();
+}
+function toggleFilter(kind, key){
+  if(kind === 'view') activeView = activeView === key ? null : key;
+  else if(activeCats.has(key)) activeCats.delete(key); else activeCats.add(key);
+  applyFilter({animate:true});
+}
+chipsEl.addEventListener('click', e => { const b = e.target.closest('.chip'); if(b) toggleFilter(b.dataset.kind, b.dataset.key); });
+function openFilter(){
+  syncPanel(); filterPanel.hidden = false; filterBackdrop.hidden = false; filterBtn.setAttribute('aria-expanded', 'true');
+  const first = filterPanel.querySelector('.fp-view, .fp-row'); if(first) first.focus({preventScroll:true});
+}
+function closeFilter(back){
+  if(filterPanel.hidden) return;
+  filterPanel.hidden = true; filterBackdrop.hidden = true; filterBtn.setAttribute('aria-expanded', 'false');
+  if(back) filterBtn.focus({preventScroll:true});
+}
+filterBtn.addEventListener('click', () => filterPanel.hidden ? openFilter() : closeFilter(true));
+filterBackdrop.addEventListener('click', () => closeFilter(true));
+filterPanel.addEventListener('click', e => {
+  const b = e.target.closest('[data-kind]');
+  if(b) return toggleFilter(b.dataset.kind, b.dataset.key);
+  if(e.target.closest('#fpReset')){ resetFilters(); applyFilter({animate:true}); }
+  else if(e.target.closest('#fpDone')) closeFilter(true);
+});
+document.addEventListener('click', e => { if(!filterPanel.hidden && !filterPanel.contains(e.target) && !filterBtn.contains(e.target)) closeFilter(false); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !filterPanel.hidden){ e.stopPropagation(); closeFilter(true); } }, true);
 
 const escapeAttr = RH.esc;
 
@@ -153,8 +180,8 @@ function applyFilter(opts){
   opts = opts || {};
   const q = query.trim().toLowerCase();
   filtered = RULES.filter(r=>{
-    const catOk = activeCat === "Alle" || (activeCat === FAV ? favs.has(r.id) : activeCat === REC ? recent.includes(r.id) : activeCat === NOTE ? !!notes[r.id] : r.category === activeCat);
-    if(!catOk) return false;
+    const viewOk = !activeView || (activeView === FAV ? favs.has(r.id) : activeView === REC ? recent.includes(r.id) : !!notes[r.id]);
+    if(!viewOk || (activeCats.size && !activeCats.has(r.category))) return false;
     if(!q) return true;
     return (r.title.toLowerCase().includes(q) || r.plain.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
   });
@@ -172,11 +199,11 @@ function applyFilter(opts){
       .sort((a, b) => (a.rank - b.rank) || (a.idx - b.idx))
       .map(x => x.r);
   }
-  if(activeCat === REC && !q) filtered.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));   // neueste zuerst
+  if(activeView === REC && !q) filtered.sort((a, b) => recent.indexOf(a.id) - recent.indexOf(b.id));   // neueste zuerst
   renderChips();
   renderList(opts.animate);
   document.getElementById('resultCount').textContent = filtered.length;
-  document.getElementById('activeCatLabel').textContent = activeCat === 'Alle' ? '' : (activeCat === FAV ? 'Merkliste' : activeCat === REC ? 'Zuletzt geöffnet' : activeCat === NOTE ? 'Notizen' : activeCat);
+  { const parts = []; if(activeView) parts.push(viewLabel(activeView)); if(activeCats.size) parts.push(activeCats.size === 1 ? [...activeCats][0] : activeCats.size + ' Themen'); document.getElementById('activeCatLabel').textContent = parts.join(' · '); }
 }
 
 function renderList(animate){
@@ -184,11 +211,11 @@ function renderList(animate){
   const emptyEl = document.getElementById('emptyState');
   if(filtered.length === 0){
     listEl.innerHTML = '';
-    const fav = activeCat === FAV && !query.trim(), rec = activeCat === REC && !query.trim(), nt = activeCat === NOTE && !query.trim();
+    const fav = activeView === FAV && !query.trim(), rec = activeView === REC && !query.trim(), nt = activeView === NOTE && !query.trim();
     document.getElementById('emptyTitle').textContent = fav ? 'Noch nichts gemerkt' : rec ? 'Noch nichts geöffnet' : nt ? 'Noch keine Notizen' : 'Keine Treffer';
     document.getElementById('emptySub').textContent = fav ? 'Öffne eine Regel und tippe auf den Stern, um sie hier zu speichern.' : rec ? 'Regeln, die du öffnest, erscheinen hier.' : nt ? 'Öffne eine Regel und schreibe unten deine Notiz dazu.' : 'Versuch es mit einem anderen Suchbegriff.';
     emptyEl.style.display = 'block';
-    document.getElementById('emptyReset').style.display = (query.trim() || activeCat !== 'Alle') ? '' : 'none';
+    document.getElementById('emptyReset').style.display = (query.trim() || !noFilter()) ? '' : 'none';
     return;
   }
   emptyEl.style.display = 'none';
@@ -238,7 +265,7 @@ function openDetail(id, opts){
   opts = opts || {};
   let idx = filtered.findIndex(r => r.id === id);
   if(idx === -1){            // Regel ist durch Suche/Filter ausgeblendet -> Filter zurücksetzen
-    activeCat = "Alle"; query = ""; searchInput.value = ""; clearBtn.style.display = 'none';
+    resetFilters(); query = ""; searchInput.value = ""; clearBtn.style.display = 'none';
     applyFilter();
     idx = filtered.findIndex(r => r.id === id);
     if(idx === -1) return;
@@ -353,7 +380,7 @@ searchInput.addEventListener('keydown', e => {
   if(e.key === 'Escape' && searchInput.value){ e.preventDefault(); clearBtn.click(); }
   else if(e.key === 'Enter'){ e.preventDefault(); if(matchMedia('(pointer: coarse)').matches) searchInput.blur(); }   // Tastatur wegklappen, Ergebnisse sehen
 });
-document.getElementById('emptyReset').addEventListener('click', () => { searchInput.value = ''; query = ''; clearBtn.style.display = 'none'; activeCat = 'Alle'; applyFilter({animate:true}); searchInput.focus(); });
+document.getElementById('emptyReset').addEventListener('click', () => { searchInput.value = ''; query = ''; clearBtn.style.display = 'none'; resetFilters(); applyFilter({animate:true}); searchInput.focus(); });
 clearBtn.addEventListener('click', () => {
   searchInput.value = '';
   query = '';
@@ -374,9 +401,9 @@ function applyFeatureUI(){
   aiSq.style.display = (AI_CONFIG.enabled && RH.feat('ai')) ? '' : 'none';
   updatePractice();
   shareBtn.style.display = RH.feat('share') ? '' : 'none';
-  if(!RH.feat('favorites') && activeCat === FAV) activeCat = 'Alle';
-  if(!RH.feat('recent') && activeCat === REC) activeCat = 'Alle';
-  if(!RH.feat('notes') && activeCat === NOTE) activeCat = 'Alle';
+  if(!RH.feat('favorites') && activeView === FAV) activeView = null;
+  if(!RH.feat('recent') && activeView === REC) activeView = null;
+  if(!RH.feat('notes') && activeView === NOTE) activeView = null;
   if(started){ renderChips(); applyFilter(); }
   updateFavBtn(); updateNoteUI();
 }
@@ -397,7 +424,7 @@ RH.onAuth(async (user) => {
     favs.clear(); favsFor = null;
     recent = [];
     Object.keys(notes).forEach(k => delete notes[k]);
-    if(activeCat === FAV || activeCat === REC || activeCat === NOTE) activeCat = 'Alle';
+    if(activeView) activeView = null;
     if(started){ renderChips(); applyFilter(); }
     updateFavBtn(); updateNoteUI();
     return;

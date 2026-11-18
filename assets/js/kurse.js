@@ -3,7 +3,7 @@
    Aus einem Regelheft-Thema oder eigenen Unterlagen (PDF, Fotos, GoodNotes, Text) macht die KI einen Kurs:
    • Lernpfad mit Lektionen (Fragen, Herzen, XP)
    • Karteikarten mit Wiederholung in Abständen – auch eigene Karten
-   • Podcast mit Lena & Max (normal oder „zum Einschlafen“ mit Schlaftimer)
+   • Podcast mit wechselnden Moderatoren (normal oder „zum Einschlafen“ mit Schlaftimer)
    • Zusammenfassung
    Kurse, Fortschritt, Serie und XP gehören zum Konto: Sie liegen im Browser (IndexedDB, auch offline) und werden mit dem Worker abgeglichen (/api/kurse/…),
    damit sie auf jedem Gerät da sind. Nur die Podcast-Aufnahmen bleiben auf dem Gerät (zu groß) und lassen sich dort neu erstellen.
@@ -878,7 +878,7 @@
     async function work(){
       while(next < chunks.length){
         const i = next++;
-        const j = await RH.api('/api/tts', {body:{lines: chunks[i], calm}});
+        const j = await RH.api('/api/tts', {body:{lines: chunks[i], calm, hosts: ttsHosts}});
         if(j.error) throw new Error(typeof j.error === 'string' ? j.error : 'Die Aufnahme hat nicht geklappt.');
         const got = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).filter(p => p.inlineData && p.inlineData.data);
         if(!got.length) throw new Error('Die Aufnahme hat nicht geklappt. Bitte nochmal versuchen.');
@@ -905,13 +905,12 @@
   }
   const fmt = s => isFinite(s) ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00';
 
-  const POD_NAMES = ['Lernkanal 42', 'Kopf an, Podcast an', 'Nachgefragt', 'Aha, so geht’s!', 'Die Lernrunde', 'Schlau am Küchentisch', 'Hauptsache verstanden', 'Plus eins, minus null', 'Frag Lena & Max', 'Zwischen Tafel und Tasse', 'Kurz erklärt', 'Der Klick-Moment', 'Heute schlauer', 'Pausenhof-Wissen', 'Rechnen, reden, rauskriegen'];
-  const podShow = k => {   // zufälliger Podcast-Name, einmal pro Kurs gewählt und mit dem Kurs gespeichert
-    if(!k.podcast.show){ k.podcast.show = POD_NAMES[Math.floor(Math.random() * POD_NAMES.length)]; save(k); }
-    return k.podcast.show;
-  };
+  // Moderatoren: bei neuen Kursen vom Server gewählt (Name, Geschlecht, wer erklärt); ältere Kurse behalten Lena & Max
+  const hostsOf = pod => (Array.isArray(pod.hosts) && pod.hosts.length === 2 ? pod.hosts : [{name:'Lena', gender:'f', role:'erklärt'}, {name:'Max', gender:'m', role:'fragt'}]);
+  let ttsHosts = null;
   function renderPodcast(k, body){
-    const pod = k.podcast, show = podShow(k);
+    const pod = k.podcast, hosts = hostsOf(pod), hostNames = hosts.map(h => h.name).join(' & ');
+    ttsHosts = hosts.map(h => ({name: h.name, gender: h.gender}));
     let calm = false; try{ calm = sessionStorage.getItem('regelheft-pod-calm') === '1'; }catch(e){}
     const key = () => k.id + ':' + (calm ? 'calm' : 'normal');
     const total = pod.lines.reduce((n, l) => n + l.text.length, 0) || 1, starts = [];
@@ -922,11 +921,11 @@
       const blob = await db.audio(key()).catch(() => null);
       body.innerHTML =
         '<div class="pc-player' + (calm ? ' night' : '') + '">' +
-          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? icon('moon', 30) : icon('headphones', 30)) + '</div><div><h3>' + esc(show) + '</h3><p class="pc-ep">' + esc(pod.title) + '</p><p>Lena & Max · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
+          '<div class="pc-head"><div class="pc-cover" aria-hidden="true">' + (calm ? icon('moon', 30) : icon('headphones', 30)) + '</div><div><h3>' + esc(pod.title) + '</h3><p>' + esc(hostNames) + ' · ' + (calm ? 'Einschlaf-Version' : 'Normale Version') + ' · ca. ' + Math.max(1, Math.round(total / (calm ? 650 : 850))) + ' min</p></div></div>' +
           '<div class="pc-seg" role="radiogroup" aria-label="Version"><button type="button" role="radio" aria-checked="' + !calm + '" data-m="0" class="' + (calm ? '' : 'on') + '">' + icon('headphones', 16) + 'Normal</button><button type="button" role="radio" aria-checked="' + calm + '" data-m="1" class="' + (calm ? 'on' : '') + '">' + icon('moon', 16) + 'Zum Einschlafen</button></div>' +
           '<div id="pcCtl"></div>' +
         '</div>' +
-        '<details class="pc-script"><summary>Mitlesen</summary><div id="pcLines">' + pod.lines.map((l, i) => '<button type="button" class="pc-line ' + (l.speaker === 'Max' ? 'max' : 'lena') + '" data-i="' + i + '"><b>' + esc(l.speaker) + '</b><span>' + esc(l.text) + '</span></button>').join('') + '</div></details>';
+        '<details class="pc-script"><summary>Mitlesen</summary><div id="pcLines">' + pod.lines.map((l, i) => '<button type="button" class="pc-line ' + (l.speaker === hosts[1].name ? 'max' : 'lena') + '" data-i="' + i + '"><b>' + esc(l.speaker) + '</b><span>' + esc(l.text) + '</span></button>').join('') + '</div></details>';
       body.querySelector('.pc-seg').onclick = e => {
         const b = e.target.closest('[data-m]'); if(!b || (b.dataset.m === '1') === calm) return;
         calm = b.dataset.m === '1'; try{ sessionStorage.setItem('regelheft-pod-calm', calm ? '1' : '0'); }catch(e){}
@@ -1011,7 +1010,7 @@
         document.body.appendChild(n); n.focus(); ui();
       };
       if('mediaSession' in navigator){
-        navigator.mediaSession.metadata = new MediaMetadata({title: pod.title, artist: show + ' · ' + (calm ? 'Zum Einschlafen' : 'Lena & Max'), album: k.title});
+        navigator.mediaSession.metadata = new MediaMetadata({title: pod.title, artist: 'Regelheft · ' + (calm ? 'Zum Einschlafen' : hostNames), album: k.title});
         navigator.mediaSession.setActionHandler('play', () => audio.play());
         navigator.mediaSession.setActionHandler('pause', () => audio.pause());
         navigator.mediaSession.setActionHandler('seekbackward', () => audio.currentTime -= 15);

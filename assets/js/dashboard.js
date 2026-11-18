@@ -76,43 +76,96 @@
     });
   }
 
-  /* ---------- Nutzer: suchen, Plus/Pro schenken ---------- */
-  let uOpen = null, uPlan = 'pro', uDays = 30, uQ = '', uTimer = 0;
+  /* ---------- Nutzer: suchen, filtern, im Detail verwalten ---------- */
+  const UFILTERS = [['all', 'Alle'], ['pro', 'Pro'], ['plus', 'Plus'], ['free', 'Gratis'], ['banned', 'Gesperrt'], ['unverified', 'E-Mail offen'], ['staff', 'Team']];
+  const UFEAT = {ai: 'KI-Aufgabenhilfe', favorites: 'Merkliste', recent: 'Zuletzt geöffnet', notes: 'Notizen', practice: 'Meine Kurse'};
+  let uOpen = null, uPlan = 'pro', uDays = 30, uQ = '', uF = 'all', uTimer = 0, uMail = false;
+  const fact = (k, v) => '<div class="u-fact"><span>' + esc(k) + '</span><b>' + v + '</b></div>';
+  const TN = {pro: 'Pro', plus: 'Plus', free: 'Gratis'};
   function userRow(u){
     const open = uOpen === u.username;
-    const sub = u.grant && u.until ? 'Geschenk bis ' + D(u.until) : (u.email || 'Seit ' + D(u.created_at));
+    const sub = (u.grant && u.until ? 'Geschenk bis ' + D(u.until) : (u.email || 'Seit ' + D(u.created_at))) + (u.last_login ? ' · zuletzt ' + T(u.last_login) : '');
     let h = '<div class="u-item"><button type="button" class="u-row" data-u="' + esc(u.username) + '" aria-expanded="' + open + '"><span class="u-av ' + u.tier + '">' + esc(u.username.charAt(0).toUpperCase()) + '</span>'
-      + '<span class="u-row-tx"><b>' + esc(u.username) + '</b><small>' + esc(sub) + '</small></span>' + (u.owner ? '<span class="u-badge ok">Besitzer</span>' : u.staff ? '<span class="u-badge ok">Team</span>' : '') + tier(u) + '</button>';
-    if(open){
-      h += '<div class="u-panel"><div class="u-seg2"><button type="button" class="u-btn ghost sm" data-plan="pro" aria-pressed="' + (uPlan === 'pro') + '">' + ic('crown', 16) + 'Pro</button><button type="button" class="u-btn ghost sm" data-plan="plus" aria-pressed="' + (uPlan === 'plus') + '">Plus</button></div>'
-        + '<div class="u-chips" style="margin-bottom:12px">' + [7, 30, 90, 365].map(d => '<button type="button" class="u-chip" data-days="' + d + '" aria-pressed="' + (uDays === d) + '">' + (d === 365 ? '1 Jahr' : d + ' Tage') + '</button>').join('') + '</div>'
-        + '<div class="u-actions"><button type="button" class="u-btn" data-give="' + esc(u.username) + '">' + ic('gift', 18) + (uPlan === 'pro' ? 'Pro' : 'Plus') + ' schenken</button>' + (u.grant ? '<button type="button" class="u-btn danger" data-take="' + esc(u.username) + '">Geschenk beenden</button>' : '') + '</div><div class="u-msg" id="uMsg" role="status"></div></div>';
-    }
+      + '<span class="u-row-tx"><b>' + esc(u.username) + '</b><small>' + esc(sub) + '</small></span>' + (u.banned ? '<span class="u-badge bad">Gesperrt</span>' : '') + (u.email && !u.verified ? '<span class="u-badge warn">E-Mail offen</span>' : '')
+      + (u.owner ? '<span class="u-badge ok">Besitzer</span>' : u.staff ? '<span class="u-badge ok">Team</span>' : '') + tier(u) + '</button>';
+    if(open) h += '<div class="u-panel" id="uPanel"><div class="u-empty">Lade …</div></div>';
     return h + '</div>';
   }
-  async function loadUsers(){
+  function panelHtml(d){
+    const f = d.flags, locked = d.owner;
+    const tierTx = TN[d.tier] + (d.grant ? ' (Geschenk bis ' + D(d.until) + ')' : d.hasSub ? ' (Abo' + (d.cancelAtEnd ? ', gekündigt zum ' + D(d.until) : '') + ')' : '');
+    let h = '<div class="u-facts">'
+      + fact('E-Mail', d.email ? esc(d.email) + (d.verified ? ' ✓' : ' (nicht bestätigt)') : 'keine') + fact('Registriert', d.created_at ? D(d.created_at) : '–') + fact('Zuletzt angemeldet', d.last_login ? T(d.last_login) : '–')
+      + fact('Tarif', esc(tierTx)) + fact('Aktive Geräte', d.sessions) + fact('Chats', d.chats) + fact('Kurse im Konto', d.kurse) + fact('KI-Chats heute', d.aiToday) + (d.google ? fact('Anmeldung', 'Google') : '') + '</div>';
+    if(locked) return h + '<div class="u-sub">Der Besitzer kann hier nicht verwaltet werden.</div>';
+    h += '<div class="u-sec">Tarif schenken</div><div class="u-seg2"><button type="button" class="u-btn ghost sm" data-plan="pro" aria-pressed="' + (uPlan === 'pro') + '">' + ic('crown', 16) + 'Pro</button><button type="button" class="u-btn ghost sm" data-plan="plus" aria-pressed="' + (uPlan === 'plus') + '">Plus</button></div>'
+      + '<div class="u-chips" style="margin-bottom:12px">' + [7, 30, 90, 365].map(x => '<button type="button" class="u-chip" data-days="' + x + '" aria-pressed="' + (uDays === x) + '">' + (x === 365 ? '1 Jahr' : x + ' Tage') + '</button>').join('') + '</div>'
+      + '<div class="u-actions"><button type="button" class="u-btn" data-give="' + esc(d.username) + '">' + ic('gift', 18) + (uPlan === 'pro' ? 'Pro' : 'Plus') + ' schenken</button>' + (d.grant ? '<button type="button" class="u-btn danger" data-take="' + esc(d.username) + '">Geschenk beenden</button>' : '') + '</div>'
+      + '<div class="u-sec">Limits und Funktionen</div>' + fld('uf_lim', 'KI-Chats pro Tag nur für diesen Nutzer (leer = Standard)', f.aiLimit == null ? '' : f.aiLimit, 'Standard', 'number')
+      + Object.keys(UFEAT).map(k => sw('uf_' + k, f.features[k] !== false, UFEAT[k])).join('')
+      + '<div class="u-sec">Sperre</div>' + sw('uf_ban', f.banned, 'Konto sperren', 'Meldet überall ab und blockiert alles außer Abmelden/Löschen') + fld('uf_reason', 'Grund (sieht der Nutzer)', f.banReason, 'z. B. Missbrauch der KI')
+      + sw('uf_notify', d.notifyActive, 'Nutzer per E-Mail informieren', d.notifyActive ? 'bei Sperre und Freischaltung' : 'keine bestätigte E-Mail oder Versand nicht eingerichtet')
+      + '<div class="u-sec">Notiz (nur für dich und das Team)</div>' + area('uf_note', '', f.note, 'z. B. Lehrerin, Testkonto …', 2)
+      + '<div class="u-actions" style="margin-top:10px"><button type="button" class="u-btn" data-act="save">Speichern</button></div>'
+      + '<div class="u-sec">Aktionen</div><div class="u-actions">'
+      + '<button type="button" class="u-btn ghost" data-act="mail">' + ic('mail', 18) + 'E-Mail senden</button><button type="button" class="u-btn ghost" data-act="logout">Überall abmelden</button>'
+      + (d.canDelete ? '<button type="button" class="u-btn danger" data-act="del">Konto löschen</button>' : '') + '</div>';
+    if(uMail) h += '<div style="margin-top:10px">' + fld('um_sub', 'Betreff', '', 'Betreff') + area('um_txt', 'Nachricht', '', 'Hallo-Zeile und Gruß ergänzt das System.', 4) + '<div class="u-actions"><button type="button" class="u-btn" data-act="sendmail">Senden</button></div></div>';
+    h += '<div style="margin-top:10px">' + fld('um_addr', 'E-Mail-Adresse setzen und als bestätigt markieren', d.email || '', 'name@beispiel.de', 'email') + '<div class="u-actions"><button type="button" class="u-btn ghost" data-act="setmail">Adresse speichern</button></div></div>'
+      + '<div class="u-msg" id="uMsg" role="status"></div>';
+    return h;
+  }
+  async function loadDetail(){
+    const box = $('uPanel'); if(!box || !uOpen) return;
+    try{ const d = await RH.api('/api/admin/user?name=' + encodeURIComponent(uOpen)); const b = $('uPanel'); if(b) b.innerHTML = panelHtml(d); }
+    catch(e){ box.innerHTML = '<div class="u-msg err">' + esc(e.message) + '</div>'; }
+  }
+  async function loadUsers(keepPanel){
     const box = $('uList'); if(!box) return;
     try{
-      const j = await RH.api('/api/admin/users?q=' + encodeURIComponent(uQ));
+      const j = await RH.api('/api/admin/users?q=' + encodeURIComponent(uQ) + '&f=' + uF);
       box.innerHTML = j.users.length ? j.users.map(userRow).join('') : '<div class="u-empty">Keine Nutzer gefunden.</div>';
+      await loadDetail();
     }catch(e){ box.innerHTML = '<div class="u-msg err">' + esc(e.message) + '</div>'; }
   }
   function viewUsers(){
-    $('dashBody').innerHTML = '<div class="u-search">' + ic('search') + '<input class="u-in" id="uSearch" type="search" placeholder="Nutzer oder E-Mail suchen" value="' + esc(uQ) + '" autocomplete="off"></div><div class="u-card"><div class="u-list" id="uList"><div class="u-empty">Lade …</div></div></div>';
+    $('dashBody').innerHTML = '<div class="u-search">' + ic('search') + '<input class="u-in" id="uSearch" type="search" placeholder="Nutzer oder E-Mail suchen" value="' + esc(uQ) + '" autocomplete="off"></div>'
+      + '<div class="u-filters" role="group" aria-label="Filter">' + UFILTERS.map(x => '<button type="button" class="u-chip" data-f="' + x[0] + '" aria-pressed="' + (uF === x[0]) + '">' + x[1] + '</button>').join('') + '</div>'
+      + '<div class="u-card"><div class="u-list" id="uList"><div class="u-empty">Lade …</div></div></div>';
     $('uSearch').oninput = e => { clearTimeout(uTimer); uTimer = setTimeout(() => { uQ = e.target.value.trim(); loadUsers(); }, 300); };
+    document.querySelector('.u-filters').onclick = e => { const b = e.target.closest('[data-f]'); if(!b) return; uF = b.dataset.f; document.querySelectorAll('.u-filters .u-chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === uF)); loadUsers(); };
+    const msg = (t, ok) => { const m = $('uMsg'); if(m){ m.className = 'u-msg' + (ok === true ? ' ok' : ok === false ? ' err' : ''); m.textContent = t; } };
     $('uList').onclick = async e => {
-      const row = e.target.closest('.u-row'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]');
-      if(row){ uOpen = uOpen === row.dataset.u ? null : row.dataset.u; return loadUsers(); }
-      if(pl){ uPlan = pl.dataset.plan; return loadUsers(); }
-      if(dy){ uDays = +dy.dataset.days; return loadUsers(); }
-      if(gv || tk){
-        const m = $('uMsg'); m.className = 'u-msg'; m.textContent = '…';
-        try{
-          const j = await RH.api('/api/admin/pro', {body: {username: (gv || tk).dataset.give || (gv || tk).dataset.take, plan: uPlan, days: uDays, revoke: !!tk}});
-          await loadUsers();
-          const m2 = $('uMsg'); if(m2){ m2.className = 'u-msg ok'; m2.textContent = tk ? 'Geschenk beendet.' : (j.plan === 'plus' ? 'Plus' : 'Pro') + ' geschenkt bis ' + D(j.until) + '.'; }
-        }catch(x){ m.className = 'u-msg err'; m.textContent = x.message; }
-      }
+      const row = e.target.closest('.u-row'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]'), ac = e.target.closest('[data-act]');
+      if(row){ uOpen = uOpen === row.dataset.u ? null : row.dataset.u; uMail = false; return loadUsers(); }
+      if(pl){ uPlan = pl.dataset.plan; return loadDetail(); }
+      if(dy){ uDays = +dy.dataset.days; return loadDetail(); }
+      const name = uOpen, g = id => $(id) ? $(id).value : '', c = id => $(id) && $(id).checked;
+      try{
+        if(gv || tk){
+          msg('…');
+          const j = await RH.api('/api/admin/pro', {body: {username: name, plan: uPlan, days: uDays, revoke: !!tk}});
+          await loadUsers(); msg(tk ? 'Geschenk beendet.' : (j.plan === 'plus' ? 'Plus' : 'Pro') + ' geschenkt bis ' + D(j.until) + '.', true);
+        }else if(ac){
+          const act = ac.dataset.act;
+          if(act === 'save'){
+            msg('Speichert …');
+            const lim = g('uf_lim').trim();
+            const j = await RH.api('/api/admin/user/update', {body: {username: name, aiLimit: lim === '' ? null : +lim, features: Object.fromEntries(Object.keys(UFEAT).map(k => [k, c('uf_' + k)])), banned: c('uf_ban'), banReason: g('uf_reason'), note: g('uf_note'), notify: c('uf_notify')}});
+            await loadUsers(); msg('Gespeichert.' + (j.mailed ? ' Der Nutzer wurde per E-Mail informiert.' : ''), true);
+          }else if(act === 'mail'){ uMail = !uMail; await loadDetail(); }
+          else if(act === 'sendmail'){
+            msg('Sendet …'); await RH.api('/api/admin/user/mail', {body: {username: name, subject: g('um_sub'), text: g('um_txt')}}); uMail = false; await loadDetail(); msg('E-Mail gesendet.', true);
+          }else if(act === 'logout'){
+            await RH.api('/api/admin/user/logout', {body: {username: name}}); await loadDetail(); msg('Auf allen Geräten abgemeldet.', true);
+          }else if(act === 'setmail'){
+            await RH.api('/api/admin/user/email', {body: {username: name, email: g('um_addr')}}); await loadUsers(); msg('E-Mail-Adresse gespeichert und als bestätigt markiert.', true);
+          }else if(act === 'del'){
+            if(!await RH.confirm({title: 'Konto „' + name + '“ löschen?', text: 'Alle Daten (Chats, Kurse, Notizen, Abo) werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.', ok: 'Endgültig löschen', danger: true})) return;
+            await RH.api('/api/admin/user/delete', {body: {username: name, confirm: name}}); uOpen = null; await loadUsers();
+          }
+        }
+      }catch(x){ msg(x.message, false); }
     };
     loadUsers();
   }
@@ -169,6 +222,7 @@
     practice: 'Meine Kurse', share: 'Regeln als Bild teilen', darkmode: 'Dunkelmodus', stats: 'Statistik'
   };
   const PROV_LABELS = {scher: 'ScherAI', gemini: 'Gemini', groq: 'Groq'};
+  const NOTIFY_LABELS = {welcome: 'Willkommen bei Plus/Pro (nach dem Kauf)', grant: 'Geschenkter Tarif (Start und Ende)', ban: 'Konto gesperrt', unban: 'Sperre aufgehoben', cancel: 'Kündigung bestätigt', paymentFailed: 'Zahlung fehlgeschlagen', deleted: 'Konto vom Betreiber gelöscht'};
   async function viewSet(){
     loading();
     let data;
@@ -177,6 +231,7 @@
     S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {});
     S.billing.plusFeatures = Object.assign({practice:false, notes:true}, S.billing.plusFeatures || {});
     S.auth = Object.assign({requireEmail:true, requireVerified:true, google:true}, S.auth || {});
+    S.notify = Object.assign({}, S.notify || {});
     const news = S.news || RH.defaults.news;
     const social = {discord: S.social.discord == null ? RH.defaults.discord : S.social.discord, instagram: S.social.instagram == null ? RH.defaults.instagram : S.social.instagram};
     let order = S.ai.order.slice();
@@ -209,6 +264,14 @@
           sw('nw_on', news.enabled !== false, 'Popup anzeigen') + '<div style="height:8px"></div>' + fld('nw_date', 'Datum', news.date, '21.10.2026') + fld('nw_title', 'Überschrift', news.title, 'Neu im Regelheft')
         + area('nw_items', 'Punkte (eine Zeile pro Punkt)', (news.items || []).join('\n'), '', 6))
       + acc('KI', 'sparkles', '<div id="provList">' + provHtml() + '</div><div style="height:10px"></div>' + fld('ai_rate', 'Anfragen pro Nutzer und Zeitfenster', S.ai.rateLimit, '20', 'number') + area('ai_extra', 'Zusätzliche Anweisung an die KI', S.ai.extra, 'z. B. Antworte besonders kurz.', 3))
+      + acc('E-Mail-Benachrichtigungen', 'mail',
+          '<div class="u-sub" style="margin-bottom:6px">' + (SYS.mail && SYS.mail.ready ? 'Gehen nur an Nutzer mit bestätigter E-Mail-Adresse.' : 'Der E-Mail-Versand ist noch nicht eingerichtet, es werden keine Mails verschickt.') + '</div>'
+        + Object.keys(NOTIFY_LABELS).map(k => sw('nt_' + k, S.notify[k] !== false, NOTIFY_LABELS[k])).join(''))
+      + acc('Rundmail', 'mail',
+          '<div class="u-sub" style="margin-bottom:6px">Schickt eine Nachricht an alle Nutzer mit bestätigter E-Mail-Adresse (gesperrte Konten bekommen nichts).</div>'
+        + '<label class="u-field"><span>Empfänger</span><select class="u-in" id="bc_aud"><option value="all">Alle</option><option value="pro">Nur Pro</option><option value="plus">Nur Plus</option><option value="free">Nur Gratis-Nutzer</option></select></label>'
+        + fld('bc_sub', 'Betreff', '', 'z. B. Neu im Regelheft') + area('bc_txt', 'Nachricht', '', 'Die Anrede „Hallo Name“ und der Gruß werden automatisch ergänzt.', 5)
+        + '<div class="u-actions"><button type="button" class="u-btn ghost" id="bc_count">Empfänger zählen</button><button type="button" class="u-btn" id="bc_send">' + ic('mail', 18) + 'Senden</button></div><div class="u-msg" id="bc_msg" role="status"></div>')
       + acc('Footer-Links', 'link', fld('so_dc', 'Discord', social.discord, 'https://discord.gg/…') + fld('so_ig', 'Instagram', social.instagram, 'https://instagram.com/…'))
       + '</div><div class="u-save"><span class="u-msg" id="setMsg" role="status"></span><button type="button" class="u-btn" id="setSave">Speichern</button></div>'
       + '<style>#setWrap .u-tech{display:none} #setWrap.show-tech .u-tech{display:block}</style>';
@@ -225,6 +288,25 @@
       $('provList').innerHTML = provHtml();
       order.forEach(p => { $('prov_' + p).checked = !!S.ai.enabled[p]; });
     };
+    // Rundmail in Paketen senden
+    const bcMsg = (t, ok) => { const m = $('bc_msg'); m.className = 'u-msg' + (ok === true ? ' ok' : ok === false ? ' err' : ''); m.textContent = t; };
+    $('bc_count').onclick = async () => { try{ const j = await RH.api('/api/admin/mail/broadcast', {body: {audience: $('bc_aud').value, count: true}}); bcMsg(j.total + ' Empfänger.', true); }catch(e){ bcMsg(e.message, false); } };
+    $('bc_send').onclick = async () => {
+      const aud = $('bc_aud').value, subject = $('bc_sub').value.trim(), text = $('bc_txt').value.trim();
+      if(!subject || !text){ bcMsg('Bitte Betreff und Nachricht eingeben.', false); return; }
+      try{
+        const cnt = await RH.api('/api/admin/mail/broadcast', {body: {audience: aud, count: true}});
+        if(!cnt.total){ bcMsg('Keine Empfänger mit bestätigter E-Mail.', false); return; }
+        if(!await RH.confirm({title: 'Rundmail senden?', text: cnt.total + ' Empfänger. Das lässt sich nicht zurücknehmen.', ok: 'Senden'})) return;
+        $('bc_send').disabled = true; let offset = 0, sent = 0, failed = 0;
+        while(offset !== null){
+          const j = await RH.api('/api/admin/mail/broadcast', {body: {audience: aud, subject, text, offset}});
+          sent += j.sent; failed += j.failed; offset = j.next; bcMsg('Gesendet: ' + sent + ' von ' + j.total + (failed ? ' (' + failed + ' fehlgeschlagen)' : '') + ' …');
+        }
+        bcMsg('Fertig: ' + sent + ' gesendet' + (failed ? ', ' + failed + ' fehlgeschlagen' : '') + '.', !failed);
+      }catch(e){ bcMsg(e.message, false); }
+      $('bc_send').disabled = false;
+    };
     $('setSave').onclick = async () => {
       keep();
       const g = id => $(id).value, c = id => $(id).checked;
@@ -236,7 +318,8 @@
         ai: {order, enabled: Object.fromEntries(order.map(p => [p, $('prov_' + p).checked])), rateLimit: +g('ai_rate') || 20, extra: g('ai_extra')},
         social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
         billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, plusAiPerDay: +g('bl_plus_ai') || 0, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
-        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}
+        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')},
+        notify: Object.fromEntries(Object.keys(NOTIFY_LABELS).map(k => [k, c('nt_' + k)]))
       };
       const m = $('setMsg'); m.className = 'u-msg'; m.textContent = 'Speichert …'; $('setSave').disabled = true;
       try{ await RH.api('/api/admin/settings', {body: {settings: payload}}); m.className = 'u-msg ok'; m.textContent = 'Gespeichert. Gilt in ca. 20 Sekunden.'; }
