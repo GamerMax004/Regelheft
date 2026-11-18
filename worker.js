@@ -3,7 +3,7 @@
 // Reihenfolge/An-Aus der Anbieter, Mitteilung, Funktionsschalter usw. stellst du im Dashboard unter "Einstellungen" ein.
 // ADMIN_USER (dein Benutzername = Dashboard-Zugriff), D1-Binding "DB",
 // optional DEBUG=1 (zeigt Fehlerdetails in der Meldung), GEMINI_MODELS, GROQ_MODELS (kommagetrennt, überschreibt die Listen unten), RATE_LIMIT
-// „Meine Kurse“ (Lernpfad, Karteikarten, Podcast, Datei-Upload) braucht zusätzlich GEMINI_API_KEY und das Feature „practice“ im Dashboard.
+// „Meine Kurse“ (Lernpfad, Karteikarten, Podcast, Datei-Upload; Kurse werden pro Konto in der Datenbank gespeichert) braucht zusätzlich GEMINI_API_KEY und das Feature „practice“ im Dashboard.
 const SYSTEM = `Du bist die Aufgabenhilfe im „Regelheft {FACH}“ eines Schülers. Du siehst ein Foto und/oder einen Text mit einer {AUFGABE}.
 Deine Aufgabe: Erkenne, welche {THEMEN} die Aufgabe braucht ({BEISPIELE}), und wähle dazu die passenden Regeln aus der folgenden Liste. Verwende NUR IDs aus dieser Liste. Die Liste enthält zu jeder Regel Titel, Kategorie und einen kurzen Textanfang als Stichwort-Hilfe.
 Löse die Aufgabe NICHT vollständig; nenne nur kurz den Ansatz und warum die Regeln helfen.
@@ -168,7 +168,9 @@ const DEFAULT_SETTINGS = {
   billing: { enabled: false, proFeatures: { practice: true, notes: true }, freeAiPerDay: 3, plusAiPerDay: 15, plusFeatures: { practice: false, notes: true }, yearly: true, kleinunternehmer: true, promo: false, note: "" },
   auth: { requireEmail: true, requireVerified: true, google: true },
   staff: [],   // Benutzernamen mit Zugriff aufs Dashboard (Team); nur der Besitzer (ADMIN_USER) kann sie ändern
+  notify: { welcome: true, grant: true, ban: true, unban: true, cancel: true, paymentFailed: true, deleted: true },   // E-Mails an Nutzer bei diesen Ereignissen
 };
+const NOTIFY_KINDS = ["welcome", "grant", "ban", "unban", "cancel", "paymentFailed", "deleted"];
 const str = (v, n) => String(v == null ? "" : v).slice(0, n);
 const okUrl = v => { v = String(v || "").trim(); return !v || /^https:\/\/[^\s]+$/.test(v) || /^[a-z0-9_-]+\.html(\?[^\s#]*)?(#[\w-]+)?$/i.test(v) ? v.slice(0, 300) : ""; };
 function cleanSettings(x) {
@@ -197,6 +199,8 @@ function cleanSettings(x) {
     yearly: b.yearly !== false, kleinunternehmer: b.kleinunternehmer !== false, promo: b.promo === true, note: str(b.note, 300) };
   const au = x.auth || {};
   o.auth = { requireEmail: au.requireEmail !== false, requireVerified: au.requireVerified !== false, google: au.google !== false };
+  const nt = x.notify || {};
+  o.notify = Object.fromEntries(NOTIFY_KINDS.map(k => [k, nt[k] !== false]));
   o.staff = (Array.isArray(x.staff) ? x.staff : []).map(n => String(n || "").trim()).filter((n, i, a) => /^[A-Za-z0-9_.-]{3,20}$/.test(n) && a.findIndex(m => m.toLowerCase() === n.toLowerCase()) === i).slice(0, 20);
   const so = x.social || {};
   const su = v => { v = String(v || "").trim(); return /^https:\/\/[^\s]+$/.test(v) ? v.slice(0, 200) : (v === "" ? "" : null); };
@@ -254,12 +258,19 @@ async function newSession(env, uid) {
     .bind(await sha256(token), uid, now, now + 30 * 864e5).run();
   return token;
 }
+const FEATURE_KEYS = ["ai", "favorites", "recent", "notes", "practice"];   // pro Nutzer abschaltbar
+async function userFlags(env, uid) {
+  const r = await env.DB.prepare("SELECT note, banned, ban_reason, ai_limit, features FROM user_admin WHERE user_id = ?").bind(uid).first();
+  let f = {}; try { f = r && r.features ? JSON.parse(r.features) : {}; } catch (e) {}
+  return { banned: !!(r && r.banned), banReason: r && r.ban_reason ? r.ban_reason : "", aiLimit: r && r.ai_limit != null ? r.ai_limit : null, features: f, note: r && r.note ? r.note : "" };
+}
+const featureOn = (cfg, user, f) => cfg.features[f] !== false && !(!user.admin && user.flags && user.flags.features && user.flags.features[f] === false);
 async function getUser(req, env) {
   const t = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!t) return null;
   const row = await env.DB.prepare("SELECT u.id, u.username FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > ?")
     .bind(await sha256(t), Date.now()).first();
-  return row ? { id: row.id, username: row.username, ...(await roleOf(env, row.username)) } : null;
+  return row ? { id: row.id, username: row.username, ...(await roleOf(env, row.username)), flags: await userFlags(env, row.id) } : null;
 }
 
 async function handleAI(env, user, body, json, cfg) {
@@ -275,8 +286,9 @@ async function handleAI(env, user, body, json, cfg) {
   if (!user.admin) {
     const info = await userInfo(env, user);
     if (cfg.auth.requireEmail && cfg.auth.requireVerified && mailReady(env) && !info.emailVerified) return json({ error: "Bitte bestätige zuerst deine E-Mail-Adresse.", code: "verify_required" }, 403);
-    if (billingOn(env, cfg) && !info.pro) {
-      const day = berlinDay(), limit = info.plus ? cfg.billing.plusAiPerDay : cfg.billing.freeAiPerDay;
+    const ovr = user.flags ? user.flags.aiLimit : null;   // vom Admin gesetztes eigenes Tageslimit gilt immer
+    if ((billingOn(env, cfg) && !info.pro) || ovr != null) {
+      const day = berlinDay(), limit = ovr != null ? ovr : (info.plus ? cfg.billing.plusAiPerDay : cfg.billing.freeAiPerDay);
       const used = (await env.DB.prepare("SELECT COUNT(*) AS n FROM ai_chats WHERE user_id = ? AND day = ?").bind(user.id, day).first()).n;
       const known = cid ? await env.DB.prepare("SELECT 1 AS x FROM ai_chats WHERE user_id = ? AND day = ? AND cid = ?").bind(user.id, day, cid).first() : null;
       if (!known && used >= limit) return json({ error: limit > 0 ? `Dein Tageslimit von ${limit} KI-Chats ist erreicht. Morgen geht es weiter, oder hol dir ${info.plus || !plusReady(env) ? "Pro für unbegrenzte Chats." : "Plus oder Pro für mehr Chats."}` : `Die KI-Aufgabenhilfe gibt es mit einem Abo (${plusReady(env) ? "Plus oder Pro" : "Pro"}).`, code: "limit", quota: { used, limit } }, 429);
@@ -324,7 +336,7 @@ async function handleAI(env, user, body, json, cfg) {
 
 // ============================================================
 // MEINE KURSE (Pro/Plus): aus einem Regelheft-Thema oder eigenen Unterlagen (PDF, Fotos, GoodNotes)
-// macht die KI einen Kurs: Zusammenfassung, Podcast (Lena & Max), Karteikarten und einen Lernpfad mit Übungen.
+// macht die KI einen Kurs: Zusammenfassung, Podcast (wechselnde Moderatoren), Karteikarten und einen Lernpfad mit Übungen.
 // Braucht GEMINI_API_KEY (Text, Dateien und Stimmen kommen von Gemini).
 //   POST /api/upload-url { name, size }                    → { uploadUrl, mimeType }  (der Browser lädt die Datei direkt zu Google)
 //   POST /api/kurs { topic?, fach, rules?, files?, notes? } → { title, emoji, summary, podcast, flashcards, units }
@@ -338,6 +350,19 @@ const KURS_MIME = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg",
 const kursQuestion = { type: "object", additionalProperties: false, required: ["type", "question", "options", "correctIndex", "explanation"],
   properties: { type: { type: "string", enum: ["multiple_choice", "true_false", "fill_blank"] }, question: { type: "string" },
     options: { type: "array", items: { type: "string" } }, correctIndex: { type: "integer" }, explanation: { type: "string" } } };
+// Moderatoren des Podcasts: jedes Mal zwei zufällige Namen (eine Frau, ein Mann); mal erklärt sie und er fragt nach, mal umgekehrt.
+const HOSTS_F = ["Lena", "Mia", "Sophie", "Emma", "Hannah", "Lea", "Anna", "Clara", "Marie", "Johanna", "Laura", "Nele", "Paula", "Greta", "Ida", "Jule", "Lotta", "Sarah", "Zoe", "Elif", "Amelie", "Charlotte", "Frieda", "Leonie", "Mara", "Selina", "Vera", "Nora", "Pia", "Mathilda", "Julia", "Katja", "Merle", "Tabea", "Yara", "Ronja", "Alina", "Carla", "Helena", "Luisa"];
+const HOSTS_M = ["Max", "Ben", "Jonas", "Leon", "Paul", "Felix", "Luca", "Noah", "Finn", "Elias", "Tim", "Jan", "David", "Moritz", "Emil", "Anton", "Lukas", "Niklas", "Philipp", "Tom", "Ole", "Simon", "Jakob", "Henri", "Kai", "Julian", "Mehmet", "Sven", "Tobias", "Marlon", "Linus", "Fabian", "Nico", "Arne", "Jannik", "Malte", "Samuel", "Yusuf", "Konstantin", "Rafael"];
+const pick = a => a[crypto.getRandomValues(new Uint32Array(1))[0] % a.length];
+function pickHosts() {
+  const f = { name: pick(HOSTS_F), gender: "f" }, m = { name: pick(HOSTS_M), gender: "m" };
+  return Math.random() < 0.5 ? { explainer: { ...f, role: "erklärt" }, asker: { ...m, role: "fragt" } } : { explainer: { ...m, role: "erklärt" }, asker: { ...f, role: "fragt" } };
+}
+const hostList = h => [h.explainer, h.asker];
+function cleanHosts(x) {   // vom Browser mitgeschickt: genau zwei, unterschiedliche Namen, Geschlecht f/m
+  const a = (Array.isArray(x) ? x : []).slice(0, 2).map(h => ({ name: str(h && h.name, 20).trim(), gender: h && h.gender === "m" ? "m" : "f" }));
+  return a.length === 2 && a.every(h => /^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß' -]{0,19}$/.test(h.name)) && a[0].name.toLowerCase() !== a[1].name.toLowerCase() ? a : [{ name: "Lena", gender: "f" }, { name: "Max", gender: "m" }];
+}
 const KURS_MAX_FILES = 5;   // Pro: so viele eigene Lerndateien pro Kurs
 const KURS_SCHEMA = {
   type: "object", additionalProperties: false, required: ["title", "emoji", "summary", "rules", "podcast", "flashcards", "units"],
@@ -347,7 +372,7 @@ const KURS_SCHEMA = {
       properties: { title: { type: "string" }, text: { type: "string" }, example: { type: "string" } } } },
     podcast: { type: "object", additionalProperties: false, required: ["title", "lines"], properties: { title: { type: "string" },
       lines: { type: "array", items: { type: "object", additionalProperties: false, required: ["speaker", "text"],
-        properties: { speaker: { type: "string", enum: ["Lena", "Max"] }, text: { type: "string" } } } } } },
+        properties: { speaker: { type: "string" }, text: { type: "string" } } } } } },
     flashcards: { type: "array", items: { type: "object", additionalProperties: false, required: ["front", "back"],
       properties: { front: { type: "string" }, back: { type: "string" } } } },
     units: { type: "array", items: { type: "object", additionalProperties: false, required: ["title", "lessons"], properties: { title: { type: "string" },
@@ -355,11 +380,11 @@ const KURS_SCHEMA = {
         properties: { title: { type: "string" }, questions: { type: "array", items: kursQuestion } } } } } } },
   },
 };
-const kursSystem = fachName => `Du bist ein Lerncoach für Schülerinnen und Schüler (Fach: ${fachName}). Du bekommst Lernunterlagen (PDFs, Fotos von Mitschriften, Notizen) und/oder Regeln aus ihrem Regelheft. Lies alles genau, auch Handschrift auf Bildern. Erfinde nichts, was nicht in den Unterlagen steht oder direkt daraus folgt.
+const kursSystem = (fachName, hosts) => `Du bist ein Lerncoach für Schülerinnen und Schüler (Fach: ${fachName}). Du bekommst Lernunterlagen (PDFs, Fotos von Mitschriften, Notizen) und/oder Regeln aus ihrem Regelheft. Lies alles genau, auch Handschrift auf Bildern. Erfinde nichts, was nicht in den Unterlagen steht oder direkt daraus folgt.
 Erstelle auf Deutsch:
 - title: kurzer Name des Themas; emoji: ein passendes Emoji; summary: Zusammenfassung in 4–8 Sätzen.
 - rules: die 4–12 wichtigsten Regeln, Formeln oder Merksätze wie in einem Regelheft. title = kurzer Name, text = die Regel in 1–3 Sätzen (Formeln erlaubt, z. B. a² + b² = c²), example = ein kurzes Beispiel (oder leer).
-- podcast: ein lockeres Gespräch zwischen Lena (erklärt) und Max (fragt nach, bringt Alltagsbeispiele), 20–36 Wortbeiträge, das die wichtigsten Inhalte verständlich erklärt. Gesprochene Sprache: keine Aufzählungszeichen, keine Formelzeichen – schreib Formeln so, wie man sie vorliest (z. B. „a Quadrat plus b Quadrat gleich c Quadrat“).
+- podcast: ein lockeres Gespräch zwischen ${hosts.explainer.name} (${hosts.explainer.gender === "f" ? "sie" : "er"} erklärt) und ${hosts.asker.name} (${hosts.asker.gender === "f" ? "sie" : "er"} fragt nach, versteht manches zuerst nicht und bringt Alltagsbeispiele; speaker ist immer genau \"${hosts.explainer.name}\" oder \"${hosts.asker.name}\"), 20–36 Wortbeiträge, das die wichtigsten Inhalte verständlich erklärt. Gesprochene Sprache: keine Aufzählungszeichen, keine Formelzeichen – schreib Formeln so, wie man sie vorliest (z. B. „a Quadrat plus b Quadrat gleich c Quadrat“).
 - flashcards: 12–30 Karteikarten. front = kurze Frage oder Aufgabe, back = knappe, richtige Antwort (hier dürfen Formeln wie a² + b² = c² stehen).
 - units: ein Lernpfad wie in einer Sprachlern-App: 2–4 Einheiten, von leicht nach schwer, je 2–3 Lektionen mit je 5–7 Fragen.
   Fragetypen: "multiple_choice" (3–4 Optionen), "true_false" (Optionen genau ["Wahr", "Falsch"]), "fill_blank" (Satz mit "___" als Lücke, 3–4 Wörter als Optionen).
@@ -440,12 +465,13 @@ async function geminiKurs(env, system, parts, opts = {}) {
 }
 
 // Antwort der KI säubern und begrenzen
-function cleanKurs(j, fallbackTitle) {
+function cleanKurs(j, fallbackTitle, hosts) {
+  const names = hostList(hosts).map(h => h.name);
   const q = x => ({ type: ["multiple_choice", "true_false", "fill_blank"].includes(x.type) ? x.type : "multiple_choice", question: str(x.question, 400),
     options: (Array.isArray(x.options) ? x.options : []).slice(0, 5).map(o => str(o, 160)), correctIndex: Math.max(0, parseInt(x.correctIndex, 10) || 0), explanation: str(x.explanation, 400) });
   return {
     title: str(j.title, 100) || fallbackTitle, emoji: str(j.emoji, 8) || "📘", summary: str(j.summary, 3000),
-    podcast: { title: str(j.podcast.title, 120) || str(j.title, 100), lines: (j.podcast.lines || []).filter(l => ["Lena", "Max"].includes(l.speaker) && l.text).slice(0, 60).map(l => ({ speaker: l.speaker, text: str(l.text, 800) })) },
+    podcast: { title: str(j.podcast.title, 120) || str(j.title, 100), hosts: hostList(hosts).map(h => ({ name: h.name, gender: h.gender, role: h.role })), lines: (j.podcast.lines || []).filter(l => names.includes(l.speaker) && l.text).slice(0, 60).map(l => ({ speaker: l.speaker, text: str(l.text, 800) })) },
     rules: (Array.isArray(j.rules) ? j.rules : []).filter(r => r && r.title && r.text).slice(0, 20).map(r => ({ title: str(r.title, 120), text: str(r.text, 800), example: str(r.example, 400) })),
     flashcards: (j.flashcards || []).filter(c => c.front && c.back).slice(0, 40).map(c => ({ front: str(c.front, 300), back: str(c.back, 600) })),
     units: (j.units || []).slice(0, 6).map(u => ({ title: str(u.title, 100), lessons: (u.lessons || []).slice(0, 5).map(l => ({ title: str(l.title, 100),
@@ -454,15 +480,19 @@ function cleanKurs(j, fallbackTitle) {
 }
 
 // Stimmen: normal = warm und locker, ruhig = sanft und leise (zum Einschlafen)
-const TTS_VOICES = { normal: { Lena: "Sulafat", Max: "Achird" }, calm: { Lena: "Vindemiatrix", Max: "Algieba" } };
-function ttsBody(model, lines, calm) {
-  const speechConfig = { multiSpeakerVoiceConfig: { speakerVoiceConfigs: Object.entries(calm ? TTS_VOICES.calm : TTS_VOICES.normal)
+const TTS_POOL = { f: ["Sulafat", "Kore", "Leda", "Aoede", "Zephyr"], m: ["Achird", "Puck", "Orus", "Charon", "Fenrir"] };
+const TTS_CALM = { f: "Vindemiatrix", m: "Algieba" };
+const nameSum = n => [...String(n)].reduce((a, c) => a + c.charCodeAt(0), 0);
+const ttsVoices = (hosts, calm) => Object.fromEntries(hosts.map((h, i) => [h.name, calm ? TTS_CALM[h.gender] : TTS_POOL[h.gender][(nameSum(h.name) + i) % TTS_POOL[h.gender].length]]));
+function ttsBody(model, lines, calm, hosts) {
+  const [h1, h2] = hosts, both = h1.name + " und " + h2.name;
+  const speechConfig = { multiSpeakerVoiceConfig: { speakerVoiceConfigs: Object.entries(ttsVoices(hosts, calm))
     .map(([speaker, voiceName]) => ({ speaker, voiceConfig: { prebuiltVoiceConfig: { voiceName } } })) } };
   const generationConfig = { responseModalities: ["AUDIO"], speechConfig };
   if (model.includes("2.5")) {   // 2.5: Regieanweisung als Text vor dem Gespräch
     const style = calm
-      ? "Lies das folgende Gespräch zwischen Lena und Max sehr leise, langsam und beruhigend vor, wie in einem Podcast zum Einschlafen. Mach kleine Pausen zwischen den Sätzen."
-      : "Lies das folgende Gespräch zwischen Lena und Max natürlich, warm und locker vor, wie in einem echten Podcast.";
+      ? "Lies das folgende Gespräch zwischen " + both + " sehr leise, langsam und beruhigend vor, wie in einem Podcast zum Einschlafen. Mach kleine Pausen zwischen den Sätzen."
+      : "Lies das folgende Gespräch zwischen " + both + " natürlich, warm und locker vor, wie in einem echten Podcast.";
     return { contents: [{ role: "user", parts: [{ text: style + "\n\n" + lines.map(l => l.speaker + ": " + l.text).join("\n") }] }], generationConfig };
   }
   const tag = calm ? "[sehr leise, langsam und beruhigend] " : "";   // 3.8: ein Teil pro Beitrag, Stil als Tag
@@ -470,13 +500,13 @@ function ttsBody(model, lines, calm) {
 }
 // Die Gemini-Antwort wird unverändert an den Browser durchgereicht (der wandelt das Audio selbst um).
 // So braucht der Worker kaum Rechenzeit – sonst bricht Cloudflare die Anfrage wegen des CPU-Limits ab.
-async function geminiSpeak(env, lines, calm) {
+async function geminiSpeak(env, lines, calm, hosts) {
   const models = calm ? ["gemini-2.5-flash-preview-tts", "gemini-3.8-flash-tts"] : ["gemini-3.8-flash-tts", "gemini-2.5-flash-preview-tts"];
   const errs = [];
   for (const model of models) {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST", headers: { "x-goog-api-key": clean(env.GEMINI_API_KEY), "Content-Type": "application/json" },
-      body: JSON.stringify(ttsBody(model, lines, calm)), signal: AbortSignal.timeout(150000),
+      body: JSON.stringify(ttsBody(model, lines, calm, hosts)), signal: AbortSignal.timeout(150000),
     }).catch(e => ({ ok: false, status: 0 }));
     if (r.ok) return r;
     errs.push(model + " " + r.status);
@@ -527,6 +557,7 @@ function ensureSchema(env) {
     q("CREATE TABLE IF NOT EXISTS oauth_codes(code TEXT PRIMARY KEY, sub TEXT, email TEXT, created_at INTEGER)"),
     q("CREATE TABLE IF NOT EXISTS ai_chats(user_id INTEGER NOT NULL, day TEXT NOT NULL, cid TEXT NOT NULL, PRIMARY KEY(user_id, day, cid))"),
     q("CREATE TABLE IF NOT EXISTS consents(user_id INTEGER NOT NULL, kind TEXT NOT NULL, ts INTEGER NOT NULL)"),
+    q("CREATE TABLE IF NOT EXISTS user_admin(user_id INTEGER PRIMARY KEY, note TEXT, banned INTEGER NOT NULL DEFAULT 0, ban_reason TEXT, ai_limit INTEGER, features TEXT, updated INTEGER)"),
   ]).then(() => env.DB.prepare("ALTER TABLE subs ADD COLUMN grant_plan TEXT").run().catch(() => {})).catch(e => { schemaDone = null; throw e; });
   return schemaDone;
 }
@@ -573,13 +604,19 @@ async function saveSub(env, uid, sub) {
     period_end=excluded.period_end, cancel_at_period_end=excluded.cancel_at_period_end, updated_at=excluded.updated_at`)
     .bind(uid, typeof sub.customer === "string" ? sub.customer : sub.customer?.id || null, sub.id, sub.status, price, planOf(env, price), end, (sub.cancel_at_period_end || sub.cancel_at) ? 1 : 0, Date.now()).run();
 }
-async function handleStripeEvent(env, ev) {
+async function handleStripeEvent(env, ev, cfg) {
   const o = ev.data?.object || {};
   if (ev.type === "checkout.session.completed" && o.mode === "subscription") {
     const uid = +(o.client_reference_id || o.metadata?.user_id || 0);
     if (!uid || !o.subscription) return;
     const sub = await stripe(env, "GET", "/v1/subscriptions/" + o.subscription);
     await saveSub(env, uid, sub);
+    const st = await proState(env, uid), tn = st.plus && !st.pro ? "Plus" : "Pro";
+    await notifyUser(env, cfg, "welcome", uid, "Willkommen bei Regelheft " + tn, [`vielen Dank, dein Abo Regelheft ${tn} ist aktiv. Du kannst es jederzeit unter „Mein Konto“ verwalten oder kündigen.`]);
+  } else if (ev.type === "invoice.payment_failed") {
+    const cust = typeof o.customer === "string" ? o.customer : o.customer?.id;
+    const row = cust ? await env.DB.prepare("SELECT user_id FROM subs WHERE customer_id = ?").bind(cust).first() : null;
+    if (row) await notifyUser(env, cfg, "paymentFailed", row.user_id, "Deine Zahlung hat nicht geklappt", ["die letzte Zahlung für dein Regelheft-Abo konnte nicht abgebucht werden. Bitte prüfe unter „Mein Konto“ deine Zahlungsmethode, damit dein Abo nicht endet."]);
   } else if (ev.type.startsWith("customer.subscription.")) {
     let uid = +(o.metadata?.user_id || 0);
     if (!uid) {
@@ -617,7 +654,7 @@ async function userInfo(env, u) {
   const e = await env.DB.prepare("SELECT email, verified FROM emails WHERE user_id = ?").bind(u.id).first();
   const p = await proState(env, u.id);
   const pw = await env.DB.prepare("SELECT salt FROM users WHERE id = ?").bind(u.id).first();
-  return { hasPassword: !(pw && pw.salt === "oauth"), username: u.username, admin: !!u.admin, owner: !!u.owner, email: e ? e.email : null, emailVerified: !!(e && e.verified), pro: p.pro || !!u.admin, plus: p.plus && !u.admin, proUntil: p.until, plan: p.plan, cancelAtEnd: p.cancelAtEnd };
+  return { hasPassword: !(pw && pw.salt === "oauth"), username: u.username, banned: !!(u.flags && u.flags.banned && !u.admin), banReason: u.flags && u.flags.banned ? u.flags.banReason : "", admin: !!u.admin, owner: !!u.owner, email: e ? e.email : null, emailVerified: !!(e && e.verified), pro: p.pro || !!u.admin, plus: p.plus && !u.admin, proUntil: p.until, plan: p.plan, cancelAtEnd: p.cancelAtEnd };
 }
 let priceCache = { t: 0, v: null };
 // Diagnose fürs Dashboard: warum lassen sich Preise nicht laden? (Fehlertext von Stripe je Preis)
@@ -659,6 +696,18 @@ async function sendMail(env, to, subject, text, html) {
   }
 }
 const mailHtml = (title, bodyHtml) => `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#14181f"><h2 style="margin:0 0 12px">${title}</h2>${bodyHtml}<p style="color:#6b7280;font-size:12px;margin-top:28px">Regelheft Mathematik · Gölitzer Development · ein Angebot von Scherer Development Excellence</p></div>`;
+const escH = v => String(v == null ? "" : v).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// Mail an einen Nutzer (nur an bestätigte Adressen und nur, wenn das Ereignis in den Einstellungen aktiv ist)
+async function notifyUser(env, cfg, kind, uid, subject, lines) {
+  try {
+    if (!mailReady(env) || (kind && cfg.notify && cfg.notify[kind] === false)) return false;
+    const e = await env.DB.prepare("SELECT e.email, e.verified, u.username FROM emails e JOIN users u ON u.id = e.user_id WHERE e.user_id = ?").bind(uid).first();
+    if (!e || !e.verified) return false;
+    await sendMail(env, e.email, subject, `Hallo ${e.username},\n\n${lines.join("\n\n")}\n\nGölitzer Development\nein Angebot von Scherer Development Excellence`,
+      mailHtml(escH(subject), `<p>Hallo ${escH(e.username)},</p>` + lines.map(l => `<p>${escH(l)}</p>`).join("")));
+    return true;
+  } catch (err) { return false; }
+}
 const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[A-Za-z]{2,}$/;
 async function startEmailVerify(env, user, emailRaw) {
   const email = String(emailRaw || "").trim().toLowerCase();
@@ -710,6 +759,37 @@ async function googleUsername(env, email) {
   return base.slice(0, 12) + rand(3);
 }
 
+async function wipeUser(env, uid) {
+  // laufendes Abo beenden, damit nach dem Löschen nichts weiter abgebucht wird
+        try {
+          const sb = await env.DB.prepare("SELECT subscription_id, status FROM subs WHERE user_id = ?").bind(uid).first();
+          if (sb && sb.subscription_id && ["active", "trialing", "past_due"].includes(sb.status) && env.STRIPE_SECRET_KEY) await stripe(env, "DELETE", "/v1/subscriptions/" + sb.subscription_id);
+        } catch (e) {}
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS favs(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS recent(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, opened_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS notes(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, body TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS cards(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, box INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS kurse_sync(user_id INTEGER NOT NULL, cid TEXT NOT NULL, data TEXT, updated INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, cid))").run();
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS kurse_stats(user_id INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)").run();
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM favs WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM recent WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM notes WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM cards WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM chats WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM emails WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM google_links WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM subs WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM ai_chats WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM consents WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM kurse_sync WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM kurse_stats WHERE user_id = ?").bind(uid),
+          env.DB.prepare("DELETE FROM users WHERE id = ?").bind(uid),
+        ]);
+  await env.DB.prepare("DELETE FROM user_admin WHERE user_id = ?").bind(uid).run();
+}
+
 export default {
   async fetch(req, env) {
     const origin = req.headers.get("Origin") || "";
@@ -732,7 +812,7 @@ export default {
       const raw = await req.text();
       if (!(await verifyStripeSig(raw, req.headers.get("Stripe-Signature"), env.STRIPE_WEBHOOK_SECRET))) return new Response("ungültige Signatur", { status: 400 });
       let ev; try { ev = JSON.parse(raw); } catch { return new Response("ungültig", { status: 400 }); }
-      try { await handleStripeEvent(env, ev); } catch (e) { return new Response("Fehler: " + e.message, { status: 500 }); }   // Stripe wiederholt dann automatisch
+      try { await handleStripeEvent(env, ev, await getSettings(env)); } catch (e) { return new Response("Fehler: " + e.message, { status: 500 }); }   // Stripe wiederholt dann automatisch
       return new Response("ok");
     }
     // ---- Google-Login: Weiterleitung zu Google und zurück ----
@@ -855,6 +935,7 @@ export default {
       const user = await getUser(req, env);
       if (GET && path === "/api/me") return user ? json({ user: await userInfo(env, user) }) : json({ error: "Nicht angemeldet." }, 401);
       if (!user) return json({ error: "Bitte melde dich an.", login: true }, 401);
+      if (user.flags.banned && !user.admin && !["/api/logout", "/api/account/delete"].includes(path)) return json({ error: "Dein Konto ist gesperrt." + (user.flags.banReason ? " Grund: " + user.flags.banReason : "") + " Wenn du das für einen Fehler hältst, melde dich beim Betreiber.", code: "banned" }, 403);
 
       if (POST && path === "/api/email/start") {
         if (limited("ems" + user.id, 4) || limited("emi" + ip, 12)) return json({ error: "Du hast gerade schon mehrere Codes angefordert. Bitte warte ein paar Minuten." }, 429);
@@ -923,7 +1004,7 @@ export default {
         catch (e) { return json({ error: "Das hat leider nicht geklappt. Bitte versuche es später noch einmal." + (env.DEBUG === "1" ? " [" + e.message + "]" : "") }, 502); }
         await saveSub(env, user.id, sub);
         const info = await userInfo(env, user), tn = info.plan && String(info.plan).startsWith("plus") ? "Plus" : "Pro", end = new Date((sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? 0) * 1000).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
-        if (cancel && info.email && mailReady(env)) {   // Kündigungsbestätigung
+        if (cancel && info.email && mailReady(env) && cfg.notify.cancel !== false) {   // Kündigungsbestätigung
           try { await sendMail(env, info.email, "Bestätigung deiner Kündigung", `Hallo ${user.username},
 
 deine Kündigung von Regelheft ${tn} ist bei uns eingegangen. Du kannst ${tn} noch bis zum ${end} nutzen, danach endet das Abo.
@@ -944,35 +1025,13 @@ ein Angebot von Scherer Development Excellence`,
         const u = await env.DB.prepare("SELECT salt, pw_hash FROM users WHERE id = ?").bind(user.id).first();
         if (u && u.salt === "oauth") { if (String(body.password || "") !== user.username) return json({ error: "Bitte gib zur Bestätigung deinen Benutzernamen ein." }, 403); }
         else if (!u || !same(await hashPw(String(body.password || ""), u.salt), u.pw_hash)) return json({ error: "Das Passwort ist falsch." }, 403);
-        // laufendes Abo beenden, damit nach dem Löschen nichts weiter abgebucht wird
-        try {
-          const sb = await env.DB.prepare("SELECT subscription_id, status FROM subs WHERE user_id = ?").bind(user.id).first();
-          if (sb && sb.subscription_id && ["active", "trialing", "past_due"].includes(sb.status) && env.STRIPE_SECRET_KEY) await stripe(env, "DELETE", "/v1/subscriptions/" + sb.subscription_id);
-        } catch (e) {}
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS favs(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS recent(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, opened_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS notes(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, body TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
-        await env.DB.prepare("CREATE TABLE IF NOT EXISTS cards(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, box INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
-        await env.DB.batch([
-          env.DB.prepare("DELETE FROM favs WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM recent WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM notes WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM cards WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM chats WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM emails WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM google_links WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM subs WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM ai_chats WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM consents WHERE user_id = ?").bind(user.id),
-          env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
-        ]);
+        await wipeUser(env, user.id);
         if ((cfg.staff || []).some(n => n.toLowerCase() === user.username.toLowerCase())) await saveSettings(env, { ...cfg, staff: cfg.staff.filter(n => n.toLowerCase() !== user.username.toLowerCase()) });
         return json({ ok: true });
       }
       // Merkliste (Stern): speichert nur die Regel-Kennungen (r1, r2 …) pro Konto
       if (path === "/api/favs") {
-        if (!cfg.features.favorites) return off();
+        if (!featureOn(cfg, user, "favorites")) return off();
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS favs(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
           const rs = await env.DB.prepare("SELECT rule_id FROM favs WHERE user_id = ? ORDER BY created_at DESC LIMIT 500").bind(user.id).all();
@@ -989,7 +1048,7 @@ ein Angebot von Scherer Development Excellence`,
       }
       // Zuletzt geöffnet: nur Regel-Kennungen, maximal 15 pro Konto
       if (path === "/api/recent") {
-        if (!cfg.features.recent) return off();
+        if (!featureOn(cfg, user, "recent")) return off();
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS recent(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, opened_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
           const rs = await env.DB.prepare("SELECT rule_id FROM recent WHERE user_id = ? ORDER BY opened_at DESC LIMIT 15").bind(user.id).all();
@@ -1009,7 +1068,7 @@ ein Angebot von Scherer Development Excellence`,
       }
       // Notizen zu Regeln (privat, nur für das eigene Konto)
       if (path === "/api/notes") {
-        if (!cfg.features.notes) return off();
+        if (!featureOn(cfg, user, "notes")) return off();
         if (billingOn(env, cfg) && !(await hasFeature(env, cfg, user, "notes"))) return json({ error: cfg.billing.plusFeatures.notes && plusReady(env) ? "Notizen gibt es mit Plus oder Pro." : "Notizen gibt es mit Pro.", code: "pro_required" }, 402);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS notes(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, body TEXT NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
@@ -1034,7 +1093,7 @@ ein Angebot von Scherer Development Excellence`,
       }
       // Übungsmodus: Lernstand pro Regel (0 = noch nicht sicher … 3 = sicher)
       if (path === "/api/cards") {
-        if (!cfg.features.practice) return off();
+        if (!featureOn(cfg, user, "practice")) return off();
         if (billingOn(env, cfg) && !(await hasFeature(env, cfg, user, "practice"))) return json({ error: cfg.billing.plusFeatures.practice && plusReady(env) ? "Der Übungsmodus gehört zu Plus und Pro." : "Der Übungsmodus gehört zu Pro.", code: "pro_required" }, 402);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS cards(user_id INTEGER NOT NULL, rule_id TEXT NOT NULL, box INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY(user_id, rule_id))").run();
         if (GET) {
@@ -1051,9 +1110,67 @@ ein Angebot von Scherer Development Excellence`,
           return json({ ok: true });
         }
       }
+      // Meine Kurse: Kurse und Lernstand (Serie/XP) pro Konto speichern, damit sie auf allen Geräten da sind. Audio bleibt auf dem Gerät.
+      //   GET  /api/kurse/sync          → { items:[{id,updated,deleted}], stats }
+      //   GET  /api/kurse/item?id=      → { data, updated }
+      //   POST /api/kurse/item   { id, updated, data }
+      //   POST /api/kurse/delete { id, updated }
+      //   POST /api/kurse/stats  { data }
+      if (path.startsWith("/api/kurse/") && (GET || POST)) {
+        if (!featureOn(cfg, user, "practice")) return off();
+        const tier = !billingOn(env, cfg) || user.admin ? { pro: true } : await proState(env, user.id);
+        if (!tier.pro && !tier.plus) return json({ error: "Meine Kurse gibt es mit Plus oder Pro.", code: "pro_required" }, 402);
+        await env.DB.batch([
+          env.DB.prepare("CREATE TABLE IF NOT EXISTS kurse_sync(user_id INTEGER NOT NULL, cid TEXT NOT NULL, data TEXT, updated INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(user_id, cid))"),
+          env.DB.prepare("CREATE TABLE IF NOT EXISTS kurse_stats(user_id INTEGER PRIMARY KEY, data TEXT NOT NULL, updated INTEGER NOT NULL)"),
+        ]);
+        const okId = v => /^k[a-z0-9]{4,30}$/.test(String(v || ""));
+        if (GET && path === "/api/kurse/sync") {
+          const rs = await env.DB.prepare("SELECT cid, updated, deleted FROM kurse_sync WHERE user_id = ? ORDER BY updated DESC LIMIT 200").bind(user.id).all();
+          const st = await env.DB.prepare("SELECT data FROM kurse_stats WHERE user_id = ?").bind(user.id).first();
+          let stats = null; try { stats = st ? JSON.parse(st.data) : null; } catch (e) {}
+          return json({ items: rs.results.map(r => ({ id: r.cid, updated: r.updated, deleted: !!r.deleted })), stats });
+        }
+        if (GET && path === "/api/kurse/item") {
+          const id = url.searchParams.get("id") || "";
+          const r = okId(id) ? await env.DB.prepare("SELECT data, updated, deleted FROM kurse_sync WHERE user_id = ? AND cid = ?").bind(user.id, id).first() : null;
+          if (!r || r.deleted || !r.data) return json({ error: "Kurs nicht gefunden." }, 404);
+          let data = null; try { data = JSON.parse(r.data); } catch (e) {}
+          return data ? json({ data, updated: r.updated }) : json({ error: "Kurs nicht lesbar." }, 500);
+        }
+        if (POST && path === "/api/kurse/item") {
+          const id = String(body.id || ""), updated = Math.floor(+body.updated || 0);
+          if (!okId(id) || !updated || !body.data || typeof body.data !== "object") return json({ error: "Ungültige Anfrage." }, 400);
+          if (limited("ksync" + user.id, 240)) return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
+          const text = JSON.stringify(body.data);
+          if (text.length > 1500000) return json({ error: "Dieser Kurs ist zu groß zum Speichern im Konto." }, 413);
+          const have = await env.DB.prepare("SELECT updated FROM kurse_sync WHERE user_id = ? AND cid = ?").bind(user.id, id).first();
+          if (have && have.updated > updated) return json({ ok: true, stale: true, updated: have.updated });   // der Server hat schon eine neuere Fassung
+          if (!have) {
+            const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM kurse_sync WHERE user_id = ? AND deleted = 0").bind(user.id).first();
+            if (c && c.n >= 60) return json({ error: "Du kannst höchstens 60 Kurse im Konto speichern." }, 400);
+          }
+          await env.DB.prepare("INSERT INTO kurse_sync(user_id, cid, data, updated, deleted) VALUES(?,?,?,?,0) ON CONFLICT(user_id, cid) DO UPDATE SET data = excluded.data, updated = excluded.updated, deleted = 0").bind(user.id, id, text, updated).run();
+          return json({ ok: true, updated });
+        }
+        if (POST && path === "/api/kurse/delete") {
+          const id = String(body.id || ""), updated = Math.floor(+body.updated || Date.now());
+          if (!okId(id)) return json({ error: "Ungültige Anfrage." }, 400);
+          await env.DB.prepare("INSERT INTO kurse_sync(user_id, cid, data, updated, deleted) VALUES(?,?,NULL,?,1) ON CONFLICT(user_id, cid) DO UPDATE SET data = NULL, updated = excluded.updated, deleted = 1").bind(user.id, id, updated).run();
+          return json({ ok: true });
+        }
+        if (POST && path === "/api/kurse/stats") {
+          const d = body.data && typeof body.data === "object" ? body.data : null;
+          if (!d) return json({ error: "Ungültige Anfrage." }, 400);
+          const clean = { xp: Math.max(0, Math.floor(+d.xp || 0)), streak: Math.max(0, Math.floor(+d.streak || 0)), last: /^\d{4}-\d{2}-\d{2}$/.test(String(d.last || "")) ? d.last : null, day: /^\d{4}-\d{2}-\d{2}$/.test(String(d.day || "")) ? d.day : null, dayXp: Math.max(0, Math.floor(+d.dayXp || 0)) };
+          await env.DB.prepare("INSERT INTO kurse_stats(user_id, data, updated) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated = excluded.updated").bind(user.id, JSON.stringify(clean), Date.now()).run();
+          return json({ ok: true });
+        }
+        return json({ error: "Nicht gefunden." }, 404);
+      }
       // Meine Kurse (Plus/Pro): Uploads, Kurs-Erstellung und Stimmen
       if (POST && (path === "/api/upload-url" || path === "/api/kurs" || path === "/api/karten" || path === "/api/tts")) {
-        if (!cfg.features.practice) return off();
+        if (!featureOn(cfg, user, "practice")) return off();
         // Plus: Kurse aus Regelheft-Themen, KI-Karten, Podcast – aber keine eigenen Dateien. Pro: eigene Dateien, höchstens KURS_MAX_FILES pro Kurs.
         const tier = !billingOn(env, cfg) || user.admin ? { pro: true } : await proState(env, user.id);
         const kursPro = !!tier.pro, kursPlus = !kursPro && !!tier.plus;
@@ -1084,7 +1201,8 @@ ein Angebot von Scherer Development Excellence`,
               for (const f of ready) { parts.push({ text: (f.mimeType.startsWith("image/") ? "Bild: " : "Datei: ") + f.label }); parts.push({ fileData: { fileUri: f.uri, mimeType: f.mimeType } }); }
               if (notes) parts.push({ text: "Eigene Notizen:\n" + notes });
               parts.push({ text: "Erstelle jetzt den Kurs aus diesen Unterlagen." });
-              return cleanKurs(await geminiKurs(env, kursSystem(fachName), parts), topic || "Mein Kurs");
+              const hosts = pickHosts();
+              return cleanKurs(await geminiKurs(env, kursSystem(fachName, hosts), parts), topic || "Mein Kurs", hosts);
             } finally { await dropFiles(env, files); }   // hochgeladene Dateien bei Google gleich wieder löschen
           }, env);
         }
@@ -1104,16 +1222,17 @@ ein Angebot von Scherer Development Excellence`,
         }
 
         if (!user.admin && limited("tts" + user.id, 40)) return json({ error: "Zu viele Aufnahmen. Bitte warte ein paar Minuten." }, 429);
-        const lines = (Array.isArray(body.lines) ? body.lines : []).filter(l => ["Lena", "Max"].includes(l && l.speaker) && String(l.text || "").trim())
+        const hosts = cleanHosts(body.hosts);
+        const lines = (Array.isArray(body.lines) ? body.lines : []).filter(l => hosts.some(h => h.name === (l && l.speaker)) && String(l.text || "").trim())
           .slice(0, 40).map(l => ({ speaker: l.speaker, text: str(l.text, 800).trim() }));
         if (!lines.length || lines.reduce((n, l) => n + l.text.length, 0) > 6000) return json({ error: "Ungültige Anfrage." }, 400);
         try {
-          const r = await geminiSpeak(env, lines, body.calm === true);
+          const r = await geminiSpeak(env, lines, body.calm === true, hosts);
           return new Response(r.body, { headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
         } catch (e) { return json({ error: e.userMsg + (env.DEBUG === "1" ? " [" + e.message + "]" : "") }, e.status || 502); }
       }
       if (POST && path === "/api/ai") {
-        if (!user.admin && (!cfg.features.ai || cfg.maintenance.enabled))
+        if (!user.admin && (!featureOn(cfg, user, "ai") || cfg.maintenance.enabled))
           return json({ error: cfg.maintenance.enabled ? cfg.maintenance.message : "Die KI-Aufgabenhilfe ist gerade deaktiviert." }, 503);
         return handleAI(env, user, body, json, cfg);
       }
@@ -1156,17 +1275,136 @@ ein Angebot von Scherer Development Excellence`,
           const days = Math.min(3650, Math.max(0, Math.floor(+body.days || 0)));
           const until = body.revoke === true || !days ? 0 : Date.now() + days * 864e5;
           await env.DB.prepare("INSERT INTO subs(user_id, grant_until, grant_plan, updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET grant_until = excluded.grant_until, grant_plan = excluded.grant_plan, updated_at = excluded.updated_at").bind(t.id, until || null, until ? plan : null, Date.now()).run();
+          const tn = plan === "plus" ? "Plus" : "Pro";
+          if (until) await notifyUser(env, cfg, "grant", t.id, `Du hast Regelheft ${tn} geschenkt bekommen`, [`gute Nachrichten: Du kannst Regelheft ${tn} jetzt bis zum ${new Date(until).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} kostenlos nutzen. Viel Spaß beim Lernen!`]);
+          else await notifyUser(env, cfg, "grant", t.id, "Dein Regelheft-Geschenk ist beendet", ["dein geschenkter Zugang zu Plus/Pro wurde beendet. Dein Konto und deine Daten bleiben erhalten."]);
           return json({ ok: true, until: until || null, plan: until ? plan : null });
         }
-        if (GET && path === "/api/admin/users") {   // Nutzerliste mit Tarif (Suche über ?q=)
-          const q = String(url.searchParams.get("q") || "").trim().slice(0, 30).replace(/[%_]/g, "");
-          const rs = await env.DB.prepare("SELECT u.id, u.username, u.created_at, e.email FROM users u LEFT JOIN emails e ON e.user_id = u.id " + (q ? "WHERE u.username LIKE ? OR e.email LIKE ? " : "") + "ORDER BY u.id DESC LIMIT 40").bind(...(q ? ["%" + q + "%", "%" + q + "%"] : [])).all();
-          const users = [];
+        if (GET && path === "/api/admin/users") {   // Nutzerliste mit Tarif; ?q= Suche, ?f= all|pro|plus|free|banned|unverified|staff
+          const q = String(url.searchParams.get("q") || "").trim().slice(0, 30).replace(/[%_]/g, ""), f = String(url.searchParams.get("f") || "all");
+          const rs = await env.DB.prepare("SELECT u.id, u.username, u.created_at, e.email, e.verified, ua.banned, (SELECT MAX(created_at) FROM sessions s WHERE s.user_id = u.id) AS last_login FROM users u LEFT JOIN emails e ON e.user_id = u.id LEFT JOIN user_admin ua ON ua.user_id = u.id " + (q ? "WHERE u.username LIKE ? OR e.email LIKE ? " : "") + "ORDER BY u.id DESC LIMIT 300").bind(...(q ? ["%" + q + "%", "%" + q + "%"] : [])).all();
+          let users = [];
           for (const r of rs.results) {
-            const st = await proState(env, r.id), rl = await roleOf(env, r.username);
-            users.push({ username: r.username, email: r.email || null, created_at: r.created_at, tier: st.pro ? "pro" : st.plus ? "plus" : "free", grant: st.grant, until: st.until, cancelAtEnd: st.cancelAtEnd, staff: rl.admin && !rl.owner, owner: rl.owner });
+            if (f === "banned" && !r.banned) continue;
+            if (f === "unverified" && r.verified) continue;
+            const st = await proState(env, r.id), rl = await roleOf(env, r.username), tier = st.pro ? "pro" : st.plus ? "plus" : "free";
+            if (["pro", "plus", "free"].includes(f) && tier !== f) continue;
+            if (f === "staff" && !(rl.admin)) continue;
+            users.push({ username: r.username, email: r.email || null, verified: !!r.verified, created_at: r.created_at, last_login: r.last_login || null, banned: !!r.banned, tier, grant: st.grant, until: st.until, cancelAtEnd: st.cancelAtEnd, staff: rl.admin && !rl.owner, owner: rl.owner });
+            if (users.length >= 60) break;
           }
           return json({ users });
+        }
+        // ---- Einzelner Nutzer: Details und Verwaltung ----
+        const findUser = async name => env.DB.prepare("SELECT id, username FROM users WHERE username = ? COLLATE NOCASE").bind(String(name || "").trim()).first();
+        const guard = async t => {   // Besitzer ist tabu; Team-Mitglieder darf nur der Besitzer anfassen
+          const rl = await roleOf(env, t.username);
+          if (rl.owner) return json({ error: "Der Besitzer kann nicht verwaltet werden." }, 400);
+          if (rl.admin && !user.owner) return json({ error: "Team-Mitglieder kann nur der Besitzer verwalten." }, 403);
+          return null;
+        };
+        if (GET && path === "/api/admin/user") {
+          const t = await findUser(url.searchParams.get("name"));
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          const n = async (sql, ...b) => (await env.DB.prepare(sql).bind(...b).first()).n;
+          const e = await env.DB.prepare("SELECT email, verified FROM emails WHERE user_id = ?").bind(t.id).first();
+          const cr = await env.DB.prepare("SELECT created_at FROM users WHERE id = ?").bind(t.id).first();
+          const st = await proState(env, t.id), rl = await roleOf(env, t.username), fl = await userFlags(env, t.id);
+          const last = await env.DB.prepare("SELECT MAX(created_at) AS t FROM sessions WHERE user_id = ?").bind(t.id).first();
+          const g = await env.DB.prepare("SELECT 1 AS x FROM google_links WHERE user_id = ?").bind(t.id).first();
+          let kurse = 0; try { kurse = await n("SELECT COUNT(*) AS n FROM kurse_sync WHERE user_id = ? AND deleted = 0", t.id); } catch (e2) {}
+          return json({ username: t.username, created_at: cr && cr.created_at, email: e ? e.email : null, verified: !!(e && e.verified), google: !!g, last_login: last && last.t, sessions: await n("SELECT COUNT(*) AS n FROM sessions WHERE user_id = ? AND expires_at > ?", t.id, Date.now()),
+            chats: await n("SELECT COUNT(*) AS n FROM chats WHERE user_id = ?", t.id), kurse, aiToday: await n("SELECT COUNT(*) AS n FROM ai_chats WHERE user_id = ? AND day = ?", t.id, berlinDay()),
+            tier: st.pro ? "pro" : st.plus ? "plus" : "free", plan: st.plan, status: st.status, until: st.until, grant: st.grant, grantPlan: st.grantPlan, cancelAtEnd: st.cancelAtEnd, hasSub: st.hasSub,
+            staff: rl.admin && !rl.owner, owner: rl.owner, flags: fl, notifyActive: mailReady(env) && !!(e && e.verified), canDelete: !!user.owner && !rl.owner });
+        }
+        if (POST && path === "/api/admin/user/update") {
+          const t = await findUser(body.username);
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          const bad = await guard(t); if (bad) return bad;
+          const cur = await userFlags(env, t.id);
+          const next = { ...cur };
+          if (typeof body.note === "string") next.note = body.note.slice(0, 500);
+          if (body.aiLimit === null || body.aiLimit === "") next.aiLimit = null;
+          else if (body.aiLimit !== undefined) next.aiLimit = Math.min(1000, Math.max(0, Math.floor(+body.aiLimit) || 0));
+          if (body.features && typeof body.features === "object") { next.features = {}; for (const k of FEATURE_KEYS) if (body.features[k] === false) next.features[k] = false; }
+          if (typeof body.banned === "boolean") { next.banned = body.banned; next.banReason = body.banned ? String(body.banReason || "").slice(0, 200) : ""; }
+          else if (typeof body.banReason === "string" && cur.banned) next.banReason = body.banReason.slice(0, 200);
+          await env.DB.prepare("INSERT INTO user_admin(user_id, note, banned, ban_reason, ai_limit, features, updated) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET note = excluded.note, banned = excluded.banned, ban_reason = excluded.ban_reason, ai_limit = excluded.ai_limit, features = excluded.features, updated = excluded.updated")
+            .bind(t.id, next.note || null, next.banned ? 1 : 0, next.banReason || null, next.aiLimit, JSON.stringify(next.features || {}), Date.now()).run();
+          if (next.banned) await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(t.id).run();   // gesperrte Konten werden überall abgemeldet
+          let mailed = false;
+          if (body.notify !== false && next.banned !== cur.banned) {
+            mailed = next.banned
+              ? await notifyUser(env, cfg, "ban", t.id, "Dein Regelheft-Konto wurde gesperrt", ["dein Konto wurde vorübergehend gesperrt." + (next.banReason ? " Grund: " + next.banReason : ""), "Wenn du das für einen Fehler hältst, antworte bitte auf diese Nachricht oder melde dich beim Betreiber."])
+              : await notifyUser(env, cfg, "unban", t.id, "Dein Regelheft-Konto ist wieder freigeschaltet", ["deine Sperre wurde aufgehoben, du kannst das Regelheft wieder ganz normal nutzen."]);
+          }
+          return json({ ok: true, flags: next, mailed });
+        }
+        if (POST && path === "/api/admin/user/mail") {   // eigene Nachricht an einen Nutzer
+          const t = await findUser(body.username);
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          if (!mailReady(env)) return json({ error: "Der E-Mail-Versand ist nicht eingerichtet." }, 503);
+          if (limited("umail" + user.id, 30)) return json({ error: "Zu viele Mails. Bitte warte ein paar Minuten." }, 429);
+          const subject = String(body.subject || "").trim().slice(0, 120), text = String(body.text || "").trim().slice(0, 3000);
+          if (!subject || !text) return json({ error: "Bitte gib Betreff und Text ein." }, 400);
+          const e = await env.DB.prepare("SELECT email FROM emails WHERE user_id = ?").bind(t.id).first();
+          if (!e) return json({ error: "Dieser Nutzer hat keine E-Mail-Adresse hinterlegt." }, 400);
+          try { await sendMail(env, e.email, subject, `Hallo ${t.username},\n\n${text}\n\nGölitzer Development`, mailHtml(escH(subject), `<p>Hallo ${escH(t.username)},</p>` + text.split(/\n{2,}/).map(p => `<p>${escH(p).replace(/\n/g, "<br>")}</p>`).join(""))); }
+          catch (err) { return json({ error: "Die E-Mail konnte nicht gesendet werden." + (env.DEBUG === "1" ? " [" + err.message + "]" : "") }, 502); }
+          return json({ ok: true });
+        }
+        if (POST && path === "/api/admin/user/logout") {   // überall abmelden
+          const t = await findUser(body.username);
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          const bad = await guard(t); if (bad) return bad;
+          await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(t.id).run();
+          return json({ ok: true });
+        }
+        if (POST && path === "/api/admin/user/email") {   // E-Mail-Adresse setzen/ändern und als bestätigt markieren
+          const t = await findUser(body.username);
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          const bad = await guard(t); if (bad) return bad;
+          const email = String(body.email || "").trim().toLowerCase();
+          if (!EMAIL_RE.test(email) || email.length > 120) return json({ error: "Bitte gib eine gültige E-Mail-Adresse ein." }, 400);
+          if (await env.DB.prepare("SELECT user_id FROM emails WHERE email = ? AND verified = 1 AND user_id != ?").bind(email, t.id).first()) return json({ error: "Diese Adresse gehört schon zu einem anderen Konto." }, 409);
+          await env.DB.prepare("INSERT INTO emails(user_id, email, verified, created_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET email = excluded.email, verified = excluded.verified, code_hash = NULL").bind(t.id, email, body.verified === false ? 0 : 1, Date.now()).run();
+          return json({ ok: true });
+        }
+        if (POST && path === "/api/admin/user/delete") {   // Konto löschen (nur Besitzer)
+          const no = ownerOnly(); if (no) return no;
+          const t = await findUser(body.username);
+          if (!t) return json({ error: "Diesen Benutzer gibt es nicht." }, 404);
+          if (isAdmin(env, t.username)) return json({ error: "Der Besitzer kann nicht gelöscht werden." }, 400);
+          if (String(body.confirm || "").toLowerCase() !== t.username.toLowerCase()) return json({ error: "Bitte gib zur Bestätigung den Benutzernamen ein." }, 400);
+          await notifyUser(env, cfg, "deleted", t.id, "Dein Regelheft-Konto wurde gelöscht", ["dein Konto und alle zugehörigen Daten wurden vom Betreiber gelöscht. Ein laufendes Abo wurde beendet."]);
+          await wipeUser(env, t.id);
+          if ((cfg.staff || []).some(n => n.toLowerCase() === t.username.toLowerCase())) await saveSettings(env, { ...cfg, staff: cfg.staff.filter(n => n.toLowerCase() !== t.username.toLowerCase()) });
+          return json({ ok: true });
+        }
+        if (POST && path === "/api/admin/mail/broadcast") {   // Rundmail in Paketen (nur Besitzer); count=true zählt nur die Empfänger
+          const no = ownerOnly(); if (no) return no;
+          if (!mailReady(env)) return json({ error: "Der E-Mail-Versand ist nicht eingerichtet." }, 503);
+          const now = Date.now(), aud = ["all", "pro", "plus", "free"].includes(body.audience) ? body.audience : "all";
+          const proC = "COALESCE(((s.status IN ('active','trialing','past_due') AND s.period_end > ? AND (s.plan IS NULL OR s.plan NOT LIKE 'plus%')) OR (s.grant_until > ? AND COALESCE(s.grant_plan,'pro') != 'plus')), 0)";
+          const plusC = "COALESCE(((s.status IN ('active','trialing','past_due') AND s.period_end > ? AND s.plan LIKE 'plus%') OR (s.grant_until > ? AND s.grant_plan = 'plus')), 0)";
+          const where = aud === "pro" ? proC : aud === "plus" ? "NOT " + proC + " AND " + plusC : aud === "free" ? "NOT " + proC + " AND NOT " + plusC : "1=1";
+          const nb = (aud === "plus" || aud === "free") ? 4 : aud === "pro" ? 2 : 0;
+          const base = " FROM emails e JOIN users u ON u.id = e.user_id LEFT JOIN subs s ON s.user_id = e.user_id LEFT JOIN user_admin ua ON ua.user_id = e.user_id WHERE e.verified = 1 AND COALESCE(ua.banned, 0) = 0 AND (" + where + ")";
+          const binds = Array(nb).fill(now);
+          const total = (await env.DB.prepare("SELECT COUNT(*) AS n" + base).bind(...binds).first()).n;
+          if (body.count === true) return json({ ok: true, total });
+          const subject = String(body.subject || "").trim().slice(0, 120), text = String(body.text || "").trim().slice(0, 5000);
+          if (!subject || !text) return json({ error: "Bitte gib Betreff und Text ein." }, 400);
+          if (limited("bc" + user.id, 60)) return json({ error: "Zu viele Anfragen. Bitte warte ein paar Minuten." }, 429);
+          const offset = Math.max(0, Math.floor(+body.offset || 0)), size = 20;
+          const rows = (await env.DB.prepare("SELECT e.email, u.username" + base + " ORDER BY u.id LIMIT ? OFFSET ?").bind(...binds, size, offset).all()).results;
+          let sent = 0, failed = 0;
+          for (const r of rows) {
+            try { await sendMail(env, r.email, subject, `Hallo ${r.username},\n\n${text}\n\nGölitzer Development\n(Du bekommst diese Nachricht, weil du ein Konto im Regelheft hast.)`, mailHtml(escH(subject), `<p>Hallo ${escH(r.username)},</p>` + text.split(/\n{2,}/).map(p => `<p>${escH(p).replace(/\n/g, "<br>")}</p>`).join(""))); sent++; }
+            catch (err) { failed++; }
+          }
+          return json({ ok: true, total, sent, failed, next: offset + rows.length < total ? offset + rows.length : null });
         }
         if (POST && path === "/api/admin/staff") {   // Team-Zugriff aufs Dashboard geben / entziehen (nur Besitzer)
           const no = ownerOnly(); if (no) return no;

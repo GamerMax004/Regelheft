@@ -112,3 +112,11 @@ NEU (15.11.2026): „Meine Kurse“ als eigene Seite
 - Heft-Look: Die Regelliste hat dieselben Seitenränder wie die normale Ansicht (mittig, max. 720 px).
 - Podcast: Jeder Kurs bekommt einmal einen zufälligen Podcast-Namen (wird mit dem Kurs gespeichert und synchronisiert); darunter steht der Folgentitel.
   Geändert: assets/css/{heft,style,kurse}.css, assets/js/{index,kurse}.js.
+
+- Podcast-Moderatoren wechseln: Bei jedem neuen Kurs wählt der Worker zufällig zwei Namen (eine Frau, ein Mann) aus je 40 Namen; mal erklärt sie und er fragt nach, mal umgekehrt. Die Stimmen passen zum Geschlecht. Podcast-Titel bleiben sinnvoll von der KI gewählt. Ältere Kurse behalten Lena & Max.
+- Neue Icons: apple-touch-icon.png (Homebildschirm iPad/iPhone, App-Icon) und favicon.png (Webseite, transparent ohne weißen Kasten). Am iPad/iPhone das Icon neu zum Homebildschirm hinzufügen, iOS merkt sich das alte.
+- Filter: Knopf „Filter“ rechts, Mehrfachauswahl der Themen; gewählte Filter erscheinen links mit ✕. Am Handy öffnet sich der Filter von unten.
+- Dashboard → Nutzer: Filter (Pro, Plus, Gratis, Gesperrt, E-Mail offen, Team), Detailansicht je Nutzer mit Tarif schenken, eigenem KI-Limit, einzelnen Funktionen an/aus, Sperre mit Grund, Notiz, E-Mail senden, E-Mail setzen, überall abmelden, Konto löschen (nur Besitzer).
+  Einstellungen: „E-Mail-Benachrichtigungen“ (Willkommen, Geschenk, Sperre, Zahlung fehlgeschlagen …) und „Rundmail“ (nur Besitzer). Mails gehen nur an bestätigte Adressen.
+  Für „Zahlung fehlgeschlagen“ im Stripe-Webhook zusätzlich das Ereignis invoice.payment_failed aktivieren.
+  Neue Tabelle user_admin wird automatisch angelegt. Dafür die neue worker.js deployen.
