@@ -71,7 +71,7 @@
 .pc-script summary{ padding:14px 16px; font-weight:650; cursor:pointer; min-height:44px; }
 #pcLines{ display:flex; flex-direction:column; gap:4px; padding:0 10px 12px; }
 .pc-line{ display:flex; gap:10px; text-align:left; padding:10px; border:1px solid transparent; border-radius:12px; background:none; color:var(--ink); font:inherit; font-size:0.9375rem; line-height:1.55; cursor:pointer; transition:background .2s; }
-.pc-line b{ flex:none; width:44px; color:var(--accent-fg); font-weight:650; }
+.pc-line b{ flex:none; min-width:56px; max-width:96px; overflow-wrap:anywhere; color:var(--accent-fg); font-weight:650; }
 .pc-line.max b{ color:var(--teal); }
 .pc-line.now{ background:var(--accent-soft); }
 .pc-del{ display:block; margin:22px auto 0; border:none; background:none; color:var(--danger); font:inherit; font-size:0.875rem; font-weight:600; cursor:pointer; padding:10px; min-height:44px; }
@@ -515,4 +515,3 @@ html:not([data-heft="on"]) #pcSec .k-tabs > button[aria-selected="false"]{ box-s
 /* Im Kurs selbst übernimmt dessen Titel die Rolle der Überschrift – der Seitenkopf würde nur Platz kosten */
 main:has(#pcSec.has-tabbar) #kHero{ display:none; }
 
-.pc-ep{ margin:2px 0 0; font-size:1rem; font-weight:600; color:var(--ink); }
