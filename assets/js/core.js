@@ -19,7 +19,7 @@ const RH = (function(){
     billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, plusAvailable:false, yearly:true, kleinunternehmer:true, note:''},
     auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false}
   };
-  const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram};
+  const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram, email: (typeof LEGAL !== 'undefined' && LEGAL.email) || '', phone: (typeof LEGAL !== 'undefined' && LEGAL.phone) || ''};
   const cfgSubs = [];
   const onConfig = fn => { cfgSubs.push(fn); fn(cfg); };
   function applyConfig(j){
@@ -34,6 +34,9 @@ const RH = (function(){
     cfg.social.discord = so.discord == null ? defaults.discord : so.discord;
     cfg.social.instagram = so.instagram == null ? defaults.instagram : so.instagram;
     SOCIAL.discord = cfg.social.discord; SOCIAL.instagram = cfg.social.instagram;
+    // Kontaktdaten aus dem Dashboard überschreiben die Standardwerte (Impressum, Datenschutz, Footer)
+    cfg.contact = {email: (j.contact && j.contact.email) || '', phone: (j.contact && j.contact.phone) || ''};
+    if(typeof LEGAL !== 'undefined'){ LEGAL.email = cfg.contact.email || defaults.email; LEGAL.phone = cfg.contact.phone || defaults.phone; }
     cfgSubs.slice().forEach(f => f(cfg));
   }
   const configReady = configured
@@ -54,7 +57,7 @@ const RH = (function(){
     catch(e){ throw new Error('Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung und versuche es gleich noch einmal.'); }
     const j = await r.json().catch(() => ({}));
     if(r.status === 401 && auth.token && path !== '/api/login') setAuth(null, null);
-    if(!r.ok){ const e = new Error(r.status === 403 ? 'Nicht erlaubt. (Die Adresse dieser Webseite fehlt evtl. in ALLOWED_ORIGIN im Worker.)' : (j.error || ('Fehler ' + r.status))); e.status = r.status; e.code = j.code; e.data = j; throw e; }
+    if(!r.ok){ const e = new Error(r.status === 403 && (!j.error || j.error === 'Nicht erlaubt.') ? 'Nicht erlaubt. (Die Adresse dieser Webseite fehlt evtl. in ALLOWED_ORIGIN im Worker.)' : (j.error || ('Fehler ' + r.status))); e.status = r.status; e.code = j.code; e.data = j; throw e; }
     return j;
   }
   function setAuth(token, user){
@@ -79,6 +82,49 @@ const RH = (function(){
   // Nur Seiten dieser Webseite als Weiterleitungsziel erlauben (z. B. "ki.html" oder "index.html#r12")
   function safeNext(n){ return /^[a-z0-9_-]+\.html(#[\w-]+)?$/i.test(n || '') ? n : 'index.html'; }
   function toLogin(next){ location.replace('anmeldung.html?next=' + encodeURIComponent(next)); }
+
+  // ---- Gesperrte Konten: eigene Sperrseite mit Grund; nur Abmelden oder Konto löschen ist möglich ----
+  function banGate(user){
+    let g = document.getElementById('banGate');
+    if(!user || !user.banned){ if(g){ g.remove(); document.documentElement.style.overflow = ''; } return; }
+    if(g) return;
+    if(!document.getElementById('banGateCss')){
+      const st = document.createElement('style'); st.id = 'banGateCss';
+      st.textContent = '#banGate{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:20px;overflow:auto;background:var(--bg,#f2f2f7);color:var(--ink,#111);font:inherit}'
+        + '#banGate .bg-card{width:min(460px,100%);background:var(--surface,#fff);border:1px solid var(--border,#d6d6dc);border-radius:22px;padding:28px 24px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.12)}'
+        + '#banGate .bg-ic{width:64px;height:64px;margin:0 auto 14px;display:grid;place-items:center;border-radius:50%;border:2.5px solid currentColor}'
+        + '#banGate h1{margin:0 0 10px;font-size:1.5rem}#banGate p{margin:0 0 12px;line-height:1.5}'
+        + '#banGate .bg-reason{margin:14px 0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border,#d6d6dc);text-align:left}#banGate .bg-reason small{display:block;opacity:.7;margin-bottom:2px}'
+        + '#banGate .bg-act{display:flex;flex-direction:column;gap:10px;margin-top:18px}'
+        + '#banGate button,#banGate input{font:inherit;min-height:48px;border-radius:14px;padding:0 16px}'
+        + '#banGate button{cursor:pointer;border:1.5px solid var(--border,#c7c7cc);background:transparent;color:inherit;font-weight:600}'
+        + '#banGate button.bg-main{background:var(--ink,#111);color:var(--surface,#fff);border-color:transparent}'
+        + '#banGate button.bg-danger{border-color:#c0392b;color:#c0392b}#banGate input{width:100%;box-sizing:border-box;border:1.5px solid var(--border,#c7c7cc);background:transparent;color:inherit}'
+        + '#banGate .bg-err{color:#c0392b;min-height:1.2em;margin:8px 0 0;font-size:.9rem}#banGate .bg-del{display:none;margin-top:14px;text-align:left}#banGate .bg-del.on{display:block}';
+      document.head.appendChild(st);
+    }
+    g = document.createElement('div'); g.id = 'banGate'; g.setAttribute('role', 'alertdialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-labelledby', 'bgT');
+    const mail = (typeof LEGAL !== 'undefined' && LEGAL.email) ? LEGAL.email : '';
+    g.innerHTML = '<div class="bg-card"><div class="bg-ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>'
+      + '<h1 id="bgT" tabindex="-1">Dein Konto wurde gesperrt</h1><p>Du kannst das Regelheft mit diesem Konto zurzeit nicht nutzen.</p>'
+      + (user.banReason ? '<div class="bg-reason"><small>Grund</small>' + esc(user.banReason) + '</div>' : '')
+      + '<p>Wenn du das für einen Fehler hältst, melde dich beim Betreiber' + (mail ? ' unter <a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a>' : '') + '.</p>'
+      + '<div class="bg-act"><button type="button" class="bg-main" id="bgOut">Abmelden</button><button type="button" class="bg-danger" id="bgDel">Konto löschen</button></div>'
+      + '<div class="bg-del" id="bgForm"><p>Alle Daten deines Kontos werden endgültig gelöscht. Zur Bestätigung ' + (user.hasPassword === false ? 'gib deinen Benutzernamen ein:' : 'gib dein Passwort ein:') + '</p>'
+      + '<input id="bgPw" type="' + (user.hasPassword === false ? 'text' : 'password') + '" autocomplete="' + (user.hasPassword === false ? 'off' : 'current-password') + '" aria-label="Bestätigung"><p class="bg-err" id="bgErr" role="alert"></p>'
+      + '<div class="bg-act"><button type="button" class="bg-danger" id="bgGo">Endgültig löschen</button><button type="button" id="bgNo">Abbrechen</button></div></div></div>';
+    document.body.appendChild(g); document.documentElement.style.overflow = 'hidden';
+    document.getElementById('bgT').focus({preventScroll:true});
+    document.getElementById('bgOut').onclick = async () => { await logout(); location.replace('index.html'); };
+    document.getElementById('bgDel').onclick = () => { document.getElementById('bgForm').classList.add('on'); document.getElementById('bgPw').focus(); };
+    document.getElementById('bgNo').onclick = () => document.getElementById('bgForm').classList.remove('on');
+    document.getElementById('bgGo').onclick = async () => {
+      const b = document.getElementById('bgGo'), err = document.getElementById('bgErr'); err.textContent = ''; b.disabled = true;
+      try{ await api('/api/account/delete', {body:{password: document.getElementById('bgPw').value}}); setAuth(null, null); location.replace('index.html'); }
+      catch(e){ err.textContent = e.message; b.disabled = false; }
+    };
+  }
+  onAuth(u => { if(document.body) banGate(u); else document.addEventListener('DOMContentLoaded', () => banGate(u)); });
 
   const isPro = () => !!(auth.user && auth.user.pro);
   const isPlus = () => !!(auth.user && auth.user.plus && !auth.user.pro);

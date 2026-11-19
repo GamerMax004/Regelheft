@@ -194,7 +194,9 @@ html[data-heft="on"]{ --grid:#e3e9f3; --grid-strong:#c6d1e3; --paper-glass:rgba(
 html[data-heft="on"][data-theme="dark"]{ --grid:#212838; --grid-strong:#313b52; --paper-glass:rgba(23,27,38,.9); }
 /* nur EINE schmale Randlinie */
 html[data-heft="on"] body::before{ display:none; }
-@media (min-width:1280px){ html[data-heft="on"] body::before{ display:block; width:0; left:calc((100% - 1080px) / 2 - 18px); border-right:none; border-left:1.5px solid var(--margin-line); } }
+/* Randlinie nur noch im Heft-Bereich selbst (vorher lief sie über Kopfzeile und Hinweis-Banner) */
+html[data-heft="on"] .list{ position:relative; }
+@media (min-width:1280px){ html[data-heft="on"] .list::before{ content:""; position:absolute; top:0; bottom:0; left:calc((100% - 720px) / 2 - 2px); width:0; border-left:1.5px solid var(--margin-line); pointer-events:none; } }
 /* Kopfzeile + Suchleiste ruhig auf glattem Papier */
 html[data-heft="on"] .top, html[data-heft="on"] header.top{ background:var(--paper); background-image:none; border-bottom:1.5px solid var(--pen-soft); }
 html[data-heft="on"] .searchbar{ background:var(--paper); padding-bottom:10px; }

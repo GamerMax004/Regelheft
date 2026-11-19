@@ -52,3 +52,6 @@
 .p-done{ text-align:center; padding:30px 0 10px; }
 .p-big{ font-size:3.5rem; font-weight:700; letter-spacing:-.04em; line-height:1.1; color:var(--ink); }
 .p-done .page-lead{ margin:10px 0 20px; }
+
+/* Kategorie-Pille auf der Kartenvorderseite (war ungestaltet) */
+.p-front .cat-pill{ display:inline-block; padding:6px 14px; border-radius:999px; background:var(--accent-soft); color:var(--accent-fg); font-size:.8125rem; font-weight:700; }

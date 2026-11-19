@@ -502,7 +502,7 @@ html[data-heft="on"] :is(.k-card-em,.k-head .k-head-em,.pc-cover,.k-promo-ic,.k-
   #pcSec .k-tabs > button:is(.on,[aria-selected="true"]){ background:transparent; box-shadow:none; color:var(--accent-fg); }
   #pcSec .k-tabs > button.on .k-tl{ font-weight:700; }
   #pcSec .k-tabs > button.on .ic{ stroke-width:2.5; }
-  #pcSec .k-tabs .k-dot{ top:2px; right:calc(50% - 26px); }
+  #pcSec .k-tabs .k-dot{ position:absolute; top:2px; right:calc(50% - 26px); }
 }
 @media (prefers-reduced-transparency:reduce){ .k-tabs{ background:var(--surface); -webkit-backdrop-filter:none; backdrop-filter:none; } }
 html[data-heft="on"] .k-tabs{ background:var(--paper); border:1.5px solid var(--pen-soft); }
@@ -515,3 +515,6 @@ html:not([data-heft="on"]) #pcSec .k-tabs > button[aria-selected="false"]{ box-s
 /* Im Kurs selbst übernimmt dessen Titel die Rolle der Überschrift – der Seitenkopf würde nur Platz kosten */
 main:has(#pcSec.has-tabbar) #kHero{ display:none; }
 
+
+/* Zähler am Karten-Tab: am Laptop/Tablet neben dem Text, nicht darüber */
+.k-tabs .k-dot{ position:static; margin-left:2px; }

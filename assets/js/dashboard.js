@@ -103,8 +103,10 @@
       + '<div class="u-actions"><button type="button" class="u-btn" data-give="' + esc(d.username) + '">' + ic('gift', 18) + (uPlan === 'pro' ? 'Pro' : 'Plus') + ' schenken</button>' + (d.grant ? '<button type="button" class="u-btn danger" data-take="' + esc(d.username) + '">Geschenk beenden</button>' : '') + '</div>'
       + '<div class="u-sec">Limits und Funktionen</div>' + fld('uf_lim', 'KI-Chats pro Tag nur für diesen Nutzer (leer = Standard)', f.aiLimit == null ? '' : f.aiLimit, 'Standard', 'number')
       + Object.keys(UFEAT).map(k => sw('uf_' + k, f.features[k] !== false, UFEAT[k])).join('')
-      + '<div class="u-sec">Sperre</div>' + sw('uf_ban', f.banned, 'Konto sperren', 'Meldet überall ab und blockiert alles außer Abmelden/Löschen') + fld('uf_reason', 'Grund (sieht der Nutzer)', f.banReason, 'z. B. Missbrauch der KI')
+      + '<div class="u-sec">Sperre</div>' + (f.banned ? '<div class="u-msg err" style="display:block">Dieses Konto ist gesperrt' + (f.banReason ? ': ' + esc(f.banReason) : '') + '. Der Nutzer sieht eine Sperrseite und kann sich nur abmelden oder sein Konto löschen.</div>' : '<div class="u-sub">Gesperrte Nutzer werden überall abgemeldet und sehen nach der Anmeldung nur eine Sperrseite mit dem Grund.</div>')
+      + fld('uf_reason', 'Grund (sieht der Nutzer)', f.banReason, 'z. B. Missbrauch der KI')
       + sw('uf_notify', d.notifyActive, 'Nutzer per E-Mail informieren', d.notifyActive ? 'bei Sperre und Freischaltung' : 'keine bestätigte E-Mail oder Versand nicht eingerichtet')
+      + '<div class="u-actions" style="margin-top:6px">' + (f.banned ? '<button type="button" class="u-btn" data-act="unban">Sperre aufheben</button>' : '<button type="button" class="u-btn danger" data-act="ban">Konto sperren</button>') + '</div>'
       + '<div class="u-sec">Notiz (nur für dich und das Team)</div>' + area('uf_note', '', f.note, 'z. B. Lehrerin, Testkonto …', 2)
       + '<div class="u-actions" style="margin-top:10px"><button type="button" class="u-btn" data-act="save">Speichern</button></div>'
       + '<div class="u-sec">Aktionen</div><div class="u-actions">'
@@ -112,6 +114,8 @@
       + (d.canDelete ? '<button type="button" class="u-btn danger" data-act="del">Konto löschen</button>' : '') + '</div>';
     if(uMail) h += '<div style="margin-top:10px">' + fld('um_sub', 'Betreff', '', 'Betreff') + area('um_txt', 'Nachricht', '', 'Hallo-Zeile und Gruß ergänzt das System.', 4) + '<div class="u-actions"><button type="button" class="u-btn" data-act="sendmail">Senden</button></div></div>';
     h += '<div style="margin-top:10px">' + fld('um_addr', 'E-Mail-Adresse setzen und als bestätigt markieren', d.email || '', 'name@beispiel.de', 'email') + '<div class="u-actions"><button type="button" class="u-btn ghost" data-act="setmail">Adresse speichern</button></div></div>'
+      + (d.staff ? '' : '<div style="margin-top:10px">' + fld('um_name', 'Benutzernamen ändern', d.username, 'neuer Name') + '<div class="u-actions"><button type="button" class="u-btn ghost" data-act="rename">Namen ändern</button></div></div>')
+      + '<div style="margin-top:10px">' + fld('um_pw', 'Neues Passwort setzen (meldet überall ab)', '', 'mindestens 8 Zeichen', 'password') + '<div class="u-actions"><button type="button" class="u-btn ghost" data-act="setpw">Passwort setzen</button></div></div>'
       + '<div class="u-msg" id="uMsg" role="status"></div>';
     return h;
   }
@@ -151,8 +155,12 @@
           if(act === 'save'){
             msg('Speichert …');
             const lim = g('uf_lim').trim();
-            const j = await RH.api('/api/admin/user/update', {body: {username: name, aiLimit: lim === '' ? null : +lim, features: Object.fromEntries(Object.keys(UFEAT).map(k => [k, c('uf_' + k)])), banned: c('uf_ban'), banReason: g('uf_reason'), note: g('uf_note'), notify: c('uf_notify')}});
+            const j = await RH.api('/api/admin/user/update', {body: {username: name, aiLimit: lim === '' ? null : +lim, features: Object.fromEntries(Object.keys(UFEAT).map(k => [k, c('uf_' + k)])), note: g('uf_note')}});
             await loadUsers(); msg('Gespeichert.' + (j.mailed ? ' Der Nutzer wurde per E-Mail informiert.' : ''), true);
+          }else if(act === 'ban' || act === 'unban'){
+            msg('Speichert …');
+            const j = await RH.api('/api/admin/user/update', {body: {username: name, banned: act === 'ban', banReason: g('uf_reason'), notify: c('uf_notify')}});
+            await loadUsers(); msg((act === 'ban' ? 'Konto gesperrt.' : 'Sperre aufgehoben.') + (j.mailed ? ' Der Nutzer wurde per E-Mail informiert.' : ''), true);
           }else if(act === 'mail'){ uMail = !uMail; await loadDetail(); }
           else if(act === 'sendmail'){
             msg('Sendet …'); await RH.api('/api/admin/user/mail', {body: {username: name, subject: g('um_sub'), text: g('um_txt')}}); uMail = false; await loadDetail(); msg('E-Mail gesendet.', true);
@@ -160,6 +168,10 @@
             await RH.api('/api/admin/user/logout', {body: {username: name}}); await loadDetail(); msg('Auf allen Geräten abgemeldet.', true);
           }else if(act === 'setmail'){
             await RH.api('/api/admin/user/email', {body: {username: name, email: g('um_addr')}}); await loadUsers(); msg('E-Mail-Adresse gespeichert und als bestätigt markiert.', true);
+          }else if(act === 'rename'){
+            const j = await RH.api('/api/admin/user/rename', {body: {username: name, newName: g('um_name')}}); uOpen = j.username; await loadUsers(); msg('Benutzername geändert.', true);
+          }else if(act === 'setpw'){
+            await RH.api('/api/admin/user/password', {body: {username: name, password: g('um_pw')}}); await loadDetail(); msg('Neues Passwort gesetzt, der Nutzer ist überall abgemeldet.', true);
           }else if(act === 'del'){
             if(!await RH.confirm({title: 'Konto „' + name + '“ löschen?', text: 'Alle Daten (Chats, Kurse, Notizen, Abo) werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.', ok: 'Endgültig löschen', danger: true})) return;
             await RH.api('/api/admin/user/delete', {body: {username: name, confirm: name}}); uOpen = null; await loadUsers();
@@ -222,7 +234,7 @@
     practice: 'Meine Kurse', share: 'Regeln als Bild teilen', darkmode: 'Dunkelmodus', stats: 'Statistik'
   };
   const PROV_LABELS = {scher: 'ScherAI', gemini: 'Gemini', groq: 'Groq'};
-  const NOTIFY_LABELS = {welcome: 'Willkommen bei Plus/Pro (nach dem Kauf)', grant: 'Geschenkter Tarif (Start und Ende)', ban: 'Konto gesperrt', unban: 'Sperre aufgehoben', cancel: 'Kündigung bestätigt', paymentFailed: 'Zahlung fehlgeschlagen', deleted: 'Konto vom Betreiber gelöscht'};
+  const NOTIFY_LABELS = {ban: 'Konto gesperrt', unban: 'Sperre aufgehoben (Freischaltung)', deleted: 'Konto gelöscht'};
   async function viewSet(){
     loading();
     let data;
@@ -232,6 +244,8 @@
     S.billing.plusFeatures = Object.assign({practice:false, notes:true}, S.billing.plusFeatures || {});
     S.auth = Object.assign({requireEmail:true, requireVerified:true, google:true}, S.auth || {});
     S.notify = Object.assign({}, S.notify || {});
+    S.limits = Object.assign({courses: 60, notes: 300}, S.limits || {});
+    S.contact = Object.assign({email: '', phone: ''}, S.contact || {});
     const news = S.news || RH.defaults.news;
     const social = {discord: S.social.discord == null ? RH.defaults.discord : S.social.discord, instagram: S.social.instagram == null ? RH.defaults.instagram : S.social.instagram};
     let order = S.ai.order.slice();
@@ -264,8 +278,13 @@
           sw('nw_on', news.enabled !== false, 'Popup anzeigen') + '<div style="height:8px"></div>' + fld('nw_date', 'Datum', news.date, '21.10.2026') + fld('nw_title', 'Überschrift', news.title, 'Neu im Regelheft')
         + area('nw_items', 'Punkte (eine Zeile pro Punkt)', (news.items || []).join('\n'), '', 6))
       + acc('KI', 'sparkles', '<div id="provList">' + provHtml() + '</div><div style="height:10px"></div>' + fld('ai_rate', 'Anfragen pro Nutzer und Zeitfenster', S.ai.rateLimit, '20', 'number') + area('ai_extra', 'Zusätzliche Anweisung an die KI', S.ai.extra, 'z. B. Antworte besonders kurz.', 3))
+      + acc('Kontakt (Impressum und Datenschutz)', 'mail',
+          '<div class="u-sub" style="margin-bottom:6px">Diese Angaben erscheinen im Impressum, in der Datenschutzerklärung, AGB, Widerruf und im Footer. Leer lassen = Standard aus config.js.</div>'
+        + fld('ct_email', 'E-Mail-Adresse', S.contact.email, RH.defaults.email || 'name@beispiel.de', 'email') + fld('ct_phone', 'Telefonnummer', S.contact.phone, RH.defaults.phone || '+49 …', 'tel'))
+      + acc('Limits pro Konto', 'sliders',
+          fld('lm_courses', 'Höchstzahl gespeicherter Kurse', S.limits.courses, '60', 'number') + fld('lm_notes', 'Höchstzahl Notizen', S.limits.notes, '300', 'number'))
       + acc('E-Mail-Benachrichtigungen', 'mail',
-          '<div class="u-sub" style="margin-bottom:6px">' + (SYS.mail && SYS.mail.ready ? 'Gehen nur an Nutzer mit bestätigter E-Mail-Adresse.' : 'Der E-Mail-Versand ist noch nicht eingerichtet, es werden keine Mails verschickt.') + '</div>'
+          '<div class="u-sub" style="margin-bottom:6px">' + (SYS.mail && SYS.mail.ready ? 'Automatische Mails gibt es nur bei diesen drei Ereignissen und nur an bestätigte Adressen.' : 'Der E-Mail-Versand ist noch nicht eingerichtet, es werden keine Mails verschickt.') + '</div>'
         + Object.keys(NOTIFY_LABELS).map(k => sw('nt_' + k, S.notify[k] !== false, NOTIFY_LABELS[k])).join(''))
       + acc('Rundmail', 'mail',
           '<div class="u-sub" style="margin-bottom:6px">Schickt eine Nachricht an alle Nutzer mit bestätigter E-Mail-Adresse (gesperrte Konten bekommen nichts).</div>'
@@ -319,6 +338,8 @@
         social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
         billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, plusAiPerDay: +g('bl_plus_ai') || 0, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
         auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')},
+        contact: {email: $('ct_email').value.trim(), phone: $('ct_phone').value.trim()},
+        limits: {courses: +$('lm_courses').value || 60, notes: +$('lm_notes').value || 300},
         notify: Object.fromEntries(Object.keys(NOTIFY_LABELS).map(k => [k, c('nt_' + k)]))
       };
       const m = $('setMsg'); m.className = 'u-msg'; m.textContent = 'Speichert …'; $('setSave').disabled = true;

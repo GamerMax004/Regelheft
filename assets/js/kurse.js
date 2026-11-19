@@ -504,6 +504,8 @@
   const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   const ruleOf = (k, id) => id && (k.rules || []).find(r => r.id === id);
   // Rückseite beim Lernen: Antwort + (falls verknüpft) die Regel als Merkkasten
+  // Vorschau in Listen: Zeilenmarker ($, !, ##, ‖) und Formelklammern entfernen, damit keine Rohschreibweise zu sehen ist
+  const flat = t => String(t == null ? '' : t).split('\n').map(l => l.replace(/^(\$ |## |! |- )/, '').replace(/ ‖ /g, ' – ')).filter(Boolean).join(' · ').replace(/\{([^{}]*)\}/g, '$1');
   const backOf = (k, c) => { const r = ruleOf(k, c.ruleId); return r && !c.fromRule ? c.back + '\n! ' + r.title + ': ' + r.text : c.back; };
   const ruleOptions = (k, sel) => '<option value="">Keine Regel</option>' + k.rules.map(r => '<option value="' + esc(r.id) + '"' + (r.id === sel ? ' selected' : '') + '>' + esc(r.title) + '</option>').join('');
 
@@ -530,7 +532,7 @@
     function drawList(){
       const now = Date.now(), cards = k.flashcards.filter(c => filter === 'own' ? c.own : filter === 'due' ? (c.due || 0) <= now : true);
       list.innerHTML = cards.length ? cards.map(c => { const r = ruleOf(k, c.ruleId);
-        return '<div class="k-c"><div><b>' + fx(c.front) + '</b><span>' + fx(c.back) + '</span>' +
+        return '<div class="k-c"><div><b>' + fx(flat(c.front)) + '</b><span>' + fx(flat(c.back)) + '</span>' +
           ((c.own || c.gen || r) ? '<span class="k-tags">' + (c.own ? '<i class="k-tag">Eigene</i>' : '') + (c.gen ? '<i class="k-tag">Von der KI</i>' : '') + (r ? '<i class="k-tag rule">' + icon('ruler', 13) + esc(r.title) + '</i>' : '') + '</span>' : '') + '</div>' +
           '<span class="k-c-st" title="Lernstufe ' + (c.box || 0) + ' von 5" aria-label="Lernstufe ' + (c.box || 0) + ' von 5">' + '●'.repeat(c.box || 0) + '○'.repeat(5 - (c.box || 0)) + '</span>' +
           (c.own || c.gen ? '<button type="button" class="k-c-act" data-edit="' + c.id + '" aria-label="Karte bearbeiten">Bearbeiten</button>' : '') +
@@ -588,7 +590,7 @@
       const box = $('kAi'), byTitle = t => k.rules.find(r => r.title.trim().toLowerCase() === String(t || '').trim().toLowerCase());
       box.innerHTML = '<h4 class="k-form-h">' + got.length + ' neue Karten</h4><p class="k-form-p">Häkchen weg bei Karten, die du nicht willst.</p>' +
         '<div class="k-pick">' + got.map((c, i) => { const r = byTitle(c.rule);
-          return '<label class="k-pick-i"><input type="checkbox" data-i="' + i + '" checked><span><b>' + fx(c.front) + '</b><span>' + fx(c.back) + '</span>' + (r ? '<i class="k-tag rule">' + icon('ruler', 13) + esc(r.title) + '</i>' : '') + '</span></label>'; }).join('') + '</div>' +
+          return '<label class="k-pick-i"><input type="checkbox" data-i="' + i + '" checked><span><b>' + fx(flat(c.front)) + '</b><span>' + fx(flat(c.back)) + '</span>' + (r ? '<i class="k-tag rule">' + icon('ruler', 13) + esc(r.title) + '</i>' : '') + '</span></label>'; }).join('') + '</div>' +
         '<div class="k-form-act"><button type="button" class="ai-btn ghost" id="kAiNo">Verwerfen</button><button type="button" class="ai-btn" id="kAiOk">' + got.length + ' übernehmen</button></div>';
       const count = () => box.querySelectorAll('.k-pick input:checked').length;
       box.querySelector('.k-pick').onchange = () => { const n = count(); $('kAiOk').textContent = n + ' übernehmen'; $('kAiOk').disabled = !n; };

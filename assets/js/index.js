@@ -478,7 +478,7 @@ function openNews(){
   NEWS_.items.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
   newsEl.classList.add('open'); document.body.style.overflow = 'hidden';
   BG().forEach(el => el.setAttribute('inert', ''));
-  document.getElementById('newsClose').focus({preventScroll:true});
+  { const card = document.querySelector('.news-card'); if(card){ card.setAttribute('tabindex', '-1'); card.focus({preventScroll:true}); } }   // Fokus aufs Fenster statt auf den Knopf: kein doppelter Rahmen
 }
 document.getElementById('newsClose').addEventListener('click', closeNews);
 newsEl.addEventListener('click', e => { if(e.target === newsEl) closeNews(); });

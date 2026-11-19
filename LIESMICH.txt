@@ -120,3 +120,14 @@ NEU (15.11.2026): „Meine Kurse“ als eigene Seite
   Einstellungen: „E-Mail-Benachrichtigungen“ (Willkommen, Geschenk, Sperre, Zahlung fehlgeschlagen …) und „Rundmail“ (nur Besitzer). Mails gehen nur an bestätigte Adressen.
   Für „Zahlung fehlgeschlagen“ im Stripe-Webhook zusätzlich das Ereignis invoice.payment_failed aktivieren.
   Neue Tabelle user_admin wird automatisch angelegt. Dafür die neue worker.js deployen.
+
+- E-Mails an Nutzer gibt es jetzt nur noch bei Sperre, Freischaltung und Löschung (Konto-Löschung durch dich oder durch den Nutzer selbst). Willkommens-, Geschenk-, Kündigungs- und Zahlungs-Mails sind entfernt; das Stripe-Ereignis invoice.payment_failed wird nicht mehr gebraucht.
+- Dashboard → Nutzer: zusätzlich Telefonnummer (auch durchsuchbar), Benutzernamen ändern, neues Passwort setzen. Einstellungen: „Limits pro Konto“ (Kurse, Notizen).
+- Grafikfehler behoben: Randlinie im Heft-Look lief über Kopfzeile und Hinweis-Banner (jetzt nur noch im Heft-Bereich); doppelter Rahmen am „Alles klar“-Knopf; „|“-Zeichen vor den Rand-Notizen in den Beispielen.
+  Geändert: assets/css/{style,heft}.css, assets/js/{index,dashboard}.js, worker.js.
+
+- Telefonnummer pro Nutzer ist wieder entfernt. Stattdessen: Dashboard → Einstellungen → „Kontakt (Impressum und Datenschutz)“: E-Mail und Telefonnummer ändern; gilt sofort in Impressum, Datenschutz, AGB, Widerruf und Footer (leer = Standard aus config.js).
+- Gesperrte Nutzer sehen nach der Anmeldung eine eigene Sperrseite mit Grund; sie können sich nur abmelden oder ihr Konto löschen. Im Dashboard gibt es dafür die Knöpfe „Konto sperren“ / „Sperre aufheben“, die sofort speichern (vorher musste man zusätzlich „Speichern“ drücken).
+- Fehlermeldungen vom Worker mit Status 403 (z. B. „Das Passwort ist falsch.“) werden jetzt richtig angezeigt.
+- Karteikarten: Kategorie-Pille auf der Vorderseite gestaltet, Listen-Vorschau ohne Rohschreibweise ($, !, ‖, {…}), Zähler am Karten-Tab überdeckt den Text nicht mehr.
+  Geändert: assets/js/{core,kurse,dashboard}.js, assets/css/{kurse,ueben}.css, worker.js.
