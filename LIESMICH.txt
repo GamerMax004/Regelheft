@@ -131,3 +131,15 @@ NEU (15.11.2026): „Meine Kurse“ als eigene Seite
 - Fehlermeldungen vom Worker mit Status 403 (z. B. „Das Passwort ist falsch.“) werden jetzt richtig angezeigt.
 - Karteikarten: Kategorie-Pille auf der Vorderseite gestaltet, Listen-Vorschau ohne Rohschreibweise ($, !, ‖, {…}), Zähler am Karten-Tab überdeckt den Text nicht mehr.
   Geändert: assets/js/{core,kurse,dashboard}.js, assets/css/{kurse,ueben}.css, worker.js.
+
+- Status-Bot jetzt direkt in worker.js (kein eigener Server, kein Python-Bot mehr nötig):
+  1. worker.js deployen.
+  2. Discord Developer Portal → New Application. Unter „General Information“ die Application ID und den Public Key kopieren; unter „Bot“ den Token erzeugen.
+  3. Im Worker als Secrets eintragen: DISCORD_BOT_TOKEN, DISCORD_PUBLIC_KEY, DISCORD_APP_ID. Optional: DISCORD_STATUS_CHANNEL_ID (Kanal-ID), DISCORD_ALERT_ROLE_ID (Rolle für Störungsmeldungen). SITE_URL muss als Variable gesetzt sein (wird auf Erreichbarkeit geprüft).
+  4. Cloudflare → Worker → Triggers → Cron Triggers: „* * * * *“ (jede Minute) hinzufügen.
+  5. Discord Developer Portal → General Information → „Interactions Endpoint URL“ = https://<dein-worker>/api/discord (erst speichern, wenn Schritt 3 erledigt ist; Discord prüft die Adresse).
+  6. Bot einladen: OAuth2 → URL Generator, Scopes „bot“ und „applications.commands“, Rechte „Nachrichten senden“ und „Links einbetten“.
+  7. Im gewünschten Kanal /status-einrichten ausführen (oder DISCORD_STATUS_CHANNEL_ID setzen). Die Slash-Befehle registriert der Worker beim ersten Cron-Lauf selbst.
+  Optional für die Zeit „Letztes Deployment“: im Worker unter Settings → Bindings „Version metadata“ mit dem Namen CF_VERSION_METADATA hinzufügen; ohne Binding zeigt der Bot den Start der Worker-Instanz.
+  Hinweis: Ein Ausfall des Workers selbst kann er nicht melden (er läuft ja darin); dann bleibt „Zuletzt geprüft“ in der Nachricht stehen. Erkannt werden: Webseite nicht erreichbar, Datenbank-Fehler, Wartungsmodus, fehlende KI-Schlüssel, Fehlerhäufung.
+  Neue Tabellen status_state und status_checks werden automatisch angelegt.
