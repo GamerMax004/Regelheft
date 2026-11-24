@@ -579,9 +579,13 @@ mark{border-radius:6px;}
 .chip .chip-x{ display:inline-flex; margin-right:-4px; }
 
 /* Filter: gewählte Themen links (mit ✕), rechts der Filter-Knopf mit Auswahlfenster */
-.filterbar{ position:relative; display:flex; align-items:center; gap:10px; padding:8px 18px 10px 0; margin-bottom:-14px; }
+.filterbar{ position:relative; display:flex; align-items:center; gap:10px; padding:8px 18px 10px 0; margin-bottom:4px; }
 .filterbar .chips{ flex:1 1 auto; min-width:0; margin:0; padding:6px 0 6px 18px; }
-.chips-all{ color:var(--muted); font-size:.9375rem; white-space:nowrap; align-self:center; }
+.result-count{ flex:none; color:var(--muted); font-size:.9375rem; white-space:nowrap; }   /* Trefferzahl links neben dem Filter-Knopf */
+.result-count .count{ font-weight:700; color:var(--ink); }
+.filterbar .chips{ overflow:hidden; }
+.chip.chip-more{ background:transparent; color:var(--ink); box-shadow:none; border:1.5px dashed var(--ink-soft); }   /* „+N“: gestrichelt statt Farbe */
+@media (max-width:640px){ .result-count{ font-size:.8125rem; } }
 .filter-btn{ flex:none; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }
 .filter-btn[aria-expanded="true"]{ background:var(--bg-soft); }
 .filter-count{ min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:var(--ink); color:var(--surface); font-size:.75rem; font-weight:700; line-height:20px; text-align:center; }

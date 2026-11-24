@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adventskalender – Regelheft Mathematik</title>
+<link rel="icon" type="image/png" href="favicon.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<meta name="apple-mobile-web-app-title" content="Regelheft">
+<meta name="description" content="Der Regelheft-Adventskalender: Jeden Tag im Dezember ein Türchen mit einer Mathe-Aufgabe und der passenden Regel.">
+<meta name="author" content="Gölitzer Development">
+<meta name="copyright" content="Alle Inhalte und Darstellungen sind urheberrechtlich geschützt.">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light dark">
+<script src="assets/js/theme-init.js?v=20261115a"></script>
+<link rel="stylesheet" href="assets/css/fonts.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/style.css?v=20261124a">
+<link rel="stylesheet" href="assets/css/footer.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/seiten.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/theme.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/header.css?v=20261124a">
+<link rel="stylesheet" href="assets/css/heft-font.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261124a">
+<link rel="stylesheet" href="assets/css/konto.css?v=20261109a">
+<link rel="stylesheet" href="assets/css/ui.css?v=20261119a">
+<link rel="stylesheet" href="assets/css/apple.css?v=20261116a">
+<link rel="stylesheet" href="assets/css/swiftui.css?v=20261116a">
+<link rel="stylesheet" href="assets/css/advent.css?v=20261124a">
+</head>
+<body>
+<a class="skip-link" href="#main">Zum Inhalt springen</a>
+
+<noscript><p class="noscript">Der Adventskalender braucht JavaScript. Bitte schalte es in deinem Browser ein.</p></noscript>
+<header class="top">
+  <div class="toprow"><a class="brand" href="index.html"><h1>Regelheft<span> Mathematik</span></h1></a><div data-account></div></div>
+</header>
+
+<main id="main" tabindex="-1">
+<div class="page page--wide advent">
+  <div class="ad-head">
+    <h2 class="page-title">Adventskalender</h2>
+    <p class="page-lead">Jeden Tag im Dezember öffnet sich ein Türchen mit einer Mathe-Aufgabe. Dazu gibt es die passende Regel aus dem Regelheft.</p>
+  </div>
+
+  <div class="ad-status" role="status" aria-live="polite">
+    <div class="ad-status-main" id="adStatus"></div>
+    <div class="ad-count" id="adCount"></div>
+  </div>
+  <ol class="ad-chain" id="adChain" aria-hidden="true"></ol>
+
+  <p class="ad-msg" id="adMsg" role="status" aria-live="polite"></p>
+  <ol class="ad-grid" id="adGrid"></ol>
+  <p class="fine ad-fine">Dein Fortschritt wird nur in diesem Browser gespeichert.</p>
+</div>
+</main>
+
+<dialog class="ad-dlg" id="adDlg" aria-labelledby="adTitle">
+  <div class="ad-dlg-head">
+    <span class="ad-dlg-day" id="adDay"></span>
+    <button class="icon-btn" id="adClose" type="button" aria-label="Schließen" data-icon="x" data-size="20"></button>
+  </div>
+  <h2 id="adTitle"></h2>
+  <p class="ad-q" id="adQ"></p>
+  <form class="ad-form" id="adForm" autocomplete="off" novalidate>
+    <label class="sr-only" for="adIn">Deine Antwort</label>
+    <input id="adIn" type="text" inputmode="text" enterkeyhint="done" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Deine Antwort">
+    <button class="ai-btn" type="submit">Prüfen</button>
+  </form>
+  <p class="ad-fb" id="adFb" role="status" aria-live="polite"></p>
+  <div class="ad-hint is-hidden" id="adHint"></div>
+  <div class="ad-sol is-hidden" id="adSol"></div>
+  <div class="ad-actions">
+    <button class="ai-btn ghost" id="adHintBtn" type="button">Tipp anzeigen</button>
+    <button class="ai-btn ghost" id="adSolBtn" type="button">Lösung zeigen</button>
+  </div>
+  <a class="ad-rule is-hidden" id="adRule" href="index.html"><span data-icon="book" data-size="18" aria-hidden="true"></span><span id="adRuleTx"></span></a>
+</dialog>
+
+
+<footer id="siteFooter"></footer>
+
+<script src="assets/js/config.js?v=20261109a"></script>
+<script src="assets/js/footer.js?v=20261124a"></script>
+<script src="assets/js/core.js?v=20261124a"></script>
+<script src="assets/js/icons.js?v=20261116b"></script>
+<script src="assets/js/layout.js?v=20261116a"></script>
+<script src="assets/js/advent-data.js?v=20261124a"></script>
+<script src="assets/js/advent.js?v=20261124a"></script>
+</body>
+</html>

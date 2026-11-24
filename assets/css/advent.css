@@ -1,0 +1,112 @@
+/* ============================================================
+   ADVENTSKALENDER
+   Aufbau statt Farbe: Die Türchen unterscheiden sich durch Form
+   (Rahmen, Griff, Aufschwingen, gestrichelt = noch zu), nicht durch
+   Weihnachtsfarben. Alle Farben kommen aus den Variablen der Seite
+   und passen deshalb zu Hell, Dunkel und Heft-Look.
+   ============================================================ */
+.page.advent{ max-width:1080px; margin:0 auto; padding-left:18px; padding-right:18px; }
+.ad-head{ margin-bottom:8px; }
+
+.ad-status{ display:flex; align-items:baseline; justify-content:space-between; gap:6px 16px; flex-wrap:wrap; margin:8px 0 10px; }
+.ad-status-main{ font-weight:700; font-size:1.0625rem; letter-spacing:-.01em; }
+.ad-count{ color:var(--muted); font-size:.875rem; }
+.ad-login{ margin:0 0 14px; padding:10px 14px; border:1px dashed var(--border); border-radius:var(--radius-md); font-size:.875rem; color:var(--ink-soft); }
+.ad-login a{ color:var(--accent-fg); font-weight:600; }
+
+/* Fortschrittsleiste: 24 Abschnitte, ein Abschnitt pro Türchen */
+.ad-chain{ list-style:none; display:grid; grid-template-columns:repeat(24,1fr); gap:3px; padding:0; margin:0 0 22px; }
+.ad-chain li{ height:8px; border-radius:2px; background:var(--border); }
+.ad-chain li.is-open{ background:transparent; box-shadow:inset 0 0 0 1.5px var(--accent); }
+.ad-chain li.is-done{ background:var(--accent); box-shadow:none; }
+.ad-chain li.is-today{ height:12px; margin-top:-2px; }
+
+.ad-msg{ min-height:1.4em; margin:0 0 10px; font-size:.875rem; font-weight:600; color:var(--ink-soft); }
+
+/* Türchen-Raster */
+.ad-grid{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+@media (min-width:560px){ .ad-grid{ grid-template-columns:repeat(4,1fr); } }
+@media (min-width:900px){ .ad-grid{ grid-template-columns:repeat(6,1fr); gap:14px; } }
+
+.door{ position:relative; aspect-ratio:1/1; perspective:760px; }
+.door-btn{ position:absolute; inset:0; width:100%; height:100%; padding:0; margin:0; border:0; background:none; font:inherit; color:inherit; cursor:pointer; text-align:center; -webkit-tap-highlight-color:transparent; }
+.door-btn:focus-visible{ outline:3px solid var(--accent); outline-offset:3px; border-radius:var(--radius-md); }
+
+/* Innenseite (das, was man sieht, wenn die Tür offen ist) */
+.door-back{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:8px 8px 8px 16px;
+  border-radius:var(--radius-md); background:var(--accent-soft); box-shadow:inset 3px 0 0 var(--border), inset 0 0 0 1px var(--border); color:var(--ink-soft); font-size:.75rem; line-height:1.25; }
+.door-back b{ color:var(--ink); font-size:.8125rem; font-weight:700; display:block; }
+.door-back svg{ color:var(--accent-fg); }
+
+/* Tür (Vorderseite) */
+.door-front{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:2px;
+  border-radius:var(--radius-md); background:var(--surface); box-shadow:inset 0 0 0 2px var(--ink), inset 0 0 0 8px var(--surface), inset 0 0 0 9px var(--border);
+  transform-origin:left center; backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .55s cubic-bezier(.2,.8,.2,1), box-shadow .2s; }
+.door-num{ font-size:clamp(1.5rem,4.2vw,2.1rem); font-weight:700; letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums; }
+.door-sub{ font-size:.6875rem; font-weight:600; color:var(--muted); letter-spacing:.02em; min-height:1em; }
+.door-front::after{ content:""; position:absolute; right:11px; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:var(--ink); }   /* Türgriff */
+.door-lock{ position:absolute; left:12px; top:12px; color:var(--muted); display:none; }
+
+.door:not(.is-locked):not(.is-open) .door-btn:hover .door-front{ transform:rotateY(-14deg); }
+.door.is-open .door-front{ transform:rotateY(-74deg); box-shadow:inset 0 0 0 2px var(--border); }
+.door.is-open .door-front .door-num{ opacity:.35; }
+
+/* Noch verschlossen: gestrichelt, Schloss, kein Griff */
+.door.is-locked .door-front{ background:transparent; box-shadow:none; border:2px dashed var(--border); color:var(--muted); }
+.door.is-locked .door-front::after{ display:none; }
+.door.is-locked .door-lock{ display:block; }
+.door.is-locked .door-btn{ cursor:not-allowed; }
+.door.is-shake{ animation:adShake .38s; }
+@keyframes adShake{ 20%{ transform:translateX(-5px); } 45%{ transform:translateX(5px); } 70%{ transform:translateX(-3px); } 100%{ transform:none; } }
+
+/* Heute: Etikett statt Farbe */
+.door.is-today .door-sub{ color:var(--accent-fg); }
+.door.is-today:not(.is-open) .door-front{ box-shadow:inset 0 0 0 3px var(--accent), inset 0 0 0 8px var(--surface), inset 0 0 0 9px var(--border); }
+
+/* Dialog */
+.ad-dlg{ border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); color:var(--ink); padding:20px 20px 22px; width:min(540px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto; box-shadow:0 24px 70px rgba(0,0,0,.28); }
+.ad-dlg::backdrop{ background:rgba(10,14,22,.5); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+.ad-dlg[open]{ animation:adIn .28s cubic-bezier(.2,.8,.2,1); }
+@keyframes adIn{ from{ opacity:0; transform:translateY(10px) scale(.98); } to{ opacity:1; transform:none; } }
+.ad-dlg-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.ad-dlg-day{ font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.ad-dlg h2{ margin:0 0 12px; font-size:1.3125rem; letter-spacing:-.025em; }
+.ad-q{ margin:0 0 14px; font-size:1.0625rem; line-height:1.5; }
+.ad-form{ display:flex; gap:8px; }
+.ad-form input{ flex:1; min-width:0; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg); color:var(--ink); font:inherit; font-size:1rem; }
+.ad-form input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+.ad-form input:disabled{ opacity:.6; }
+.ad-form .ai-btn{ width:auto; margin:0; padding:12px 20px; }
+.ad-fb{ min-height:1.4em; margin:10px 0 0; font-weight:700; font-size:.9375rem; }
+.ad-fb.ok{ color:var(--teal); } .ad-fb.err{ color:var(--danger); }
+.ad-hint,.ad-sol{ margin:12px 0 0; padding:10px 12px; border-radius:var(--radius-sm); background:var(--bg-soft); box-shadow:inset 3px 0 0 var(--accent); font-size:.9375rem; line-height:1.5; color:var(--ink-soft); }
+.ad-sol b{ color:var(--ink); }
+.ad-actions{ display:flex; gap:8px; margin-top:14px; }
+.ad-actions .ai-btn{ margin:0; flex:1; padding:11px; }
+.ad-rule{ display:flex; align-items:center; gap:8px; margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius-md); color:var(--ink); text-decoration:none; font-weight:600; font-size:.9375rem; }
+.ad-rule:hover{ border-color:var(--accent); }
+.ad-rule svg{ color:var(--accent-fg); flex:none; }
+
+/* Gewinn-Zettel: Lose-Look mit gestricheltem Rand */
+.ad-prize{ margin-top:14px; padding:16px; border:2px dashed var(--ink); border-radius:var(--radius-md); text-align:center; }
+.ad-prize small{ display:block; font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.ad-prize strong{ display:block; margin:6px 0 2px; font-size:1.5rem; letter-spacing:-.03em; }
+.ad-prize p{ margin:6px 0 0; font-size:.875rem; color:var(--ink-soft); }
+.ad-prize .ai-btn{ width:auto; display:inline-block; margin-top:10px; padding:10px 18px; }
+.ad-prize.is-none{ border-style:solid; border-color:var(--border); }
+.ad-prize.is-none strong{ font-size:1.0625rem; }
+.ad-fine{ margin-top:22px; text-align:center; }
+
+/* Heft-Look: Kugelschreiber-Blau, Papier und gestrichelte Linien */
+html[data-heft="on"] .door-front{ background:var(--paper); color:var(--pen); box-shadow:inset 0 0 0 2px var(--pen), inset 0 0 0 8px var(--paper), inset 0 0 0 9px var(--grid); }
+html[data-heft="on"] .door-front::after{ background:var(--pen); }
+html[data-heft="on"] .door.is-open .door-front{ box-shadow:inset 0 0 0 2px var(--grid); }
+html[data-heft="on"] .door.is-locked .door-front{ background:transparent; border-color:var(--grid-strong); box-shadow:none; color:var(--pen-soft); }
+html[data-heft="on"] .door-back{ background:var(--paper); box-shadow:inset 3px 0 0 var(--grid-strong), inset 0 0 0 1px var(--grid); }
+html[data-heft="on"] .ad-dlg{ background:var(--paper); }
+html[data-heft="on"] .ad-prize{ border-color:var(--pen); }
+
+@media (prefers-reduced-motion:reduce){
+  .door-front,.ad-dlg[open],.door.is-shake{ transition:none; animation:none; }
+  .door:not(.is-locked):not(.is-open) .door-btn:hover .door-front{ transform:none; }
+}

@@ -101,7 +101,8 @@
     h += '<div class="u-sec">Tarif schenken</div><div class="u-seg2"><button type="button" class="u-btn ghost sm" data-plan="pro" aria-pressed="' + (uPlan === 'pro') + '">' + ic('crown', 16) + 'Pro</button><button type="button" class="u-btn ghost sm" data-plan="plus" aria-pressed="' + (uPlan === 'plus') + '">Plus</button></div>'
       + '<div class="u-chips" style="margin-bottom:12px">' + [7, 30, 90, 365].map(x => '<button type="button" class="u-chip" data-days="' + x + '" aria-pressed="' + (uDays === x) + '">' + (x === 365 ? '1 Jahr' : x + ' Tage') + '</button>').join('') + '</div>'
       + '<div class="u-actions"><button type="button" class="u-btn" data-give="' + esc(d.username) + '">' + ic('gift', 18) + (uPlan === 'pro' ? 'Pro' : 'Plus') + ' schenken</button>' + (d.grant ? '<button type="button" class="u-btn danger" data-take="' + esc(d.username) + '">Geschenk beenden</button>' : '') + '</div>'
-      + '<div class="u-sec">Limits und Funktionen</div>' + fld('uf_lim', 'KI-Chats pro Tag nur für diesen Nutzer (leer = Standard)', f.aiLimit == null ? '' : f.aiLimit, 'Standard', 'number')
+      + '<div class="u-sec">Token</div>' + fld('ut_amt', 'Token schenken (mit Minus abziehen)', '', 'z. B. 50', 'number') + '<div class="u-actions"><button type="button" class="u-btn" data-tok="' + esc(d.username) + '">' + ic('gift', 18) + 'Token buchen</button></div>'
+      + '<div class="u-sec">Limits und Funktionen</div>' + fld('uf_lim', 'Zusätzliches Tageslimit (KI-Chats pro Tag) nur für diesen Nutzer (leer = keins, 0 = KI gesperrt)', f.aiLimit == null ? '' : f.aiLimit, 'Standard', 'number')
       + Object.keys(UFEAT).map(k => sw('uf_' + k, f.features[k] !== false, UFEAT[k])).join('')
       + '<div class="u-sec">Sperre</div>' + (f.banned ? '<div class="u-msg err" style="display:block">Dieses Konto ist gesperrt' + (f.banReason ? ': ' + esc(f.banReason) : '') + '. Der Nutzer sieht eine Sperrseite und kann sich nur abmelden oder sein Konto löschen.</div>' : '<div class="u-sub">Gesperrte Nutzer werden überall abgemeldet und sehen nach der Anmeldung nur eine Sperrseite mit dem Grund.</div>')
       + fld('uf_reason', 'Grund (sieht der Nutzer)', f.banReason, 'z. B. Missbrauch der KI')
@@ -140,13 +141,17 @@
     document.querySelector('.u-filters').onclick = e => { const b = e.target.closest('[data-f]'); if(!b) return; uF = b.dataset.f; document.querySelectorAll('.u-filters .u-chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === uF)); loadUsers(); };
     const msg = (t, ok) => { const m = $('uMsg'); if(m){ m.className = 'u-msg' + (ok === true ? ' ok' : ok === false ? ' err' : ''); m.textContent = t; } };
     $('uList').onclick = async e => {
-      const row = e.target.closest('.u-row'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]'), ac = e.target.closest('[data-act]');
+      const row = e.target.closest('.u-row'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]'), tkn = e.target.closest('[data-tok]'), ac = e.target.closest('[data-act]');
       if(row){ uOpen = uOpen === row.dataset.u ? null : row.dataset.u; uMail = false; return loadUsers(); }
       if(pl){ uPlan = pl.dataset.plan; return loadDetail(); }
       if(dy){ uDays = +dy.dataset.days; return loadDetail(); }
       const name = uOpen, g = id => $(id) ? $(id).value : '', c = id => $(id) && $(id).checked;
       try{
-        if(gv || tk){
+        if(tkn){
+          msg('…');
+          const j = await RH.api('/api/admin/tokens', {body: {username: name, amount: +g('ut_amt') || 0}});
+          msg('Gebucht. Neues Guthaben: ' + j.tokens.total + ' Token.', true);
+        }else if(gv || tk){
           msg('…');
           const j = await RH.api('/api/admin/pro', {body: {username: name, plan: uPlan, days: uDays, revoke: !!tk}});
           await loadUsers(); msg(tk ? 'Geschenk beendet.' : (j.plan === 'plus' ? 'Plus' : 'Pro') + ' geschenkt bis ' + D(j.until) + '.', true);
@@ -240,7 +245,7 @@
     let data;
     try{ data = await RH.api('/api/admin/settings'); }catch(e){ $('dashBody').innerHTML = err(e); return; }
     const S = data.settings, K = data.keys, SYS = data.system || {}, ST = data.stats || {};
-    S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {});
+    S.billing = Object.assign({enabled:false, proFeatures:{practice:true, notes:true}, freeTokens:60, plusTokens:600, proTokens:3000, costs:{ai:4, aiImage:8, kurs:40, karten:10, tts:8}, plusFeatures:{practice:false, notes:true}, yearly:true, kleinunternehmer:true, promo:false, note:''}, S.billing || {});
     S.billing.plusFeatures = Object.assign({practice:false, notes:true}, S.billing.plusFeatures || {});
     S.auth = Object.assign({requireEmail:true, requireVerified:true, google:true}, S.auth || {});
     S.notify = Object.assign({}, S.notify || {});
@@ -263,7 +268,7 @@
         + sw('bl_prac', S.billing.proFeatures.practice, 'Meine Kurse nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
         + sw('bl_plus_prac', S.billing.plusFeatures.practice, 'Meine Kurse auch mit Plus') + sw('bl_plus_note', S.billing.plusFeatures.notes, 'Notizen auch mit Plus')
         + sw('bl_year', S.billing.yearly, 'Jahrestarif anbieten') + sw('bl_ku', S.billing.kleinunternehmer, 'Kleinunternehmer (§ 19 UStG)') + sw('bl_promo', S.billing.promo, 'Gutscheincodes erlauben')
-        + '<div style="height:10px"></div>' + fld('bl_free', 'Gratis: KI-Chats pro Tag', S.billing.freeAiPerDay, '3', 'number') + fld('bl_plus_ai', 'Plus: KI-Chats pro Tag', S.billing.plusAiPerDay, '15', 'number')
+        + '<div style="height:10px"></div>' + fld('bl_free', 'Gratis: Start-Token (einmalig, wird nicht aufgefüllt)', S.billing.freeTokens, '60', 'number') + fld('bl_plus_tok', 'Plus: Token pro Monat', S.billing.plusTokens, '600', 'number') + fld('bl_pro_tok', 'Pro: Token pro Monat', S.billing.proTokens, '3000', 'number') + '<div style="height:10px"></div>' + fld('bl_c_ai', 'Kosten: KI-Nachricht (Token)', S.billing.costs.ai, '4', 'number') + fld('bl_c_img', 'Kosten: KI-Nachricht mit Foto (Token)', S.billing.costs.aiImage, '8', 'number') + fld('bl_c_kurs', 'Kosten: Kurs erstellen (Token)', S.billing.costs.kurs, '40', 'number') + fld('bl_c_karten', 'Kosten: Karteikarten erstellen (Token)', S.billing.costs.karten, '10', 'number') + fld('bl_c_tts', 'Kosten: Podcast-Stimme (Token)', S.billing.costs.tts, '8', 'number') + '<div style="height:10px"></div>' + sw('adv_on', !S.advent || S.advent.enabled !== false, 'Adventskalender mit Gewinnen aktiv')
         + area('bl_note_t', 'Hinweis auf der Pro-Seite', S.billing.note, '', 2))
       + acc('Anmeldung', 'user',
           '<div class="u-tech">' + tick(SYS.mail && SYS.mail.ready, 'E-Mail-Versand' + (SYS.mail && SYS.mail.provider ? ' (' + SYS.mail.provider + ')' : '')) + tick(SYS.google && SYS.google.ready, 'Google-Login') + '<div style="height:8px"></div></div>'
@@ -336,8 +341,8 @@
         features: Object.fromEntries(Object.keys(FEATURE_LABELS).map(k => [k, c('ft_' + k)])),
         ai: {order, enabled: Object.fromEntries(order.map(p => [p, $('prov_' + p).checked])), rateLimit: +g('ai_rate') || 20, extra: g('ai_extra')},
         social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
-        billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeAiPerDay: +g('bl_free') || 0, plusAiPerDay: +g('bl_plus_ai') || 0, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
-        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')},
+        billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeTokens: +g('bl_free') || 0, plusTokens: +g('bl_plus_tok') || 0, proTokens: +g('bl_pro_tok') || 0, costs: {ai: +g('bl_c_ai') || 0, aiImage: +g('bl_c_img') || 0, kurs: +g('bl_c_kurs') || 0, karten: +g('bl_c_karten') || 0, tts: +g('bl_c_tts') || 0}, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
+        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}, advent: {enabled: c('adv_on')},
         contact: {email: $('ct_email').value.trim(), phone: $('ct_phone').value.trim()},
         limits: {courses: +$('lm_courses').value || 60, notes: +$('lm_notes').value || 300},
         notify: Object.fromEntries(Object.keys(NOTIFY_LABELS).map(k => [k, c('nt_' + k)]))

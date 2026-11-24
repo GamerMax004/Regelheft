@@ -124,6 +124,32 @@ function syncPanel(){
   if(panelSig !== viewList().join('|')) buildPanel();
   filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); });
 }
+/* Gewählte Filter bleiben in EINER Zeile: Was nicht mehr passt, wird zu „+N“ (öffnet das Filterfenster). Keine abgeschnittene Wand, kein Umbruch. */
+function fitChips(){
+  chipsEl.querySelectorAll('.chip-more').forEach(n => n.remove());
+  const kids = [...chipsEl.querySelectorAll('.chip')];
+  kids.forEach(k => { k.style.display = ''; });
+  if(kids.length < 2) return;
+  const cs = getComputedStyle(chipsEl), gap = parseFloat(cs.columnGap) || 8;
+  const avail = chipsEl.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+  if(avail <= 0) return;
+  const w = kids.map(k => k.getBoundingClientRect().width);
+  if(w.reduce((x, y) => x + y, 0) + gap * (w.length - 1) <= avail) return;
+  const more = document.createElement('button');
+  more.type = 'button'; more.className = 'chip chip-more'; more.textContent = '+' + kids.length;
+  chipsEl.appendChild(more);
+  const mw = more.getBoundingClientRect().width;
+  let shown = 0, used = 0;
+  for(let i = 0; i < kids.length; i++){
+    const next = used + (i ? gap : 0) + w[i];
+    if(next + gap + mw > avail) break;
+    used = next; shown = i + 1;
+  }
+  kids.forEach((k, i) => { k.style.display = i < shown ? '' : 'none'; });
+  const rest = kids.length - shown;
+  more.textContent = shown ? '+' + rest : kids.length + ' Filter';
+  more.setAttribute('aria-label', rest + (rest === 1 ? ' weiterer Filter' : ' weitere Filter') + ' – Filterfenster öffnen');
+}
 function renderChips(){   // links vom Filter-Knopf: nur die gewählten Filter, jeder mit ✕ zum Abwählen
   const items = [];
   if(activeView) items.push({kind:'view', key:activeView, label:viewLabel(activeView), html:viewIcon(activeView) + escapeHtml(viewLabel(activeView))});
@@ -133,7 +159,8 @@ function renderChips(){   // links vom Filter-Knopf: nur die gewählten Filter, 
     chipSig = sig;
     chipsEl.innerHTML = items.length
       ? items.map(i => '<button type="button" class="chip active" data-kind="' + i.kind + '" data-key="' + escapeAttr(i.key) + '" aria-label="' + escapeAttr(i.label) + ' – Filter entfernen" title="Filter entfernen">' + i.html + '<span class="chip-x" aria-hidden="true">' + icon('x', 14) + '</span></button>').join('')
-      : '<span class="chips-all">Alle Regeln</span>';
+      : '';
+    fitChips();
   }
   filterCount.textContent = items.length || ''; filterCount.hidden = !items.length;
   syncPanel();
@@ -143,7 +170,13 @@ function toggleFilter(kind, key){
   else if(activeCats.has(key)) activeCats.delete(key); else activeCats.add(key);
   applyFilter({animate:true});
 }
-chipsEl.addEventListener('click', e => { const b = e.target.closest('.chip'); if(b) toggleFilter(b.dataset.kind, b.dataset.key); });
+chipsEl.addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  if(b.classList.contains('chip-more')){ filterBtn.click(); return; }
+  toggleFilter(b.dataset.kind, b.dataset.key);
+});
+if('ResizeObserver' in window) new ResizeObserver(() => fitChips()).observe(chipsEl); else window.addEventListener('resize', fitChips);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitChips);
 function openFilter(){
   syncPanel(); filterPanel.hidden = false; filterBackdrop.hidden = false; filterBtn.setAttribute('aria-expanded', 'true');
   const first = filterPanel.querySelector('.fp-view, .fp-row'); if(first) first.focus({preventScroll:true});
@@ -203,7 +236,6 @@ function applyFilter(opts){
   renderChips();
   renderList(opts.animate);
   document.getElementById('resultCount').textContent = filtered.length;
-  { const parts = []; if(activeView) parts.push(viewLabel(activeView)); if(activeCats.size) parts.push(activeCats.size === 1 ? [...activeCats][0] : activeCats.size + ' Themen'); document.getElementById('activeCatLabel').textContent = parts.join(' · '); }
 }
 
 function renderList(animate){

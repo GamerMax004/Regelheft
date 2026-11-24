@@ -18,15 +18,15 @@
     const pro = [];
     if(f.practice) pro.push(li('Meine Kurse mit eigenen Lerndateien (PDF, Fotos, GoodNotes – bis zu 5 pro Kurs): Lernpfad, Karteikarten, Regeln, Test und Podcast'));
     if(f.notes) pro.push(li('Eigene Notizen zu jeder Regel (Eselsbrücken, Beispiele)'));
-    pro.push(li('KI-Aufgabenhilfe ohne Tageslimit' + (c.freeAiPerDay >= 0 ? ' (kostenlos: ' + c.freeAiPerDay + ' Chats pro Tag)' : '')));
+    pro.push(li(c.proTokens + ' Token pro Monat für KI-Aufgabenhilfe und Kurse (kostenlos: einmalig ' + c.freeTokens + ' Token)'));
     let out = [];
     if(plus){
       const pl = [];
-      pl.push(li('KI-Aufgabenhilfe mit ' + c.plusAiPerDay + ' Chats pro Tag (kostenlos: ' + c.freeAiPerDay + ')'));
+      pl.push(li(c.plusTokens + ' Token pro Monat für KI-Aufgabenhilfe und Kurse (kostenlos: einmalig ' + c.freeTokens + ' Token)'));
       if(f.notes) pl.push(li('Eigene Notizen zu jeder Regel (Eselsbrücken, Beispiele)', !pf.notes));
       if(f.practice) pl.push(li('Meine Kurse zu Themen aus dem Regelheft: Lernpfad, Karteikarten, Regeln, Test und Podcast'));
       if(f.practice) pl.push(li('Eigene Lerndateien hochladen (nur mit Pro)', true));
-      out = [head('Plus', 'mehr Limit, günstiger'), ...pl.filter((_, i) => true), head('Pro', 'alles ohne Limit'), ...pro];
+      out = [head('Plus', 'mehr Token, günstiger'), ...pl.filter((_, i) => true), head('Pro', 'die meisten Token, alle Funktionen'), ...pro];
     }else out = pro;
     out.push(li('Jederzeit kündbar, keine versteckten Kosten'));
     $('proList').innerHTML = out.join('');
@@ -44,7 +44,7 @@
       const sub = yearly ? 'entspricht ' + eur(Math.round(p.amount / 12), p.currency) + ' pro Monat' : 'monatlich kündbar';
       const save = yearly && m ? Math.round((1 - p.amount / (m.amount * 12)) * 100) : 0;
       const first = both && (i === 0 || plans[i - 1].id.startsWith('plus') !== isPlus);
-      return (first ? '<div class="plan-group">' + (isPlus ? 'Plus: mehr Limit, günstiger' : 'Pro: alles ohne Limit') + '</div>' : '')
+      return (first ? '<div class="plan-group">' + (isPlus ? 'Plus: mehr Token, günstiger' : 'Pro: die meisten Token, alle Funktionen') + '</div>' : '')
         + '<label class="plan' + (chosen === p.id ? ' on' : '') + '"><input type="radio" name="plan" value="' + p.id + '"' + (chosen === p.id ? ' checked' : '') + '>'
         + (save > 0 ? '<span class="plan-badge">Spare ' + save + ' %</span>' : '')
         + '<div class="plan-name">' + name + '</div><div class="plan-price">' + eur(p.amount, p.currency) + '<small>' + per + '</small></div><div class="plan-sub">' + sub + '</div></label>';

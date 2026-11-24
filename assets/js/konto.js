@@ -42,9 +42,15 @@
     else if(hasPlan) sub = st.cancelAtEnd ? 'Gekündigt, läuft bis ' + dt(st.until) : st.grant ? 'Geschenkt bis ' + dt(st.until) : 'Verlängert sich am ' + dt(st.until);
     else sub = 'Mit Plus oder Pro gibt es mehr.';
     $('kPlanSub').textContent = sub;
-    const q = !u.admin && !st.pro && st.quota;
+    const q = !u.admin && st.tokens;
     $('kQuota').classList.toggle('u-hidden', !q);
-    if(q){ $('kQuotaBar').style.width = Math.min(100, st.quota.limit ? Math.round(st.quota.used / st.quota.limit * 100) : 100) + '%'; $('kQuotaTx').textContent = 'Heute ' + st.quota.used + ' von ' + st.quota.limit + ' KI-Chats genutzt'; }
+    if(q){
+      const cap = Math.max(q.plan === 'free' ? RH.cfg().billing.freeTokens : q.allowance + q.bonus, q.total, 1);
+      $('kQuotaBar').style.width = Math.min(100, Math.round(q.total / cap * 100)) + '%';
+      $('kQuotaTx').textContent = q.plan === 'free'
+        ? q.total + ' Token übrig (Startguthaben, wird nicht automatisch aufgefüllt)'
+        : q.monthly + ' von ' + q.allowance + ' Monats-Token übrig' + (q.bonus ? ' + ' + q.bonus + ' Bonus-Token' : '') + ', jeden Monat neu';
+    }
     if(!u.admin){
       if(!st.pro && billing) btns.push('<a class="u-btn" href="pro.html">' + (st.plus ? 'Auf Pro wechseln' : (RH.cfg().billing.plusAvailable ? 'Plus oder Pro holen' : 'Pro holen')) + '</a>');
       if(st.hasSub && !st.cancelAtEnd) btns.push('<button class="u-btn danger" id="kCancel" type="button">Tarif kündigen</button>');

@@ -4,6 +4,7 @@
 .top{ padding:8px 18px; background:var(--glass); border-bottom:1px solid var(--border); }
 .toprow{ max-width:1080px; margin:0 auto; min-height:46px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .toprow .brand{ flex:1 1 auto; min-width:0; }
+.top--scroll .toprow{ max-width:none; }   /* Startseite: volle Breite wie Suchleiste und Filterleiste */
 .top h1, .toprow h1{
   margin:0; font-size:1.0625rem; font-weight:700; letter-spacing:-.02em; line-height:1.2;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink);

@@ -18,6 +18,7 @@ const FOOTER = {
   links: [
     { label: "Impressum",        href: "impressum.html" },
     { label: "Datenschutz",      href: "datenschutz.html" },
+    { label: "Adventskalender",  href: "advent.html" },
     // Nur sichtbar, wenn die Bezahlung im Dashboard eingeschaltet ist (rechtlich nötig):
     { label: "AGB",              href: "agb.html",     billing: true },
     { label: "Widerruf",         href: "widerruf.html", billing: true }
@@ -25,6 +26,6 @@ const FOOTER = {
   ],
 
   backToTop: true,                             // Knopf „Nach oben“
-  copyright: "Copyright © Gölitzer Development",   // Text unten links
-  madeIn: "Entwickelt in Deutschland"          // leer lassen = ausblenden
+  copyright: "Alle Inhalte und Darstellungen sind urheberrechtlich geschützt.",   // Text unten links
+  madeIn: ""                                  // leer lassen = ausblenden
 };

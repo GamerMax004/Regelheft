@@ -16,7 +16,7 @@ const RH = (function(){
     news: NEWS,
     features: {ai:true, registration:true, favorites:true, recent:true, notes:true, practice:true, share:true, darkmode:true, stats:true},
     social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram},
-    billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeAiPerDay:3, plusAiPerDay:15, plusFeatures:{practice:false, notes:true}, plusAvailable:false, yearly:true, kleinunternehmer:true, note:''},
+    billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeTokens:60, plusTokens:600, proTokens:3000, costs:{ai:4, aiImage:8, kurs:40, karten:10, tts:8}, plusFeatures:{practice:false, notes:true}, plusAvailable:false, yearly:true, kleinunternehmer:true, note:''},
     auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false}
   };
   const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram, email: (typeof LEGAL !== 'undefined' && LEGAL.email) || '', phone: (typeof LEGAL !== 'undefined' && LEGAL.phone) || ''};
