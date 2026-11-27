@@ -118,11 +118,11 @@ function buildPanel(){
   const views = viewList(); panelSig = views.join('|');
   filterPanel.innerHTML = '<div class="fp-head"><b>Filter</b><span class="fp-act"><button type="button" class="fp-reset" id="fpReset">Zurücksetzen</button><button type="button" class="fp-done" id="fpDone">Fertig</button></span></div>'
     + (views.length ? '<div class="fp-sec">Ansicht</div><div class="fp-views" role="group" aria-label="Ansicht">' + views.map(v => '<button type="button" class="fp-view" role="checkbox" aria-checked="false" data-kind="view" data-key="' + escapeAttr(v) + '">' + viewIcon(v) + escapeHtml(viewLabel(v)) + '</button>').join('') + '</div>' : '')
-    + '<div class="fp-sec">Themen</div><div class="fp-list" role="group" aria-label="Themen">' + categories.map(c => '<button type="button" class="fp-row" role="checkbox" aria-checked="false" data-kind="cat" data-key="' + escapeAttr(c) + '"><span>' + escapeHtml(c) + '</span><span class="fp-check" aria-hidden="true">' + icon('check', 18) + '</span></button>').join('') + '</div>';
+    + '<div class="fp-sec">Themen</div><div class="fp-list" role="group" aria-label="Themen">' + categories.map(c => '<div class="fp-row"><span class="fp-label">' + escapeHtml(c) + '</span><button type="button" class="fp-check-btn" role="checkbox" aria-checked="false" aria-label="' + escapeAttr(c) + '" data-kind="cat" data-key="' + escapeAttr(c) + '"><span class="fp-check" aria-hidden="true">' + icon('check', 18) + '</span></button></div>').join('') + '</div>';
 }
 function syncPanel(){
   if(panelSig !== viewList().join('|')) buildPanel();
-  filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); });
+  filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); const row = b.closest('.fp-row'); if(row) row.classList.toggle('on', on); });
 }
 /* Gewählte Filter bleiben in EINER Zeile: Was nicht mehr passt, wird zu „+N“ (öffnet das Filterfenster). Keine abgeschnittene Wand, kein Umbruch. */
 function fitChips(){
@@ -179,7 +179,7 @@ if('ResizeObserver' in window) new ResizeObserver(() => fitChips()).observe(chip
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitChips);
 function openFilter(){
   syncPanel(); filterPanel.hidden = false; filterBackdrop.hidden = false; filterBtn.setAttribute('aria-expanded', 'true');
-  const first = filterPanel.querySelector('.fp-view, .fp-row'); if(first) first.focus({preventScroll:true});
+  const first = filterPanel.querySelector('.fp-view, .fp-check-btn'); if(first) first.focus({preventScroll:true});
 }
 function closeFilter(back){
   if(filterPanel.hidden) return;
@@ -277,9 +277,10 @@ function renderList(animate){
         <span class="cat-pill">${escapeHtml(r.category)}</span>
         ${canFav() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
-      <h3><a class="rule-link" href="index.html#${encodeURIComponent(r.id)}">${highlight(r.title, q)}</a></h3>
+      <h3>${highlight(r.title, q)}</h3>
       <p>${highlight(r.excerpt, q)}</p>
       ${notes[r.id] ? '<div class="card-note">' + icon('pencil', 14) + '<span>' + escapeHtml(notes[r.id].replace(/\s+/g, ' ').slice(0, 90)) + '</span></div>' : ''}
+      <div class="card-foot"><a class="row-btn rule-open" href="index.html#${encodeURIComponent(r.id)}" aria-label="Regel öffnen: ${RH.esc(r.title)}">Öffnen${icon('chevron-right', 18)}</a></div>
     </div>
   `;
   listEl.classList.toggle('is-tiles', tiles);
@@ -288,13 +289,15 @@ function renderList(animate){
     let n = 0;
     listEl.innerHTML = BEREICHE.groups(filtered).map(g => '<section class="tile-group" data-c="' + g.c + '"><h2 class="tile-head"><span>' + escapeHtml(g.l) + '</span><em>' + g.items.length + '</em></h2><div class="tile-grid" role="list">' + g.items.map(r => card(r, n++)).join('') + '</div></section>').join('');
   } else listEl.innerHTML = filtered.map(card).join('');
+  // Nur der Stern und der „Öffnen“-Button reagieren auf Klicks, nicht die ganze Karte
   listEl.querySelectorAll('.rule-card').forEach(el=>{
     el.addEventListener('click', (e)=>{
       const star = e.target.closest('.fav-star');
       if(star){ e.stopPropagation(); toggleFav(star.dataset.id); return; }
+      const open = e.target.closest('.rule-open'); if(!open) return;
       if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;      // „In neuem Tab öffnen“ bleibt möglich
       e.preventDefault();
-      openDetail(el.getAttribute('data-id'), {log:true, from:el});
+      openDetail(el.getAttribute('data-id'), {log:true, from:open});
     });
   });
 }
@@ -393,7 +396,7 @@ function hideOverlay(){
     overlayEl.classList.add('closing'); closeTimer = setTimeout(finish, 230);
   }
   if(lastFocus && document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
-  else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-link'); if(c) c.focus({preventScroll:true}); }
+  else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-open'); if(c) c.focus({preventScroll:true}); }
   lastFocus = null;
 }
 function closeDetail(instant){

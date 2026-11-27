@@ -95,8 +95,6 @@ html:not([data-heft="on"]) :where(.rule-card,.auth-card,.set-card,.u-card,.u-acc
   border-color:transparent; box-shadow:none;
 }
 html:not([data-heft="on"]) .rule-card{ background:var(--surface); border:0; border-radius:16px; padding:16px 18px; }
-html:not([data-heft="on"]) .rule-card:hover{ transform:none; box-shadow:none; border-color:transparent; background:var(--surface); }
-@media (hover:hover){ html:not([data-heft="on"]) .rule-card:hover{ box-shadow:0 0 0 .5px var(--sep), 0 6px 18px rgba(0,0,0,.06); } }
 html:not([data-heft="on"]) .rule-card h3{ font-size:1.0625rem; font-weight:600; letter-spacing:-.022em; color:var(--ink); }
 html:not([data-heft="on"]) .rule-card p{ color:var(--ink-soft); }
 html:not([data-heft="on"]) .rule-card .cat-pill{ background:transparent; padding:0; color:var(--accent-fg); font-size:.75rem; font-weight:600; letter-spacing:.01em; text-transform:none; }
@@ -104,8 +102,6 @@ html:not([data-heft="on"]) .fav-star{ border:0; background:transparent; }
 html:not([data-heft="on"]) .icon-btn{ background:var(--bg-soft); border-radius:50%; }
 html:not([data-heft="on"]) :where(.auth-card,.set-card,.u-card,.u-acc,.k-new,.k-summary,.k-cards-top,.pc-script){ border-radius:16px; }
 html:not([data-heft="on"]) :where(.k-card,.u-stat,.dash-stat,.k-c){ border-radius:14px; }
-html:not([data-heft="on"]) .k-card:hover{ border-color:transparent; box-shadow:0 0 0 .5px var(--sep), 0 6px 18px rgba(0,0,0,.06); }
-html[data-theme="dark"]:not([data-heft="on"]) :where(.rule-card,.k-card):hover{ box-shadow:0 0 0 .5px var(--sep); }
 
 /* Kopf einer Gruppe: klein, grau, wie über einer Liste in den Einstellungen */
 html:not([data-heft="on"]) :where(.k-h,.dash-h,.u-card-h h3,.set-card h2,.set-card h3){ letter-spacing:-.01em; }

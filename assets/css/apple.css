@@ -48,10 +48,8 @@ input:not([type="checkbox"]):not([type="radio"]),select,textarea{ font-size:max(
   .p-chip{ min-height:44px; }
 }
 
-/* ---- 4. Karten: ganze Karte klickbar, Titel ist der echte Link ---- */
+/* ---- 4. Karten: nur der Öffnen-Button ist klickbar ---- */
 .rule-card{ position:relative; }
-.rule-card h3 a.rule-link{ color:inherit; text-decoration:none; font:inherit; letter-spacing:inherit; }
-.rule-card h3 a.rule-link::after{ content:""; position:absolute; inset:0; z-index:1; border-radius:inherit; }
 .rule-card .fav-star{ position:relative; z-index:2; }
 .empty-reset{ margin:14px auto 0; display:block; }
 
@@ -189,9 +187,9 @@ html[data-theme="dark"]:not([data-heft="on"]) .u-card, html[data-theme="dark"]:n
 /* Schalter wie bei Apple: 51 × 31, Daumen dehnt sich beim Drücken, federt */
 .u-sw .u-sw-ui{ width:51px; height:31px; transition:background-color .25s; }
 .u-sw .u-sw-ui::after{ top:2px; left:2px; width:27px; height:27px; box-shadow:0 2px 6px rgb(0 0 0 / .28); transition:transform .32s var(--spring), width .2s var(--ease-out); }
-.u-sw:active .u-sw-ui::after{ width:33px; }
+.u-sw-hit:active .u-sw-ui::after{ width:33px; }
 .u-sw input:checked + .u-sw-ui::after{ transform:translateX(20px); }
-.u-sw:active input:checked + .u-sw-ui::after{ transform:translateX(14px); }
+.u-sw-hit:active input:checked + .u-sw-ui::after{ transform:translateX(14px); }
 
 /* Ladegerüst */
 .u-skel{ display:grid; gap:12px; padding:4px 0; }

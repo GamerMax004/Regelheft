@@ -38,10 +38,11 @@
     $('aiHistBtn').textContent = 'Chats (' + chats.length + ')';
     const l = $('aiHistList'); l.innerHTML = '';
     chats.slice().reverse().forEach(c => {
-      const b = document.createElement('button');
+      const b = document.createElement('div');
       b.className = 'ai-rule' + (c === cur ? ' cur' : '');
-      b.innerHTML = '<b>' + esc(c.title) + '</b><span>' + hhmm(c.time) + (c.busy ? ' · läuft …' : '') + (c === cur ? ' · geöffnet' : '') + '</span>';
-      b.onclick = () => activate(c);
+      b.innerHTML = '<div class="ai-rule-tx"><b>' + esc(c.title) + '</b><span>' + hhmm(c.time) + (c.busy ? ' · läuft …' : '') + (c === cur ? ' · geöffnet' : '') + '</span></div>'
+        + (c === cur ? '' : '<button type="button" class="row-btn" aria-label="Chat öffnen: ' + esc(c.title) + '">Öffnen</button>');
+      const go = b.querySelector('button'); if(go) go.onclick = () => activate(c);
       l.appendChild(b);
     });
   }
@@ -77,10 +78,10 @@
         c.add('<div class="ai-lbl">' + (m.role === 'user' ? 'Du' : 'KI') + '</div><p>' + esc(m.text) + '</p>', m.role === 'user' ? 'user' : '');
       });
       const ids = (j.rule_ids || []).filter(id => ALL.some(r => r.id === id));
-      let h = ids.length ? '<div class="ai-lbl">Vorgeschlagene Regeln</div>' + ids.map(id => '<button class="ai-rule" data-id="' + esc(id) + '"><b>' + esc(ruleTitle(id)) + '</b></button>').join('') : '';
+      let h = ids.length ? '<div class="ai-lbl">Vorgeschlagene Regeln</div>' + ids.map(id => '<div class="ai-rule"><div class="ai-rule-tx"><b>' + esc(ruleTitle(id)) + '</b></div><button type="button" class="row-btn" data-id="' + esc(id) + '" aria-label="Regel öffnen: ' + esc(ruleTitle(id)) + '">Öffnen</button></div>').join('') : '';
       h += modelLine(j) + '<button class="ai-btn ghost ai-new">Neuer Chat</button>';
       const d = c.add(h);
-      d.querySelectorAll('.ai-rule').forEach(b => b.onclick = () => openRule(b.dataset.id));
+      d.querySelectorAll('.ai-rule .row-btn').forEach(b => b.onclick = () => openRule(b.dataset.id));
       d.querySelector('.ai-new').onclick = startNew;
     }catch(e){ wait.remove(); c.loaded = false; c.add(esc(e.message), 'err'); }
   }
@@ -161,11 +162,11 @@
     if(!ids.length) h += '<p>Dazu habe ich keine passende Regel gefunden.</p>';
     ids.forEach(id => {
       const r = ALL.find(x => x.id === id);
-      h += '<button class="ai-rule" data-id="' + esc(id) + '"><b>' + esc(r.title) + '</b><span>' + esc(r.category) + (r.page ? ' · Seite ' + r.page : '') + '</span></button>';
+      h += '<div class="ai-rule"><div class="ai-rule-tx"><b>' + esc(r.title) + '</b><span>' + esc(r.category) + (r.page ? ' · Seite ' + r.page : '') + '</span></div><button type="button" class="row-btn" data-id="' + esc(id) + '" aria-label="Regel öffnen: ' + esc(r.title) + '">Öffnen</button></div>';
     });
     h += modelLine(j) + '<button class="ai-btn ghost ai-new">Neuer Chat</button>';
     const d = c.add(h);
-    d.querySelectorAll('.ai-rule').forEach(b => b.onclick = () => openRule(b.dataset.id));
+    d.querySelectorAll('.ai-rule .row-btn').forEach(b => b.onclick = () => openRule(b.dataset.id));
     d.querySelector('.ai-new').onclick = startNew;
   }
 
