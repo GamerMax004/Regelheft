@@ -43,24 +43,20 @@
   border-radius:var(--radius-md); background:var(--surface); box-shadow:inset 0 0 0 2px var(--ink), inset 0 0 0 8px var(--surface), inset 0 0 0 9px var(--border);
   transform-origin:left center; backface-visibility:hidden; -webkit-backface-visibility:hidden; transition:transform .55s cubic-bezier(.2,.8,.2,1), box-shadow .2s; }
 .door-num{ font-size:clamp(1.5rem,4.2vw,2.1rem); font-weight:700; letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums; }
-.door-sub{ font-size:.6875rem; font-weight:600; color:var(--muted); letter-spacing:.02em; min-height:1em; }
 .door-front::after{ content:""; position:absolute; right:11px; top:50%; width:8px; height:8px; margin-top:-4px; border-radius:50%; background:var(--ink); }   /* Türgriff */
-.door-lock{ position:absolute; left:12px; top:12px; color:var(--muted); display:none; }
 
 .door:not(.is-locked):not(.is-open) .door-btn:hover .door-front{ transform:rotateY(-14deg); }
 .door.is-open .door-front{ transform:rotateY(-74deg); box-shadow:inset 0 0 0 2px var(--border); }
 .door.is-open .door-front .door-num{ opacity:.35; }
 
 /* Noch verschlossen: gestrichelt, Schloss, kein Griff */
-.door.is-locked .door-front{ background:transparent; box-shadow:none; border:2px dashed var(--border); color:var(--muted); }
+.door.is-locked .door-front{ background:var(--bg-soft); box-shadow:none; border:2px dashed var(--border); color:var(--muted); }   /* deckend: dahinter ist nichts zu sehen */
 .door.is-locked .door-front::after{ display:none; }
-.door.is-locked .door-lock{ display:block; }
 .door.is-locked .door-btn{ cursor:not-allowed; }
 .door.is-shake{ animation:adShake .38s; }
 @keyframes adShake{ 20%{ transform:translateX(-5px); } 45%{ transform:translateX(5px); } 70%{ transform:translateX(-3px); } 100%{ transform:none; } }
 
 /* Heute: Etikett statt Farbe */
-.door.is-today .door-sub{ color:var(--accent-fg); }
 .door.is-today:not(.is-open) .door-front{ box-shadow:inset 0 0 0 3px var(--accent), inset 0 0 0 8px var(--surface), inset 0 0 0 9px var(--border); }
 
 /* Dialog */
@@ -101,7 +97,7 @@
 html[data-heft="on"] .door-front{ background:var(--paper); color:var(--pen); box-shadow:inset 0 0 0 2px var(--pen), inset 0 0 0 8px var(--paper), inset 0 0 0 9px var(--grid); }
 html[data-heft="on"] .door-front::after{ background:var(--pen); }
 html[data-heft="on"] .door.is-open .door-front{ box-shadow:inset 0 0 0 2px var(--grid); }
-html[data-heft="on"] .door.is-locked .door-front{ background:transparent; border-color:var(--grid-strong); box-shadow:none; color:var(--pen-soft); }
+html[data-heft="on"] .door.is-locked .door-front{ background:var(--paper); border-color:var(--grid-strong); box-shadow:none; color:var(--pen-soft); }
 html[data-heft="on"] .door-back{ background:var(--paper); box-shadow:inset 3px 0 0 var(--grid-strong), inset 0 0 0 1px var(--grid); }
 html[data-heft="on"] .ad-dlg{ background:var(--paper); }
 html[data-heft="on"] .ad-prize{ border-color:var(--pen); }

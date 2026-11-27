@@ -8,19 +8,18 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <meta name="apple-mobile-web-app-title" content="Regelheft">
 <meta name="description" content="Regelheft Mathematik: alle Regeln zum Suchen, Üben und Nachschlagen – mit Formeln und Skizzen.">
-<meta name="author" content="Gölitzer Development">
 <meta name="copyright" content="Alle Inhalte und Darstellungen sind urheberrechtlich geschützt.">
 <meta name="theme-color" content="#ffffff">
 <meta name="color-scheme" content="light dark">
 <script src="assets/js/theme-init.js?v=20261115a"></script>
 <link rel="stylesheet" href="assets/css/fonts.css?v=20261109a">
-<link rel="stylesheet" href="assets/css/style.css?v=20261124a">
+<link rel="stylesheet" href="assets/css/style.css?v=20261126a">
 <link rel="stylesheet" href="assets/css/footer.css?v=20261109a">
 <link rel="stylesheet" href="assets/css/seiten.css?v=20261109a">
 <link rel="stylesheet" href="assets/css/theme.css?v=20261109a">
 <link rel="stylesheet" href="assets/css/header.css?v=20261124a">
 <link rel="stylesheet" href="assets/css/heft-font.css?v=20261109a">
-<link rel="stylesheet" href="assets/css/heft.css?v=20261124a">
+<link rel="stylesheet" href="assets/css/heft.css?v=20261126a">
 <link rel="stylesheet" href="assets/css/konto.css?v=20261109a">
 <link rel="stylesheet" href="assets/css/ui.css?v=20261119a">
 <link rel="stylesheet" href="assets/css/apple.css?v=20261116a">
@@ -35,6 +34,7 @@
 </header>
 
 <main id="main" tabindex="-1">
+<div data-fach-switch></div>
 <div class="searchbar" id="searchbar" role="search">
   <a class="sq-btn" id="aiSq" href="ki.html" aria-label="KI-Aufgabenhilfe" title="KI-Aufgabenhilfe"><span class="sq-ic" id="aiSqIcon"></span><span class="sq-tx">KI-Hilfe</span></a>
   <div class="searchwrap">
@@ -49,6 +49,10 @@
 <div class="filterbar" id="filterBar">
   <div class="chips" id="chips" role="group" aria-label="Aktive Filter"></div>
   <div class="result-count" role="status" aria-live="polite" aria-atomic="true"><span class="count" id="resultCount"></span> Regeln</div>
+  <button type="button" class="layout-btn" id="layoutBtn" aria-pressed="false" aria-label="Zur Kachelansicht wechseln" title="Kacheln">
+    <svg class="ic-tiles" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" stroke="currentColor" stroke-width="2"/></svg>
+    <svg class="ic-list" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 6.5h12M8 12h12M8 17.5h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4" cy="6.5" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="17.5" r="1.3" fill="currentColor"/></svg>
+  </button>
   <button type="button" class="filter-btn" id="filterBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="filterPanel"><span data-icon="sliders" data-size="18" aria-hidden="true"></span><span>Filter</span><span class="filter-count" id="filterCount" hidden></span></button>
   <div class="filter-backdrop" id="filterBackdrop" hidden></div>
   <div class="filter-panel" id="filterPanel" role="dialog" aria-label="Filter" hidden></div>
@@ -56,6 +60,7 @@
 
 <h2 class="sr-only">Regeln</h2>
 <div class="list" id="list" role="list"></div>
+<p class="submit-hint" id="submitHint">Fehlt dir etwas? <a href="einreichen.html">Eintrag einreichen</a></p>
 <div class="empty-state" id="emptyState" style="display:none;">
   <div class="big" id="emptyTitle">Keine Treffer</div>
   <div id="emptySub">Versuch es mit einem anderen Suchbegriff.</div>
@@ -110,14 +115,19 @@
 
 <footer id="siteFooter"></footer>
 
-<script src="assets/js/config.js?v=20261109a"></script>
-<script src="assets/js/footer.js?v=20261124a"></script>
-<script src="assets/js/core.js?v=20261124a"></script>
+<script src="assets/js/config.js?v=20261126a"></script>
+<script src="assets/js/footer.js?v=20261126a"></script>
+<script src="assets/js/regeln.js?v=20261126a"></script>
+<script src="assets/js/physik.js?v=20261126a"></script>
+<script src="assets/js/chemie.js?v=20261126a"></script>
+<script src="assets/js/biologie.js?v=20261126a"></script>
+<script src="assets/js/fach.js?v=20261126a"></script>
+<script src="assets/js/core.js?v=20261126a"></script>
 <script src="assets/js/icons.js?v=20261116b"></script>
 <script src="assets/js/layout.js?v=20261116a"></script>
 <script src="assets/js/heft-grid.js?v=20261109a"></script>
-<script src="assets/js/regeln.js?v=20261124a"></script>
 <script src="assets/js/format.js?v=20261109a"></script>
-<script src="assets/js/index.js?v=20261124a"></script>
+<script src="assets/js/bereiche.js?v=20261126a"></script>
+<script src="assets/js/index.js?v=20261126a"></script>
 </body>
 </html>

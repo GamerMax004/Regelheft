@@ -15,7 +15,6 @@ const AI_CONFIG = {
    Beide Seiten werden aus diesen Angaben erzeugt.
    Nicht ausgefüllte Felder erscheinen gelb markiert als [BITTE EINTRAGEN]. */
 const LEGAL = {
-  brand:   "Gölitzer Development",   // Marke / Name des Angebots (Copyright liegt hier)
   company: "Scherer Development Excellence",   // Anbieter und Vertragspartner (Rechnungsstellung, Zahlungsabwicklung)
   rep:     "Luca Scherer",   // vertreten durch
   street:  "Steinenbühlstrasse 24A",   // Straße und Hausnummer des Anbieters

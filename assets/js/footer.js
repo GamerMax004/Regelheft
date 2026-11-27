@@ -18,6 +18,7 @@ const FOOTER = {
   links: [
     { label: "Impressum",        href: "impressum.html" },
     { label: "Datenschutz",      href: "datenschutz.html" },
+    { label: "Eintrag einreichen", href: "einreichen.html" },
     { label: "Adventskalender",  href: "advent.html" },
     // Nur sichtbar, wenn die Bezahlung im Dashboard eingeschaltet ist (rechtlich nötig):
     { label: "AGB",              href: "agb.html",     billing: true },

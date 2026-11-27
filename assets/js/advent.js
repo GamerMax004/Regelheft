@@ -3,8 +3,9 @@
    • Türchen 1–24 öffnen sich ab dem jeweiligen Dezembertag (Berlin).
    • Jedes Türchen hat eine Aufgabe. Wer angemeldet ist, bekommt nach der richtigen Antwort eine Auslosung
      (Token, Plus oder Pro). Die Auslosung macht der Server (worker.js), nicht der Browser.
-   • Fortschritt (geöffnet/gelöst) wird in diesem Browser gespeichert, Gewinne im Konto.
-   • Vorschau für dich: advent.html?vorschau=1 öffnet alle Türchen zum Ansehen (ohne Auslosung).
+   • Mit Konto gehört der Fortschritt (geöffnet, gelöst, Gewinne) zum Konto und ist auf jedem Gerät da.
+     Ohne Konto bleibt er nur auf diesem Gerät (Zwischenspeicher) und es gibt keine Auslosung.
+   • Team/Admin: Alle Türchen sind immer offen (zum Testen). Alle anderen: advent.html?vorschau=1 zeigt nur die Aufgaben, ohne Auslosung.
    ============================================================ */
 (function(){
   'use strict';
@@ -12,16 +13,22 @@
   var ORDER = [14,3,21,9,17,1,24,6,12,19,4,22,8,15,2,20,11,23,7,13,18,5,10,16];   // wie bei einem echten Kalender durcheinander
   var KEY = 'rh_advent_' + YEAR;
   var PREVIEW = new URLSearchParams(location.search).get('vorschau') === '1';
+  var STAFF = false;   // Team/Admin sehen alle Türchen (wird nach dem Anmelden gesetzt)
   var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var $ = function(id){ return document.getElementById(id); };
-  var esc = function(s){ return (window.RH && RH.esc) ? RH.esc(s) : String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  var esc = function(s){ return (typeof RH !== 'undefined' && RH.esc) ? RH.esc(s) : String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   var ic = function(n, s){ return (typeof icon === 'function') ? icon(n, s || 18) : ''; };
   var byDay = function(d){ return DAYS.filter(function(t){ return t.d === d; })[0]; };
 
-  /* ----- Speicher (nur in diesem Browser) ----- */
-  var S = { o: [], s: [] };
-  try { var raw = JSON.parse(localStorage.getItem(KEY) || 'null'); if (raw && Array.isArray(raw.o) && Array.isArray(raw.s)) S = raw; } catch (e) {}
+  /* ----- Zwischenspeicher auf diesem Gerät (je Konto getrennt, damit sich auf geteilten Geräten nichts vermischt) ----- */
+  var KEY0 = KEY, S = { o: [], s: [] };
+  function load(){
+    var r = { o: [], s: [] };
+    try { var raw = JSON.parse(localStorage.getItem(KEY) || 'null'); if (raw && Array.isArray(raw.o) && Array.isArray(raw.s)) r = raw; } catch (e) {}
+    return r;
+  }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  S = load();
   var claims = {};     // Gewinne vom Server: { tag: { id, label } }
   var tokens = null;   // Token-Guthaben vom Server (nur wenn Bezahlung an ist)
   var cur = 0;         // gerade geöffnetes Türchen
@@ -32,7 +39,7 @@
     return { y: p[0], m: p[1], d: p[2] };
   }
   function maxOpen(){
-    if (PREVIEW) return 24;
+    if (PREVIEW || STAFF) return 24;
     var t = berlin();
     if (t.y === YEAR && t.m === 12) return Math.min(t.d, 24);
     if (t.y > YEAR || (t.y === YEAR && t.m > 12)) return 24;
@@ -58,25 +65,24 @@
     // Status
     var main;
     if (max === 0) { var n = Math.round((Date.UTC(YEAR, 11, 1) - Date.UTC(t.y, t.m - 1, t.d)) / 864e5); main = n > 0 ? 'Noch ' + n + (n === 1 ? ' Tag' : ' Tage') + ' bis zum ersten Türchen' : 'Der Kalender ist gerade nicht geöffnet'; }
-    else if (inDec && t.d <= 24 && !PREVIEW) main = 'Heute ist Türchen ' + t.d;
-    else main = PREVIEW ? 'Vorschau: alle Türchen sind offen' : 'Alle Türchen sind offen';
+    else if (inDec && t.d <= 24 && !PREVIEW && !STAFF) main = 'Heute ist Türchen ' + t.d;
+    else main = STAFF ? 'Team-Ansicht: alle Türchen sind offen' : PREVIEW ? 'Vorschau: alle Türchen sind offen' : 'Alle Türchen sind offen';
     $('adStatus').textContent = main;
     $('adCount').textContent = opened + ' von 24 geöffnet · ' + solved + ' gelöst' + (tokens ? ' · Guthaben: ' + tokens.total + ' Token' : '');
     // Fortschrittsleiste
     var chain = '';
-    for (var d = 1; d <= 24; d++) chain += '<li class="' + (S.s.indexOf(d) >= 0 ? 'is-done' : (d <= max ? 'is-open' : '')) + (inDec && d === t.d && !PREVIEW ? ' is-today' : '') + '"></li>';
+    for (var d = 1; d <= 24; d++) chain += '<li class="' + (S.s.indexOf(d) >= 0 ? 'is-done' : (d <= max ? 'is-open' : '')) + (inDec && d === t.d && !PREVIEW && !STAFF ? ' is-today' : '') + '"></li>';
     $('adChain').innerHTML = chain;
     // Türchen
     var html = '';
     ORDER.forEach(function(d){
       var tt = byDay(d), locked = d > max, open = S.o.indexOf(d) >= 0 && !locked, done = S.s.indexOf(d) >= 0, c = claims[d];
-      var isToday = inDec && d === t.d && !PREVIEW;
+      var isToday = inDec && d === t.d && !PREVIEW && !STAFF;
       var inner = done ? (c && c.id !== 'none' ? ic('star', 20) : ic('check', 20)) : ic('lightbulb', 20);
       var back = '<span class="door-back">' + inner + '<b>' + esc(tt.title) + '</b>' + (c && c.id !== 'none' ? '<span>' + esc(c.label) + '</span>' : (done ? '<span>gelöst</span>' : '<span>noch offen</span>')) + '</span>';
-      var sub = locked ? 'ab ' + d + '. Dez.' : (isToday ? 'Heute' : '');
-      var front = '<span class="door-front"><span class="door-lock">' + ic('lock', 16) + '</span><span class="door-num">' + d + '</span><span class="door-sub">' + sub + '</span></span>';
+      var front = '<span class="door-front"><span class="door-num">' + d + '</span></span>';   // im Türchen steht nur die Zahl
       var label = 'Türchen ' + d + (locked ? ', verschlossen bis ' + d + '. Dezember' : open ? ', geöffnet: ' + tt.title + (done ? ', gelöst' : '') : ', zum Öffnen');
-      html += '<li class="door' + (locked ? ' is-locked' : '') + (open ? ' is-open' : '') + (isToday ? ' is-today' : '') + '" data-d="' + d + '"><button class="door-btn" type="button" data-d="' + d + '" aria-label="' + esc(label) + '"' + (locked ? ' aria-disabled="true"' : '') + '>' + back + front + '</button></li>';
+      html += '<li class="door' + (locked ? ' is-locked' : '') + (open ? ' is-open' : '') + (isToday ? ' is-today' : '') + '" data-d="' + d + '"><button class="door-btn" type="button" data-d="' + d + '" aria-label="' + esc(label) + '"' + (locked ? ' aria-disabled="true"' : '') + '>' + (open ? back : '') + front + '</button></li>';   // Innenseite gibt es nur bei geöffneten Türchen
     });
     $('adGrid').innerHTML = html;
   }
@@ -91,7 +97,7 @@
       return;
     }
     msg('');
-    if (S.o.indexOf(d) < 0) { S.o.push(d); save(); }
+    if (S.o.indexOf(d) < 0) { S.o.push(d); save(); remember([d]); }
     li.classList.add('is-open');
     setTimeout(function(){ show(d); }, REDUCED ? 0 : 320);
   });
@@ -117,7 +123,7 @@
     try { dlg.showModal(); } catch (e) { dlg.setAttribute('open', ''); }
     if (!done) setTimeout(function(){ try { inp.focus(); } catch (e) {} }, 60);
   }
-  function loggedIn(){ return !!(window.RH && RH.user && RH.user()); }
+  function loggedIn(){ return !!(typeof RH !== 'undefined' && RH.user && RH.user()); }
   function prizeEl(){ var b = $('adPrize'); if (!b) { b = document.createElement('div'); b.id = 'adPrize'; $('adRule').insertAdjacentElement('beforebegin', b); } return b; }
   function prizeBlock(d){   // für gelöste Türchen: Gewinn zeigen oder anbieten
     var c = claims[d];
@@ -158,7 +164,7 @@
     fb('ok', 'Richtig!'); $('adIn').disabled = true; $('adForm').querySelector('button').disabled = true;
     $('adHint').classList.add('is-hidden'); $('adHintBtn').style.display = 'none'; $('adSolBtn').style.display = 'none';
     reveal(t); render();
-    if (loggedIn() && !(window.RH && RH.cfg && RH.cfg().advent === false)) draw(t, v); else prizeBlock(cur);
+    if (loggedIn() && !(typeof RH !== 'undefined' && RH.cfg && RH.cfg().advent === false)) draw(t, v); else prizeBlock(cur);
   });
   $('adHintBtn').onclick = function(){ var t = byDay(cur), h = $('adHint'); h.textContent = 'Tipp: ' + t.hint; h.classList.remove('is-hidden'); };
   $('adSolBtn').onclick = function(){
@@ -169,22 +175,38 @@
   dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });   // Klick neben die Karte schließt
   dlg.addEventListener('close', function(){ render(); });
 
+  /* ----- Fortschritt im Konto merken ----- */
+  function remember(days){
+    if (!loggedIn() || PREVIEW) return;
+    try { RH.api('/api/advent/seen', { body: { days: days } }).catch(function(){}); } catch (e) {}
+  }
+
   /* ----- Start ----- */
   $('adClose').innerHTML = ic('x', 20);
   var ri = document.querySelector('#adRule [data-icon]'); if (ri) ri.innerHTML = ic('book', 18);
   render();
-  if (window.RH && RH.ready) RH.ready.then(async function(){
+  if (typeof RH !== 'undefined' && RH.ready) RH.ready.then(async function(){
     var cfg = RH.cfg ? RH.cfg() : {};
     if (cfg.advent === false) { msg('Der Adventskalender ist gerade nicht aktiv.'); }
     if (!loggedIn()) {
       var p = document.createElement('p'); p.className = 'ad-login';
-      p.innerHTML = 'Du kannst alle Aufgaben auch ohne Konto lösen. <a href="anmeldung.html?next=advent.html">Melde dich an</a>, dann wird bei jedem gelösten Türchen etwas ausgelost: Token, Plus oder Pro.';
+      p.innerHTML = '<a href="anmeldung.html?next=advent.html">Melde dich an</a>, dann wird dein Fortschritt im Konto gespeichert und bei jedem gelösten Türchen etwas ausgelost: Token, Plus oder Pro. Ohne Konto kannst du die Aufgaben nur ansehen und lösen.';
       $('adChain').insertAdjacentElement('afterend', p);
       return;
     }
     try {
       var st = await RH.api('/api/advent/state');
-      if (st && st.enabled) { (st.claims || []).forEach(function(c){ claims[c.day] = c; if (S.s.indexOf(c.day) < 0) { S.s.push(c.day); } }); save(); tokens = st.tokens || null; render(); }
+      if (st && st.enabled) {
+        STAFF = !!(RH.user() && RH.user().admin);
+        KEY = KEY0 + ':' + RH.user().username; S = load();   // eigener Zwischenspeicher für dieses Konto
+        (st.claims || []).forEach(function(c){ claims[c.day] = c; if (S.s.indexOf(c.day) < 0) S.s.push(c.day); if (S.o.indexOf(c.day) < 0) S.o.push(c.day); });
+        // Konto und Gerät abgleichen: Was das Konto kennt, kommt aufs Gerät, was nur das Gerät kennt, ins Konto
+        var srv = st.opened || [], mine = S.o.slice();
+        srv.forEach(function(d){ if (S.o.indexOf(d) < 0) S.o.push(d); });
+        var extra = mine.filter(function(d){ return srv.indexOf(d) < 0 && d <= st.max; });
+        if (extra.length) remember(extra);
+        save(); tokens = st.tokens || null; render();
+      }
     } catch (e) {}
   });
 })();

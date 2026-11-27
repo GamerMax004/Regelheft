@@ -17,7 +17,9 @@ const RH = (function(){
     features: {ai:true, registration:true, favorites:true, recent:true, notes:true, practice:true, share:true, darkmode:true, stats:true},
     social: {discord:SOCIAL.discord, instagram:SOCIAL.instagram},
     billing: {enabled:false, proFeatures:{practice:true, notes:true}, freeTokens:60, plusTokens:600, proTokens:3000, costs:{ai:4, aiImage:8, kurs:40, karten:10, tts:8}, plusFeatures:{practice:false, notes:true}, plusAvailable:false, yearly:true, kleinunternehmer:true, note:''},
-    auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false}
+    auth: {requireEmail:false, verifyActive:false, mailActive:false, google:false},
+    advent: true,   // Adventskalender (im Dashboard abschaltbar)
+    submit: true    // Einträge einreichen (im Dashboard abschaltbar)
   };
   const defaults = {news: NEWS, discord: SOCIAL.discord, instagram: SOCIAL.instagram, email: (typeof LEGAL !== 'undefined' && LEGAL.email) || '', phone: (typeof LEGAL !== 'undefined' && LEGAL.phone) || ''};
   const cfgSubs = [];
@@ -29,6 +31,8 @@ const RH = (function(){
     if(j.features) Object.assign(cfg.features, j.features);
     if(j.billing){ Object.assign(cfg.billing, j.billing); if(j.billing.proFeatures) cfg.billing.proFeatures = Object.assign({practice:true, notes:true}, j.billing.proFeatures); if(j.billing.plusFeatures) cfg.billing.plusFeatures = Object.assign({practice:false, notes:true}, j.billing.plusFeatures); }
     if(j.auth) Object.assign(cfg.auth, j.auth);
+    if(j.advent !== undefined) cfg.advent = j.advent !== false;
+    if(j.submit !== undefined) cfg.submit = j.submit !== false;
     cfg.news = j.news || defaults.news;
     const so = j.social || {};
     cfg.social.discord = so.discord == null ? defaults.discord : so.discord;

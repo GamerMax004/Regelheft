@@ -1,0 +1,35 @@
+/* Eintrag einreichen – nutzt die Variablen der Seite (Hell, Dunkel, Heft-Look) */
+.page.einr{ max-width:720px; margin:0 auto; padding-left:18px; padding-right:18px; }
+.e-need{ margin:14px 0; padding:12px 14px; border:1px dashed var(--border); border-radius:var(--radius-md); color:var(--ink-soft); }
+.e-need a{ color:var(--accent-fg); font-weight:600; }
+.e-ok{ margin:12px 0; padding:12px 14px; border-radius:var(--radius-md); background:var(--accent-soft); color:var(--ink); font-weight:600; }
+.e-form{ display:flex; flex-direction:column; gap:14px; margin-top:12px; }
+.e-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:560px){ .e-row{ grid-template-columns:1fr; } }
+.e-field{ display:flex; flex-direction:column; gap:6px; font-size:.875rem; font-weight:600; color:var(--ink-soft); }
+.e-field input,.e-field select,.e-field textarea{ width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg); color:var(--ink); font:inherit; font-size:1rem; font-weight:400; }
+.e-field textarea{ resize:vertical; min-height:180px; line-height:1.5; }
+.e-field input:focus,.e-field select:focus,.e-field textarea:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+.e-meta{ margin-top:-8px; text-align:right; font-size:.75rem; color:var(--muted); }
+.e-help{ border:1px solid var(--border); border-radius:var(--radius-md); padding:10px 14px; font-size:.875rem; color:var(--ink-soft); }
+.e-help summary{ cursor:pointer; font-weight:600; color:var(--ink); }
+.e-help ul{ margin:10px 0 2px; padding-left:18px; display:grid; gap:6px; }
+.e-help code{ font-size:.8125rem; padding:1px 6px; border-radius:6px; background:var(--bg-soft); }
+.e-prev-h{ font-size:.75rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.e-prev{ padding:14px; border:1px dashed var(--border); border-radius:var(--radius-md); background:var(--surface); min-height:64px; }
+.e-muted{ color:var(--muted); font-size:.875rem; }
+.e-check{ display:flex; gap:10px; align-items:flex-start; font-size:.875rem; line-height:1.45; color:var(--ink-soft); }
+.e-check input{ flex:none; width:20px; height:20px; margin-top:2px; accent-color:var(--accent); }
+.e-check a{ color:var(--accent-fg); }
+.e-err{ margin:0; min-height:1.2em; color:var(--danger); font-weight:600; font-size:.9375rem; }
+.e-form .ai-btn{ margin:0; }
+.e-mine{ margin-top:30px; }
+.e-mine h3{ margin:0 0 10px; font-size:1.0625rem; }
+.e-item{ padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); margin-bottom:10px; }
+.e-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.e-badge{ flex:none; padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; border:1.5px solid var(--border); }
+.e-badge.is-approved{ border-style:solid; border-color:var(--teal); color:var(--teal); }
+.e-badge.is-pending{ border-style:dashed; }
+.e-badge.is-rejected{ border-style:dotted; color:var(--danger); border-color:var(--danger); }
+.e-note{ margin:8px 0 0; font-size:.875rem; color:var(--ink-soft); }
+.e-del{ margin-top:8px; padding:0; border:0; background:none; color:var(--accent-fg); font:inherit; font-size:.875rem; font-weight:600; cursor:pointer; text-decoration:underline; }

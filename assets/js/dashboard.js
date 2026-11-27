@@ -4,7 +4,7 @@
    ============================================================ */
 (function(){
   const $ = id => document.getElementById(id);
-  const RULES = window.RULES || [];
+  const RULES = window.RULES_ALL || window.RULES || [];
   const esc = RH.esc;
   const ic = (n, s) => icon(n, s || 18);
   const T = ts => new Date(ts).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
@@ -28,7 +28,7 @@
   const loading = () => { $('dashBody').innerHTML = '<div class="u-skel" role="status" aria-label="Lädt"><i></i><i></i><i></i></div>'; };
 
   /* ---------- Tabs ---------- */
-  const TABS = [['ov', 'chart', 'Übersicht'], ['users', 'users', 'Nutzer'], ['chats', 'chat', 'Chats'], ['team', 'shield', 'Team', 1], ['set', 'sliders', 'Einstellungen', 1]];
+  const TABS = [['ov', 'chart', 'Übersicht'], ['users', 'users', 'Nutzer'], ['chats', 'chat', 'Chats'], ['subs', 'file-text', 'Einreichungen'], ['team', 'shield', 'Team', 1], ['set', 'sliders', 'Einstellungen', 1]];
   function placeInd(animate){
     const bar = $('dashTabs'), on = bar.querySelector('[aria-selected="true"]'), ind = bar.querySelector('.u-ind'); if(!on || !ind) return;
     if(!animate) ind.style.transition = 'none';
@@ -45,7 +45,7 @@
     bar.querySelectorAll('.u-tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === tab ? 'true' : 'false'));
     placeInd(!!bar.dataset.ready); bar.dataset.ready = '1';
   }
-  function go(t){ tab = t; renderTabs(); RH.haptic && RH.haptic(6); ({ov: viewOv, users: viewUsers, chats: viewChats, team: viewTeam, set: viewSet})[t](); }
+  function go(t){ tab = t; renderTabs(); RH.haptic && RH.haptic(6); ({ov: viewOv, users: viewUsers, chats: viewChats, subs: viewSubs, team: viewTeam, set: viewSet})[t](); }
   $('dashTabs').onclick = e => { const b = e.target.closest('.u-tab'); if(b) go(b.dataset.t); };
   $('dashBody').addEventListener('click', e => {
     const h = e.target.closest('.u-acc-h'); if(!h) return;
@@ -212,6 +212,40 @@
     }catch(e){ $('dashBody').innerHTML = err(e); }
   }
 
+  /* ---------- Einreichungen (Community-Einträge prüfen) ---------- */
+  let subState = 'pending';
+  async function viewSubs(){
+    loading();
+    try{
+      const j = await RH.api('/api/admin/submissions?s=' + subState);
+      const labels = {pending: 'Offen' + (j.pending ? ' (' + j.pending + ')' : ''), approved: 'Freigegeben', rejected: 'Abgelehnt'};
+      const FN = {mathe: 'Mathematik', physik: 'Physik', chemie: 'Chemie', biologie: 'Biologie'};
+      let h = '<div class="u-actions" style="margin-bottom:12px">' + Object.keys(labels).map(k => '<button type="button" class="u-btn sm' + (k === subState ? '' : ' ghost') + '" data-ss="' + k + '">' + esc(labels[k]) + '</button>').join('') + '</div>';
+      if(!j.items.length) h += '<div class="u-card"><div class="u-sub">Keine Einträge.</div></div>';
+      j.items.forEach(s => {
+        h += '<div class="u-card"><div class="u-card-h">' + esc(s.title) + '</div>'
+          + '<div class="u-sub">' + esc(FN[s.fach] || s.fach) + ' · von ' + esc(s.username || 'gelöschtem Konto') + ' · ' + T(s.created_at) + (s.source ? ' · Quelle: ' + esc(s.source) : '') + '</div>'
+          + fld('st_' + s.id, 'Titel', s.title) + fld('sc_' + s.id, 'Thema', s.category) + fld('sn_' + s.id, 'Genannt als (leer = nicht nennen)', s.credit)
+          + '<label class="u-field"><span>Inhalt</span><textarea class="u-in" id="sb_' + s.id + '" rows="8">' + esc(s.body) + '</textarea></label>'
+          + fld('sm_' + s.id, 'Notiz an die Einreichenden (optional)', s.note)
+          + '<div class="u-actions"><button type="button" class="u-btn sm" data-sa="approve" data-id="' + s.id + '">' + ic('check', 16) + (s.status === 'approved' ? 'Änderungen speichern' : 'Freigeben') + '</button>'
+          + (s.status !== 'rejected' ? '<button type="button" class="u-btn ghost sm" data-sa="reject" data-id="' + s.id + '">' + ic('x', 16) + 'Ablehnen</button>' : '')
+          + '<button type="button" class="u-btn ghost sm" data-sa="delete" data-id="' + s.id + '">' + ic('trash', 16) + 'Löschen</button></div><div class="u-msg" id="sx_' + s.id + '"></div></div>';
+      });
+      $('dashBody').innerHTML = h;
+      $('dashBody').querySelectorAll('[data-ss]').forEach(b => b.onclick = () => { subState = b.dataset.ss; viewSubs(); });
+      $('dashBody').querySelectorAll('[data-sa]').forEach(b => b.onclick = async () => {
+        const id = b.dataset.id, g = k => $(k + id).value, box = $('sx_' + id);
+        if(b.dataset.sa === 'delete' && !confirm('Diesen Eintrag endgültig löschen?')) return;
+        box.className = 'u-msg'; box.textContent = '…';
+        try{
+          await RH.api('/api/admin/submission', {body: {id: +id, action: b.dataset.sa, title: g('st_'), category: g('sc_'), credit: g('sn_'), body: g('sb_'), note: g('sm_')}});
+          viewSubs();
+        }catch(e){ box.className = 'u-msg err'; box.textContent = e.message || 'Das hat nicht geklappt.'; }
+      });
+    }catch(e){ $('dashBody').innerHTML = err(e); }
+  }
+
   /* ---------- Team (nur Besitzer) ---------- */
   async function viewTeam(){
     loading();
@@ -268,7 +302,7 @@
         + sw('bl_prac', S.billing.proFeatures.practice, 'Meine Kurse nur mit Pro') + sw('bl_note', S.billing.proFeatures.notes, 'Notizen nur mit Pro')
         + sw('bl_plus_prac', S.billing.plusFeatures.practice, 'Meine Kurse auch mit Plus') + sw('bl_plus_note', S.billing.plusFeatures.notes, 'Notizen auch mit Plus')
         + sw('bl_year', S.billing.yearly, 'Jahrestarif anbieten') + sw('bl_ku', S.billing.kleinunternehmer, 'Kleinunternehmer (§ 19 UStG)') + sw('bl_promo', S.billing.promo, 'Gutscheincodes erlauben')
-        + '<div style="height:10px"></div>' + fld('bl_free', 'Gratis: Start-Token (einmalig, wird nicht aufgefüllt)', S.billing.freeTokens, '60', 'number') + fld('bl_plus_tok', 'Plus: Token pro Monat', S.billing.plusTokens, '600', 'number') + fld('bl_pro_tok', 'Pro: Token pro Monat', S.billing.proTokens, '3000', 'number') + '<div style="height:10px"></div>' + fld('bl_c_ai', 'Kosten: KI-Nachricht (Token)', S.billing.costs.ai, '4', 'number') + fld('bl_c_img', 'Kosten: KI-Nachricht mit Foto (Token)', S.billing.costs.aiImage, '8', 'number') + fld('bl_c_kurs', 'Kosten: Kurs erstellen (Token)', S.billing.costs.kurs, '40', 'number') + fld('bl_c_karten', 'Kosten: Karteikarten erstellen (Token)', S.billing.costs.karten, '10', 'number') + fld('bl_c_tts', 'Kosten: Podcast-Stimme (Token)', S.billing.costs.tts, '8', 'number') + '<div style="height:10px"></div>' + sw('adv_on', !S.advent || S.advent.enabled !== false, 'Adventskalender mit Gewinnen aktiv')
+        + '<div style="height:10px"></div>' + fld('bl_free', 'Gratis: Start-Token (einmalig, wird nicht aufgefüllt)', S.billing.freeTokens, '60', 'number') + fld('bl_plus_tok', 'Plus: Token pro Monat', S.billing.plusTokens, '600', 'number') + fld('bl_pro_tok', 'Pro: Token pro Monat', S.billing.proTokens, '3000', 'number') + '<div style="height:10px"></div>' + fld('bl_c_ai', 'Kosten: KI-Nachricht (Token)', S.billing.costs.ai, '4', 'number') + fld('bl_c_img', 'Kosten: KI-Nachricht mit Foto (Token)', S.billing.costs.aiImage, '8', 'number') + fld('bl_c_kurs', 'Kosten: Kurs erstellen (Token)', S.billing.costs.kurs, '40', 'number') + fld('bl_c_karten', 'Kosten: Karteikarten erstellen (Token)', S.billing.costs.karten, '10', 'number') + fld('bl_c_tts', 'Kosten: Podcast-Stimme (Token)', S.billing.costs.tts, '8', 'number') + '<div style="height:10px"></div>' + sw('adv_on', !S.advent || S.advent.enabled !== false, 'Adventskalender mit Gewinnen aktiv') + sw('sub_on', !S.submit || S.submit.enabled !== false, 'Einträge einreichen aktiv')
         + area('bl_note_t', 'Hinweis auf der Pro-Seite', S.billing.note, '', 2))
       + acc('Anmeldung', 'user',
           '<div class="u-tech">' + tick(SYS.mail && SYS.mail.ready, 'E-Mail-Versand' + (SYS.mail && SYS.mail.provider ? ' (' + SYS.mail.provider + ')' : '')) + tick(SYS.google && SYS.google.ready, 'Google-Login') + '<div style="height:8px"></div></div>'
@@ -342,7 +376,7 @@
         ai: {order, enabled: Object.fromEntries(order.map(p => [p, $('prov_' + p).checked])), rateLimit: +g('ai_rate') || 20, extra: g('ai_extra')},
         social: {discord: g('so_dc').trim(), instagram: g('so_ig').trim()},
         billing: {enabled: c('bl_on'), proFeatures: {practice: c('bl_prac'), notes: c('bl_note')}, freeTokens: +g('bl_free') || 0, plusTokens: +g('bl_plus_tok') || 0, proTokens: +g('bl_pro_tok') || 0, costs: {ai: +g('bl_c_ai') || 0, aiImage: +g('bl_c_img') || 0, kurs: +g('bl_c_kurs') || 0, karten: +g('bl_c_karten') || 0, tts: +g('bl_c_tts') || 0}, plusFeatures: {practice: c('bl_plus_prac'), notes: c('bl_plus_note')}, yearly: c('bl_year'), kleinunternehmer: c('bl_ku'), promo: c('bl_promo'), note: g('bl_note_t')},
-        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}, advent: {enabled: c('adv_on')},
+        auth: {requireEmail: c('au_mail'), requireVerified: c('au_ver'), google: c('au_g')}, advent: {enabled: c('adv_on')}, submit: {enabled: c('sub_on')},
         contact: {email: $('ct_email').value.trim(), phone: $('ct_phone').value.trim()},
         limits: {courses: +$('lm_courses').value || 60, notes: +$('lm_notes').value || 300},
         notify: Object.fromEntries(Object.keys(NOTIFY_LABELS).map(k => [k, c('nt_' + k)]))

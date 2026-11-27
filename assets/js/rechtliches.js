@@ -9,17 +9,16 @@ function renderLegal(which){
   const v = k => LEGAL[k] ? esc(LEGAL[k]) : '<mark>[BITTE EINTRAGEN: ' + k + ']</mark>';
   const addr = () => v('company') + '<br>vertreten durch ' + v('rep') + '<br>' + v('street') + '<br>' + v('city') + '<br>' + v('country');
   const PN = () => CFG().billing.plusAvailable ? 'Regelheft Plus bzw. Regelheft Pro' : 'Regelheft Pro';
-  const payNote = () => 'Die Zahlungsabwicklung und Rechnungsstellung für Produkte und Dienstleistungen von ' + esc(LEGAL.brand) + ' erfolgt über ' + esc(LEGAL.company) + ' (Zahlungsdienstleister: Stripe). Auf Kreditkarten- und Kontoabrechnungen erscheint die Belastung in der Regel unter Stripe.';
+  const payNote = () => 'Die Zahlungsabwicklung und Rechnungsstellung erfolgt über ' + esc(LEGAL.company) + ' (Zahlungsdienstleister: Stripe). Auf Kreditkarten- und Kontoabrechnungen erscheint die Belastung in der Regel unter Stripe.';
   const contact = () => 'E-Mail: ' + v('email') + (LEGAL.phone ? '<br>Telefon: ' + esc(LEGAL.phone) : '<br><mark>[BITTE EINTRAGEN: phone – oder ein anderes zweites Kontaktmittel]</mark>');
   const ext = [SOCIAL.discord && 'Discord', SOCIAL.instagram && 'Instagram'].filter(Boolean);
   const hasExt = ext.length > 0, extNames = ext.join(', ');
 
   const impressum = () => `
 <h3>Anbieterkennzeichnung (Angaben gemäß § 5 DDG)</h3>
-<p><b>${esc(LEGAL.brand)}</b></p>
 <p>Ein Angebot von:<br>${v('company')}</p>
 <p>Vertreten durch:<br>${v('rep')}<br>${v('street')}<br>${v('city')}<br>${v('country')}</p>
-<p>„Regelheft Mathematik“ ist ein Lernangebot von ${esc(LEGAL.brand)}.</p>
+<p>Das „Regelheft“ ist ein Lernangebot von ${esc(LEGAL.company)}.</p>
 <h3>Zahlungshinweis &amp; Abrechnung</h3>
 <p>${payNote()}</p>
 <h3>Kontakt</h3>
@@ -32,7 +31,12 @@ function renderLegal(which){
 <p>Als Diensteanbieter sind wir nach den allgemeinen Gesetzen für eigene Inhalte verantwortlich. Nach den §§ 8 bis 10 DDG sind wir nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung von Informationen nach den allgemeinen Gesetzen bleiben unberührt. Bei Bekanntwerden entsprechender Rechtsverletzungen entfernen wir die betreffenden Inhalte umgehend.</p>
 ${hasExt ? '<h3>Haftung für Links</h3><p>Im Fußbereich der Seiten befinden sich Links zu externen Angeboten (' + extNames + '). Auf deren Inhalte haben wir keinen Einfluss und übernehmen dafür keine Gewähr. Für die Inhalte ist der jeweilige Betreiber verantwortlich.</p>' : ''}
 <h3>Urheberrecht</h3>
-<p>Die Inhalte dieses Angebots (Texte, Formeln, Grafiken, Zusammenstellung) und ihre Darstellungen sind urheberrechtlich geschützt. Eine Vervielfältigung oder Verwendung außerhalb der gesetzlichen Schranken (z. B. privates Lernen) bedarf der vorherigen Zustimmung des Anbieters. Wer Rechte an Inhalten verletzt sieht, kann sich unter der oben genannten E-Mail-Adresse melden.</p>
+<p>Alle Inhalte und Darstellungen dieses Angebots (Texte, Formeln, Grafiken, Zusammenstellung und Gestaltung) sind urheberrechtlich geschützt. Vervielfältigung, Bearbeitung, Verbreitung und jede Verwertung außerhalb der Grenzen des Urheberrechts (z. B. privates Lernen) bedürfen der vorherigen schriftlichen Zustimmung des Anbieters bzw. der jeweiligen Rechteinhaber. Das Kopieren ganzer Regeln, das systematische Auslesen der Seiten und das Weiterverkaufen von Inhalten sind nicht erlaubt.</p>
+<p>Beiträge aus der Community (freigegebene Einreichungen) stammen von den genannten Einreichenden. Sie haben dem Angebot ein Nutzungsrecht eingeräumt und versichert, zur Veröffentlichung berechtigt zu sein (siehe Nutzungsbedingungen, Abschnitt „Einreichungen“).</p>
+<h3>Lizenzen Dritter</h3>
+<p>Schriftarten: Poppins und Patrick Hand (jeweils SIL Open Font License 1.1). Software: html2canvas 1.4.1, © 2022 Niklas von Hertzen (MIT-Lizenz). Einzelne Symbole sind von den Lucide-Icons (ISC-Lizenz) übernommen oder daran angelehnt. Die Lizenzen der Urheber gelten für diese Bestandteile.</p>
+<h3>Rechtsverletzungen melden</h3>
+<p>Wenn du meinst, dass ein Inhalt hier deine Rechte verletzt (z. B. dein Urheberrecht), schreibe bitte an ${v('email')}. Nenne dabei den betroffenen Inhalt (Titel oder Link), dein Recht daran und wie wir dich erreichen. Ich prüfe den Hinweis zeitnah und entferne den Inhalt, wenn die Verletzung erkennbar ist. Bitte melde nur Inhalte, bei denen du dir begründet sicher bist.</p>
 <h3>Verbraucherstreitbeilegung</h3>
 <p>Wir sind weder bereit noch verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).</p>`;
 
@@ -40,7 +44,7 @@ ${hasExt ? '<h3>Haftung für Links</h3><p>Im Fußbereich der Seiten befinden sic
 <p>Stand: ${esc(LEGAL.stand)}. Diese Erklärung informiert dich nach Art. 13 und 14 DSGVO darüber, welche personenbezogenen Daten beim Besuch und bei der Nutzung des Regelhefts verarbeitet werden.</p>
 <h3>1. Verantwortlicher</h3>
 <p>${addr()}<br>${contact()}</p>
-<p>Das Regelheft Mathematik wird unter der Marke ${esc(LEGAL.brand)} als Angebot von ${esc(LEGAL.company)} betrieben.</p>${LEGAL.euRep ? '<p>Vertreter in der EU (Art. 27 DSGVO): ' + esc(LEGAL.euRep) + '</p>' : ''}
+<p>Das Regelheft wird als Angebot von ${esc(LEGAL.company)} betrieben.</p>${LEGAL.euRep ? '<p>Vertreter in der EU (Art. 27 DSGVO): ' + esc(LEGAL.euRep) + '</p>' : ''}
 <p>Ein Datenschutzbeauftragter ist nicht benannt, da dafür keine gesetzliche Pflicht besteht.</p>
 <h3>2. Überblick</h3>
 <p>Das Regelheft kann ohne Konto genutzt werden. Dabei werden nur technisch notwendige Daten (Abschnitt 3) und eine anonyme Statistik (Abschnitt 5) verarbeitet. Ein Konto (Abschnitt 6) und die KI-Aufgabenhilfe (Abschnitt 7) sind freiwillig.</p>
@@ -48,6 +52,7 @@ ${hasExt ? '<h3>Haftung für Links</h3><p>Im Fußbereich der Seiten befinden sic
 <p>Die Webseite wird bei Render Services, Inc. (USA) gehostet. Beim Aufruf verarbeitet der Server technisch notwendige Daten, insbesondere deine IP-Adresse, Datum und Uhrzeit, die aufgerufene Datei und Angaben zu Browser und Gerät, um die Seite auszuliefern und ihre Sicherheit und Stabilität zu gewährleisten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren und funktionsfähigen Betrieb). Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO. Die Logdaten werden vom Anbieter nur kurzzeitig gespeichert.</p>
 <h3>4. Keine Cookies, kein Tracking, lokaler Speicher</h3>
 <p>Das Regelheft setzt keine Cookies und nutzt keine Analyse-, Werbe- oder Tracking-Dienste. Es werden keine externen Schriftarten, Skripte oder Karten nachgeladen. Wenn du dich anmeldest, wird in deinem Browser (localStorage) ein Anmelde-Token gespeichert (Name „regelheft-token“), damit du angemeldet bleibst. Dieser Zugriff auf dein Endgerät ist für den von dir ausdrücklich gewünschten Dienst (die Anmeldung) unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG), eine Einwilligung ist daher nicht nötig. Wenn du über den Schalter in der Kopfzeile zwischen hellem und dunklem Design wechselst, speichert dein Browser deine Wahl (localStorage, Name „regelheft-theme“). Das geschieht nur auf deinen Wunsch und dient allein dazu, dein Design beim nächsten Besuch wiederherzustellen; es wird nichts an den Server gesendet. Das Token ist 30 Tage gültig und wird beim Abmelden oder Löschen des Kontos entfernt.</p>
+<p>Weitere Einstellungen speichert dein Browser nur, wenn du die jeweilige Funktion benutzt (localStorage): dein gewähltes Fach („regelheft-fach“), die gewählte Ansicht der Regelliste als Liste oder Kacheln („regelheft-layout“) und im Adventskalender ein Zwischenspeicher deines Fortschritts („rh_advent_…“, bei angemeldeten Nutzern mit dem Benutzernamen als Teil des Namens, damit sich auf geteilten Geräten nichts vermischt). Diese Speicherungen sind für die von dir gewünschte Funktion erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG) und werden nicht an mich übertragen.</p>
 <h3>5. Statistik: Suchbegriffe und geöffnete Regeln</h3>
 <p>Wenn du im Regelheft nach einem Begriff suchst oder eine Regel öffnest, werden der Suchbegriff bzw. die Kennung der Regel mit Zeitpunkt ohne Bezug zu dir gespeichert (ohne IP-Adresse, Benutzername oder Gerätekennung). So sehe ich, welche Regeln oft gesucht werden, und kann das Regelheft verbessern. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Bitte gib in die Suche keine personenbezogenen Daten ein. Diese Statistikdaten werden nach 12 Monaten gelöscht. Deine IP-Adresse wird dabei nur kurzzeitig im Arbeitsspeicher zur Begrenzung von Missbrauch (Anfragelimit) verarbeitet und nicht gespeichert.</p>
 <h3>6. Konto: Registrierung und Anmeldung</h3>
@@ -63,6 +68,10 @@ ${CFG().billing.enabled ? `<h3>6c. Abo (${CFG().billing.plusAvailable ? 'Plus un
 <p><b>Deshalb: Fotografiere nur die Aufgabe. Lade keine Fotos von Personen und keine Namen, Adressen, Gesundheitsdaten oder sonstigen persönlichen oder vertraulichen Angaben hoch.</b> Lade nur Aufgaben hoch, die du zum Lernen verwenden darfst.</p>
 <p>Gespeichert werden in meiner Datenbank (Cloudflare, Abschnitt 8): Text deiner Anfrage, die Antworten der KI, der von der KI vergebene Chat-Titel, der Modellname, der Zeitpunkt und eine kleine Vorschau deines Fotos (höchstens 360 Pixel). Das vollständige Foto wird nicht gespeichert. Die Speicherung dient dazu, dass du deine Chats später wieder ansehen kannst (Art. 6 Abs. 1 lit. b DSGVO). Als Betreiber kann ich gespeicherte Chats einsehen, um Missbrauch zu verhindern, Fehler zu finden und das Angebot zu verbessern (Art. 6 Abs. 1 lit. f DSGVO). Du kannst einzelne Chats jederzeit löschen; mit dem Konto werden alle Chats gelöscht.</p>
 <p>Die Antworten der KI werden automatisch erzeugt, können falsch sein und haben keine rechtliche oder ähnlich erhebliche Wirkung für dich. Eine automatisierte Entscheidungsfindung im Sinne des Art. 22 DSGVO findet nicht statt.</p>
+<h3>7a. Token, Adventskalender und Einreichungen</h3>
+<p><b>Token:</b> Für KI-Funktionen und „Meine Kurse“ gibt es ein Token-Guthaben. Gespeichert werden dein Guthaben (Monatskontingent und Bonus-Token) sowie jeder Verbrauch und jede Gutschrift mit Art der Funktion, Menge und Zeitpunkt. Das dient dazu, das Guthaben richtig zu führen und Missbrauch zu verhindern (Art. 6 Abs. 1 lit. b und f DSGVO).</p>
+<p><b>Adventskalender:</b> Wenn du angemeldet bist, speichere ich, welche Türchen du geöffnet und gelöst hast, was du gewonnen hast (Token oder Tage Plus bzw. Pro) und wann. Die Auslosung erfolgt auf meinem Server. Rechtsgrundlage ist die Durchführung der von dir genutzten Funktion (Art. 6 Abs. 1 lit. b DSGVO).</p>
+<p><b>Einreichungen:</b> Wenn du einen Eintrag einreichst, speichere ich Titel, Thema, Fach, Inhalt, die optionale Quelle, den optionalen Namen für die Nennung, deinen Benutzernamen, den Zeitpunkt, den Status und gegebenenfalls eine Notiz des Teams. Das Team prüft den Eintrag. Veröffentlicht wird er erst nach Freigabe; dein Name steht nur dabei, wenn du ihn angegeben hast. Rechtsgrundlage sind Art. 6 Abs. 1 lit. b DSGVO (Nutzung der Funktion) und lit. f (Prüfung, Schutz vor Rechtsverletzungen). Du kannst einen Eintrag jederzeit unter „Einreichen“ zurückziehen, dann wird er gelöscht. Schreibe bitte keine personenbezogenen Daten anderer Personen in Beiträge.</p>
 <h3>8. Backend und Datenbank</h3>
 <p>Konto, Chats, Statistik und die Weiterleitung an die KI laufen über Cloudflare, Inc. (USA; Cloudflare Workers und D1-Datenbank). Cloudflare verarbeitet dabei technisch bedingt auch deine IP-Adresse (z. B. in Server-Logs und zur Abwehr von Angriffen). Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.</p>
 <h3>9. Empfänger</h3>
@@ -79,6 +88,8 @@ ${CFG().billing.enabled ? `<h3>6c. Abo (${CFG().billing.plusAvailable ? 'Plus un
 <li>Merkliste: bis du den Eintrag oder das Konto löschst</li>
 <li>Zuletzt geöffnet: höchstens 15 Einträge, bis du den Verlauf oder das Konto löschst</li>
 <li>Notizen und Lernstand: bis du sie oder das Konto löschst</li>
+<li>Token-Guthaben und -Verbrauch, Adventskalender-Fortschritt und Gewinne: bis du das Konto löschst</li>
+<li>Einreichungen: bis du sie zurückziehst oder das Konto löschst (nicht freigegebene werden dann gelöscht, freigegebene ohne deinen Namen weitergeführt, sofern du sie nicht vorher zurückgezogen hast)</li>
 <li>E-Mail-Adresse: bis du sie änderst oder das Konto löschst</li>${CFG().billing.enabled ? '<li>Abo-Daten: bis du das Konto löschst; Zahlungs- und Rechnungsdaten (bei Stripe und in der Buchhaltung): gesetzliche Aufbewahrungsfrist, bis zu zehn Jahre</li>' : ''}
 </ul>
 <h3>12. Deine Rechte</h3>
@@ -96,7 +107,7 @@ ${hasExt ? '<h3>16. Externe Links (' + extNames + ')</h3><p>Im Fußbereich der S
 
   const agb = () => `<p><b>Allgemeine Geschäftsbedingungen (AGB) für „${PN()}“</b><br>Stand: ${esc(LEGAL.stand || '')}</p>
 <h3>1. Geltungsbereich und Anbieter</h3>
-<p>Diese AGB gelten für die entgeltliche Nutzung von „${PN()}“ auf dieser Webseite. Anbieter und Vertragspartner ist ${addr()}<br>${contact()}. Das Regelheft wird unter der Marke „${esc(LEGAL.brand)}“ angeboten. Es ist ein Lernangebot und richtet sich an Schülerinnen und Schüler. Die Grundfunktionen (Regeln ansehen und suchen) sind kostenlos.</p>
+<p>Diese AGB gelten für die entgeltliche Nutzung von „${PN()}“ auf dieser Webseite. Anbieter und Vertragspartner ist ${addr()}<br>${contact()}.  Es ist ein Lernangebot und richtet sich an Schülerinnen und Schüler. Die Grundfunktionen (Regeln ansehen und suchen) sind kostenlos.</p>
 <h3>2. Vertragsgegenstand</h3>
 <p>${CFG().billing.plusAvailable ? 'Regelheft Plus enthält für die Laufzeit des Abos ein monatliches Kontingent von ' + CFG().billing.plusTokens + ' Token für KI-Funktionen (Token werden bei jeder Nutzung der KI-Aufgabenhilfe und von „Meine Kurse“ verbraucht)' + (CFG().billing.proFeatures.notes && CFG().billing.plusFeatures.notes ? ' und schaltet eigene Notizen zu Regeln frei' : '') + (CFG().billing.proFeatures.practice && CFG().billing.plusFeatures.practice ? ' sowie den Übungsmodus' : '') + '. ' + (CFG().billing.proFeatures.practice && !CFG().billing.plusFeatures.practice ? 'Der Übungsmodus ist nur in Regelheft Pro enthalten. ' : '') + (CFG().billing.proFeatures.notes && !CFG().billing.plusFeatures.notes ? 'Notizen sind nur in Regelheft Pro enthalten. ' : '') + '</p><p>' : ''}Regelheft Pro schaltet für die Laufzeit des Abos Zusatzfunktionen frei. Aktuell sind das: ${CFG().billing.proFeatures.practice ? 'der Übungsmodus mit Karteikarten, ' : ''}${CFG().billing.proFeatures.notes ? 'eigene Notizen zu Regeln, ' : ''}die KI-Aufgabenhilfe mit einem monatlichen Kontingent von ${CFG().billing.proTokens} Token. Der Umfang der kostenlosen Version, insbesondere das einmalige Startguthaben von ${CFG().billing.freeTokens} Token, kann sich ändern. Das Monatskontingent beginnt jeden Monat neu; Bonus-Token (z. B. aus Gewinnspielen) verfallen nicht. Die KI-Antworten können Fehler enthalten; es wird kein bestimmter Lernerfolg geschuldet.</p>
 <h3>3. Vertragsschluss</h3>
@@ -111,6 +122,18 @@ ${hasExt ? '<h3>16. Externe Links (' + extNames + ')</h3><p>Im Fußbereich der S
 <p>${PN()} richtet sich auch an Schülerinnen und Schüler. Minderjährige können ${PN()} kaufen, wenn sie mit eigenen Mitteln (z. B. Taschengeld) oder mit Zustimmung ihrer gesetzlichen Vertreter bezahlen. Mit der Bestellung bestätigst du das.</p>
 <h3>8. Nutzungsrechte und Pflichten</h3>
 <p>Du erhältst ein einfaches, nicht übertragbares Recht, ${PN()} für eigene Lernzwecke zu nutzen. Konten und Zugänge dürfen nicht weitergegeben werden. Inhalte des Regelhefts dürfen nicht systematisch kopiert oder weiterverkauft werden.</p>
+<h3 id="einreichungen">8a. Einreichungen (Beiträge von Nutzern)</h3>
+<p>Mit einem Konto kannst du Beiträge einreichen, z. B. Regeln, Merksätze oder Beispiele. Dafür gilt:</p>
+<ul>
+<li><b>Deine Rechte:</b> Du versicherst, dass du den Beitrag selbst verfasst hast oder zur Veröffentlichung berechtigt bist. Übernimm keine Texte, Bilder oder Grafiken aus Schulbüchern, Arbeitsblättern, Internetseiten, fremden Heften oder von KI-Diensten, wenn du dafür keine Erlaubnis hast.</li>
+<li><b>Inhalt:</b> Beiträge dürfen keine Rechte Dritter verletzen und keine rechtswidrigen, beleidigenden oder jugendgefährdenden Inhalte, keine Werbung und keine personenbezogenen Daten anderer enthalten.</li>
+<li><b>Nutzungsrecht:</b> Du bleibst Urheber. Du räumst dem Anbieter ein einfaches, unentgeltliches, örtlich unbeschränktes Recht ein, den Beitrag für die Dauer der Veröffentlichung im Regelheft zu speichern, anzuzeigen und dafür zu kürzen, zu korrigieren und zu formatieren (z. B. Rechtschreibung, Darstellung).</li>
+<li><b>Nennung:</b> Dein Name steht nur dabei, wenn du ihn beim Einreichen angegeben hast.</li>
+<li><b>Prüfung:</b> Es gibt keinen Anspruch auf Veröffentlichung. Der Anbieter kann Beiträge ablehnen, ändern oder wieder entfernen.</li>
+<li><b>Zurückziehen:</b> Du kannst einen Beitrag jederzeit unter „Einreichen“ zurückziehen. Er wird dann gelöscht.</li>
+<li><b>Verantwortung:</b> Machen Dritte wegen deines Beitrags Ansprüche geltend, weil er ihre Rechte verletzt, und hast du das zu vertreten, stellst du den Anbieter im gesetzlichen Rahmen davon frei.</li>
+<li><b>Minderjährige:</b> Wenn du unter 18 bist, reiche Beiträge nur ein, wenn deine Eltern oder gesetzlichen Vertreter einverstanden sind.</li>
+</ul>
 <h3>9. Verfügbarkeit</h3>
 <p>Wir bemühen uns um eine hohe Erreichbarkeit, schulden aber keine ununterbrochene Verfügbarkeit. Wartungsarbeiten und Störungen (auch bei eingesetzten Drittanbietern wie KI-Diensten) sind möglich.</p>
 <h3>10. Haftung</h3>
@@ -140,5 +163,6 @@ ${hasExt ? '<h3>16. Externe Links (' + extNames + ')</h3><p>Im Fußbereich der S
 (*) Unzutreffendes streichen.</p>`;
   const target = document.getElementById('legalBody');
   target.innerHTML = ({impressum, datenschutz, agb, widerruf})[which]();
+  if(location.hash){ const el = document.getElementById(decodeURIComponent(location.hash.slice(1))); if(el) el.scrollIntoView(); }   // Sprungmarken wie #einreichungen funktionieren trotz nachträglich erzeugtem Text
   if(!renderLegal._h){ renderLegal._h = true; RH.onConfig(() => renderLegal(which)); }
 }

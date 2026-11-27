@@ -1,34 +1,48 @@
-# Änderungen (Stand: neue Zip + neuer worker.js)
+# Änderungen (Stand: dein neuer Upload)
 
-Alle Dateien in diesem Ordner einfach über deine Dateien kopieren, gleicher Pfad, gleicher Name. Nicht enthaltene Dateien bleiben unverändert. Danach `worker.js` im Cloudflare-Worker einspielen und wie gewohnt veröffentlichen.
+Alle Dateien aus diesem Ordner mit gleichem Pfad über deine Dateien kopieren. Nicht enthaltene Dateien bleiben unverändert. `worker.js` danach im Cloudflare-Worker einspielen. Die neuen Tabellen legt der Worker beim ersten Start selbst an.
 
-## Startseite (Screenshot)
-- Titel „Regelheft Mathematik“ ganz links, Symbole (Heft, Darstellung, Konto) ganz rechts, bündig mit der Leiste darunter (`header.css`).
-- „Alle Regeln“ entfernt. Die Trefferzahl („177 Regeln“) steht jetzt links neben dem Filter-Knopf, die Themen-Zeile darunter ist weg (`index.html`, `index.js`, `style.css`, `heft.css`).
-- Die „Wand“: Gewählte Filter bleiben in einer Zeile. Was nicht mehr passt, wird zu „+N“ (gestrichelt). Antippen öffnet das Filterfenster. Wenn gar kein Platz ist, steht dort „N Filter“.
+## Aus deinem Discord-Screenshot (Status-Kanal)
+- Fehler „Wrong number of parameter bindings“ bei `/api/admin/users`: Die Suche in der Nutzerliste hatte ein `?` im SQL, band aber zwei Werte. Behoben, die Suche geht jetzt über Benutzername und E-Mail.
+- „Letzter Neustart: vor 57 Jahren (1970)“: `Date.now()` liefert im globalen Bereich eines Workers 0. Die Startzeit wird jetzt erst bei der ersten Anfrage gesetzt.
+- Fußzeile „Gölitzer Development · prüft jede Minute“ heißt jetzt „Regelheft · prüft jede Minute“.
 
-## Neue Regel
-- „Potenzfunktionen mit negativen Exponenten“ (Seite 89) mit Skizze (`regeln.js`). Jetzt 178 Regeln.
+## „Gölitzer Development“ entfernt
+- Mails, Status-Fußzeile, Impressum, Datenschutz, AGB, Meta-Tags und `config.js` (`brand` gelöscht). Betreiber in den Rechtstexten ist jetzt nur noch der Name aus `LEGAL.company`.
+- Nicht angefasst: `LIESMICH.txt` (Beschreibung der Domain) und die Domain selbst.
 
 ## Adventskalender
-- Neu: `advent.html`, `advent.css`, `advent.js`, `advent-data.js`. Link im Footer (`footer.js`).
-- 24 Türchen mit Aufgabe, Tipp, Lösungsweg und passender Regel. Öffnen sich ab dem jeweiligen Dezembertag (Berlin), Gewinne bis 6. Januar einlösbar.
-- Nach der richtigen Antwort wird (angemeldet) auf dem Server ausgelost: Token, Plus oder Pro für ein paar Tage, oder nichts. Türchen 24 gibt immer einen größeren Gewinn. Wer den Tarif schon hat, bekommt Token statt Tarif.
-- Gewinne und Wahrscheinlichkeiten: im `worker.js` bei `ADVENT_PRIZES`.
-- Testen: Worker-Variable `ADVENT_TEST_DAY` = 24 setzen. Nur ansehen: `advent.html?vorschau=1`.
-- Ein/Aus im Dashboard unter „Bezahlung“.
+- Im Türchen steht nur noch die Zahl. Fehler dahinter: Bei verschlossenen Türchen schimmerte die Innenseite (Titel, „noch offen“) durch die Tür.
+- Der Hinweis „nur lokal gespeichert“ ist weg. Der Fortschritt (geöffnet, gelöst, Gewinne) gehört jetzt zum Konto und ist auf jedem Gerät da (`/api/advent/seen`). Der Zwischenspeicher im Browser ist je Konto getrennt.
+- Team/Admin sehen immer alle Türchen (zum Testen, auch die Auslosung).
 
-## Token statt KI-Chats pro Tag
-- Gratis: einmalig 60 Token, wird nie aufgefüllt. Plus 600 und Pro 3000 pro Monat (jeden Monat neu). Gewonnene Bonus-Token verfallen nicht.
-- Kosten: KI-Nachricht 4 (mit Foto 8), Kurs erstellen 40, Karteikarten 10, Podcast-Stimme 8.
-- Alles im Dashboard unter „Bezahlung“ einstellbar. Im Nutzer-Detail gibt es jetzt „Token buchen“ (mit Minus abziehen).
-- Das persönliche Tageslimit pro Nutzer bleibt als zusätzliche Obergrenze erhalten (leer = keins, 0 = KI gesperrt).
-- Ohne eingeschaltete Bezahlung gibt es keine Limits. Betreiber und Team zahlen nichts.
-- Neue Tabellen (`tokens`, `token_log`, `advent_claims`) legt der Worker beim ersten Start selbst an.
-- Angepasst: `ki.js`, `konto.js`, `pro.js`, `core.js`, `dashboard.js`, `rechtliches.js` (AGB-Text), `pro.html`.
+## KI-Chat (Fehler)
+- Das Fach wurde nie mitgeschickt: In Physik, Chemie und Biologie antwortete die KI mit dem Mathe-Prompt. Behoben (`ki.js`, `worker.js`).
+- Rückfragen im selben Chat kosten keine Token mehr (nur der neue Chat). Das Guthaben wird dabei weiter angezeigt.
+- Regeln anderer Fächer in alten Chats werden wieder gefunden. Bei Limit-Fehlern gibt es „Erneut versuchen“.
 
-## Texte
-- Copyright-Hinweis ersetzt durch „Alle Inhalte und Darstellungen sind urheberrechtlich geschützt.“ (Footer, Startseite, Meta-Tags aller Seiten, Urheberrecht-Absatz).
-- „Entwickelt in Deutschland“ im Footer entfernt.
+## Kachel-Ansicht und Übersicht
+- Neuer Knopf links neben „Filter“: Liste oder Kacheln. Kacheln sind nach Bereichen gegliedert, jeder Bereich hat eine Farbe (Mathe: Zahlen & Brüche, Prozent & Zuordnungen, Algebra, Funktionen, Geometrie, Stochastik; ebenso für Physik, Chemie, Biologie).
+- In der Liste zeigt ein farbiger Streifen links und ein farbiges Themen-Etikett den Bereich. Im Heft-Look bleibt die Liste.
+- Zuordnung der Themen zu Farben: `assets/js/bereiche.js`.
 
-Die Seiten haben neue Versionsnummern bei den geänderten Dateien, damit Browser nichts Altes aus dem Cache laden.
+## Mehr Fächer
+- Jetzt eingebunden: Mathematik, Physik (Datei war da, aber auf keiner Seite geladen), neu Chemie (19 Regeln) und Biologie (15 Regeln). Umschalter oben auf Startseite, KI und Meine Kurse.
+- Neues Fach: Datei mit `window.RULES_<FACH>`, Eintrag in `fach.js` (LIST, DATA), `bereiche.js` und `FAECHER` im `worker.js`.
+- Chemie und Biologie sind Einstiegstexte in eigenen Worten und sollten mit eurem Unterricht abgeglichen werden.
+
+## Eintrag einreichen
+- Neue Seite `einreichen.html` (Footer-Link und Hinweis unter der Regelliste): Fach, Thema, Titel, Inhalt mit Live-Vorschau, Quelle, optionaler Name, zwei Pflicht-Haken (Rechte, Veröffentlichung). „Meine Einreichungen“ mit Status und Zurückziehen.
+- Dashboard → Tab „Einreichungen“: ansehen, bearbeiten, freigeben, ablehnen (mit Notiz), löschen. Schalter unter „Bezahlung“.
+- Freigegebene Einträge erscheinen im Regelheft (Kennung z. B. `cx12`) mit „Eingereicht von …“.
+- Grenzen: 5 pro Tag, 10 gleichzeitig in Prüfung, Titel 80 und Inhalt 4000 Zeichen. Beim Löschen des Kontos werden nicht freigegebene Beiträge gelöscht, freigegebene ohne Namen weitergeführt.
+
+## Rechtliches (Entwurf, keine Rechtsberatung)
+- Impressum: Urheberrecht erweitert, Lizenzen Dritter (Poppins, Patrick Hand, html2canvas, Lucide-Icons), „Rechtsverletzungen melden“.
+- AGB: neuer Abschnitt 8a „Einreichungen“ (Rechtezusicherung, Nutzungsrecht, Nennung, Prüfung, Zurückziehen, Freistellung, Minderjährige).
+- Datenschutz: neuer Abschnitt 7a (Token, Adventskalender, Einreichungen), weitere Browser-Speicher, Speicherdauer.
+- Bitte prüfen lassen, bevor es als verbindlich gilt (z. B. Verbraucherzentrale/Anwalt, eRecht24-Generator).
+
+## Sonst
+- `core.js`: Schalter für Adventskalender und Einreichen aus dem Dashboard greifen jetzt auch auf den Seiten.
+- Neue Versionsnummern bei allen geänderten Dateien.

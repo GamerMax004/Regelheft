@@ -238,6 +238,23 @@ function applyFilter(opts){
   document.getElementById('resultCount').textContent = filtered.length;
 }
 
+/* Ansicht: Liste oder Kacheln (im Heft-Look immer Liste) */
+let layout = 'list'; try{ layout = localStorage.getItem('regelheft-layout') === 'tiles' ? 'tiles' : 'list'; }catch(e){}
+const tilesOn = () => layout === 'tiles' && !!window.BEREICHE && document.documentElement.getAttribute('data-heft') !== 'on';
+const layoutBtn = document.getElementById('layoutBtn');
+function syncLayoutBtn(){
+  if(!layoutBtn) return;
+  const t = layout === 'tiles';
+  layoutBtn.setAttribute('aria-pressed', String(t));
+  layoutBtn.setAttribute('aria-label', t ? 'Zur Listenansicht wechseln' : 'Zur Kachelansicht wechseln');
+  layoutBtn.title = t ? 'Liste' : 'Kacheln';
+}
+if(layoutBtn){
+  layoutBtn.addEventListener('click', () => { layout = layout === 'tiles' ? 'list' : 'tiles'; try{ localStorage.setItem('regelheft-layout', layout); }catch(e){} syncLayoutBtn(); renderList(false); });
+  syncLayoutBtn();
+}
+new MutationObserver(() => { if(typeof filtered !== 'undefined') renderList(false); }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-heft']});
+
 function renderList(animate){
   const listEl = document.getElementById('list');
   const emptyEl = document.getElementById('emptyState');
@@ -252,8 +269,10 @@ function renderList(animate){
   }
   emptyEl.style.display = 'none';
   const q = query.trim();
-  listEl.innerHTML = filtered.map((r,idx) => `
-    <div class="rule-card${animate ? ' anim' : ''}" role="listitem" data-id="${r.id}" style="${animate ? 'animation-delay:' + Math.min(idx*18,240) + 'ms' : ''}">
+  const tiles = tilesOn();
+  const area = r => window.BEREICHE ? BEREICHE.of(r) : null;
+  const card = (r, idx) => `
+    <div class="rule-card${tiles ? ' rule-tile' : ''}${animate ? ' anim' : ''}" role="listitem" data-id="${r.id}"${area(r) ? ' data-c="' + area(r).c + '"' : ''} style="${animate ? 'animation-delay:' + Math.min(idx*18,240) + 'ms' : ''}">
       <div class="row-top">
         <span class="cat-pill">${escapeHtml(r.category)}</span>
         ${canFav() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
@@ -262,7 +281,13 @@ function renderList(animate){
       <p>${highlight(r.excerpt, q)}</p>
       ${notes[r.id] ? '<div class="card-note">' + icon('pencil', 14) + '<span>' + escapeHtml(notes[r.id].replace(/\s+/g, ' ').slice(0, 90)) + '</span></div>' : ''}
     </div>
-  `).join('');
+  `;
+  listEl.classList.toggle('is-tiles', tiles);
+  listEl.setAttribute('role', tiles ? 'presentation' : 'list');
+  if(tiles){   // Kachel-Ansicht: nach Bereichen gegliedert, jeder Bereich mit eigener Farbe
+    let n = 0;
+    listEl.innerHTML = BEREICHE.groups(filtered).map(g => '<section class="tile-group" data-c="' + g.c + '"><h2 class="tile-head"><span>' + escapeHtml(g.l) + '</span><em>' + g.items.length + '</em></h2><div class="tile-grid" role="list">' + g.items.map(r => card(r, n++)).join('') + '</div></section>').join('');
+  } else listEl.innerHTML = filtered.map(card).join('');
   listEl.querySelectorAll('.rule-card').forEach(el=>{
     el.addEventListener('click', (e)=>{
       const star = e.target.closest('.fav-star');
@@ -334,7 +359,7 @@ function showCurrent(){
   const r = filtered[currentIndex];
   document.getElementById('overlayCat').textContent = r.category;
   document.getElementById('overlayTitle').textContent = r.title;
-  document.getElementById('overlayText').innerHTML = formatBody(r.body);
+  document.getElementById('overlayText').innerHTML = formatBody(r.body) + (r.community ? '<p class="community-note">Eingereicht' + (r.credit ? ' von ' + escapeHtml(r.credit) : ' aus der Community') + ' und vom Team freigegeben. <a href="einreichen.html">Selbst einen Eintrag einreichen</a></p>' : '');
   const diagSection = document.getElementById('diagramSection');
   const diagFrame = document.getElementById('diagramFrame');
   if(r.diagram){
@@ -655,3 +680,22 @@ document.getElementById('shareBtn').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+
+/* Community: Freigegebene Einreichungen nachladen und in die Liste einsortieren */
+if(typeof RH !== 'undefined' && RH.ready){
+  RH.ready.then(async () => {
+    const off = RH.cfg && RH.cfg().submit === false;
+    const hint = document.getElementById('submitHint'); if(hint && off) hint.style.display = 'none';
+    if(off || !window.prepRules) return;
+    try{
+      const fid = (typeof FACH !== 'undefined' && FACH.id) || 'mathe';
+      const j = await RH.api('/api/community?fach=' + encodeURIComponent(fid));
+      const items = (j.items || []).filter(x => !RULES.some(r => r.id === x.id));
+      if(!items.length) return;
+      prepRules(items.map(x => ({id: x.id, title: x.title, category: x.category, body: x.body, community: true, credit: x.credit}))).forEach(r => RULES.push(r));
+      items.forEach(x => { if(categories.indexOf(x.category) < 0) categories.push(x.category); });
+      panelSig = null; syncPanel(); applyFilter();
+      const hid = ruleIdFromHash(); if(hid && !overlayEl.classList.contains('open')) openDetail(hid, {log:true});   // Link auf einen Community-Eintrag (z. B. #cx4)
+    }catch(e){ console.warn('Community-Einträge konnten nicht geladen werden:', e); }
+  });
+}

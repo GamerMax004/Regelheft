@@ -5,6 +5,8 @@
 (function(){
   const $ = id => document.getElementById(id);
   const RULES = window.RULES;
+  const ALL = window.RULES_ALL || RULES;   // Chats können Regeln aus anderen Fächern vorschlagen
+  const FACH_ID = (typeof FACH !== 'undefined' && FACH.id) || 'mathe';
   const LOGO = '<img class="ai-logo" alt="Gemini als Ladeanimation" src="assets/img/gemini.png">';
   const esc = RH.esc, api = RH.api;
   const PROV = {gemini:'Google Gemini', groq:'Groq'};
@@ -74,7 +76,7 @@
         if(m.role === 'user' && !m.text) return;
         c.add('<div class="ai-lbl">' + (m.role === 'user' ? 'Du' : 'KI') + '</div><p>' + esc(m.text) + '</p>', m.role === 'user' ? 'user' : '');
       });
-      const ids = (j.rule_ids || []).filter(id => RULES.some(r => r.id === id));
+      const ids = (j.rule_ids || []).filter(id => ALL.some(r => r.id === id));
       let h = ids.length ? '<div class="ai-lbl">Vorgeschlagene Regeln</div>' + ids.map(id => '<button class="ai-rule" data-id="' + esc(id) + '"><b>' + esc(ruleTitle(id)) + '</b></button>').join('') : '';
       h += modelLine(j) + '<button class="ai-btn ghost ai-new">Neuer Chat</button>';
       const d = c.add(h);
@@ -153,13 +155,13 @@
       if(c === cur) ta.focus();
       return;
     }
-    const ids = (j.rule_ids || []).filter(id => RULES.some(r => r.id === id));
+    const ids = (j.rule_ids || []).filter(id => ALL.some(r => r.id === id));
     let h = '<div class="ai-lbl">' + logoFor(j) + 'Vorschlag</div>';
     if(j.explanation) h += '<p>' + esc(j.explanation) + '</p>';
     if(!ids.length) h += '<p>Dazu habe ich keine passende Regel gefunden.</p>';
     ids.forEach(id => {
-      const r = RULES.find(x => x.id === id);
-      h += '<button class="ai-rule" data-id="' + id + '"><b>' + esc(r.title) + '</b><span>' + esc(r.category) + ' · Seite ' + r.page + '</span></button>';
+      const r = ALL.find(x => x.id === id);
+      h += '<button class="ai-rule" data-id="' + esc(id) + '"><b>' + esc(r.title) + '</b><span>' + esc(r.category) + (r.page ? ' · Seite ' + r.page : '') + '</span></button>';
     });
     h += modelLine(j) + '<button class="ai-btn ghost ai-new">Neuer Chat</button>';
     const d = c.add(h);
@@ -172,12 +174,12 @@
     const wait = c.add('<div class="ai-load">' + LOGO + '<span class="ai-shimmer">Die KI schaut sich die Aufgabe an …</span></div>', 'muted');
     try{
       if(AI_CONFIG.proxyUrl.includes('DEIN-PROXY')) throw new Error('Die KI ist noch nicht eingerichtet (proxyUrl fehlt im Code).');
-      const j = await api('/api/ai', {body:{image:c.image, thumb:c.thumb, chatId:c.cid, messages:c.msgs, rules:RULES.map(x => ({id:x.id, title:x.title, category:x.category, hint:(x.plain || x.excerpt || '').replace(/\s+/g,' ').slice(0,100)}))}});
+      const j = await api('/api/ai', {body:{image:c.image, thumb:c.thumb, chatId:c.cid, fach:FACH_ID, messages:c.msgs, rules:RULES.map(x => ({id:x.id, title:x.title, category:x.category, hint:(x.plain || x.excerpt || '').replace(/\s+/g,' ').slice(0,100)}))}});
       wait.remove(); show(c, j); setTokens(j.tokens);
     }catch(e){
       wait.remove();
       if(e.status === 401){ RH.toLogin('ki.html'); return; }
-      if(e.code === 'limit'){ if(e.data && e.data.tokens) setTokens(e.data.tokens); c.add(esc(e.message) + '<br><a class="ai-btn" href="pro.html">Tarife ansehen</a>', 'err'); c.busy = false; c.upd(); renderHist(); return; }
+      if(e.code === 'limit'){ if(e.data && e.data.tokens) setTokens(e.data.tokens); const dl = c.add(esc(e.message) + '<br><a class="ai-btn" href="pro.html">Tarife ansehen</a> <button class="ai-btn ghost">Erneut versuchen</button>', 'err'); dl.querySelector('button').onclick = () => { dl.remove(); run(c); }; c.busy = false; c.upd(); renderHist(); return; }
       if(e.code === 'verify_required'){ const d0 = c.add(esc(e.message) + '<br><button class="ai-btn">E-Mail bestätigen</button>', 'err'); d0.querySelector('button').onclick = () => RH.openEmailDialog({dismissible:true}); c.busy = false; c.upd(); renderHist(); return; }
       const d = c.add(esc(e.message || 'Unbekannter Fehler') + '<br><button class="ai-btn ghost">Erneut versuchen</button>', 'err');
       d.querySelector('button').onclick = () => { d.remove(); run(c); };
@@ -190,7 +192,7 @@
     const el = $('kiQuota'); if(!el) return;
     if(!t || !RH.cfg().billing.enabled){ el.innerHTML = ''; return; }
     const c = RH.cfg().billing.costs || {};
-    el.innerHTML = 'Du hast noch <b>' + t.total + ' Token</b>. Eine Nachricht kostet ' + c.ai + ' Token, mit Foto ' + c.aiImage + '.' + (t.plan === 'pro' ? '' : ' <a href="pro.html">Mehr Token mit ' + (RH.cfg().billing.plusAvailable && t.plan === 'free' ? 'Plus oder Pro' : 'Pro') + '</a>');
+    el.innerHTML = 'Du hast noch <b>' + t.total + ' Token</b>. Ein neuer Chat kostet ' + c.ai + ' Token, mit Foto ' + c.aiImage + '. Rückfragen im selben Chat sind gratis.' + (t.plan === 'pro' ? '' : ' <a href="pro.html">Mehr Token mit ' + (RH.cfg().billing.plusAvailable && t.plan === 'free' ? 'Plus oder Pro' : 'Pro') + '</a>');
   }
   RH.ready.then(async () => { if(RH.user() && RH.cfg().billing.enabled){ try{ const st = await api('/api/billing/status'); if(st.tokens) setTokens(st.tokens); }catch(e){} } });
 
@@ -206,7 +208,7 @@
       img.onerror = () => res(null); img.src = src;
     });
   }
-  const ruleTitle = id => { const r = RULES.find(x => x.id === id); return r ? r.title : id; };
+  const ruleTitle = id => { const r = ALL.find(x => x.id === id); return r ? r.title : id; };
 
   $('aiNewChat').onclick = startNew;
   $('aiHistBtn').onclick = () => { const h = $('aiHist'); renderHist(); h.style.display = h.style.display === 'none' ? '' : 'none'; };

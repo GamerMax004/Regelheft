@@ -617,3 +617,64 @@ mark{border-radius:6px;}
 @media (prefers-reduced-motion:no-preference){ .filter-panel:not([hidden]){ animation:fpIn .2s ease-out; } @keyframes fpIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } } }
 
 .news-card:focus{ outline:none; }
+
+/* ============================================================
+   BEREICHE: je Bereich eine Farbe (Kachel-Ansicht und Liste)
+   Zuordnung der Themen zu Bereichen: assets/js/bereiche.js
+   ============================================================ */
+[data-c="blue"]  { --ac:#2F5BFF; --ac-soft:#E8EEFF; --ac-ink:#1E40D8; }
+[data-c="violet"]{ --ac:#7C3AED; --ac-soft:#F0E9FF; --ac-ink:#5B21B6; }
+[data-c="green"] { --ac:#16A34A; --ac-soft:#E2F5E9; --ac-ink:#166534; }
+[data-c="amber"] { --ac:#D97706; --ac-soft:#FDF0D5; --ac-ink:#92400E; }
+[data-c="rose"]  { --ac:#E11D48; --ac-soft:#FDE6EB; --ac-ink:#9F1239; }
+[data-c="teal"]  { --ac:#0D9488; --ac-soft:#DAF3F0; --ac-ink:#0F766E; }
+[data-c="slate"] { --ac:#64748B; --ac-soft:#EAEEF3; --ac-ink:#334155; }
+:root[data-theme="dark"] [data-c="blue"]  { --ac:#6F8DFF; --ac-soft:#1B2547; --ac-ink:#A9BBFF; }
+:root[data-theme="dark"] [data-c="violet"]{ --ac:#A78BFA; --ac-soft:#2A2147; --ac-ink:#CBB9FF; }
+:root[data-theme="dark"] [data-c="green"] { --ac:#4ADE80; --ac-soft:#17301F; --ac-ink:#8EE9AE; }
+:root[data-theme="dark"] [data-c="amber"] { --ac:#FBBF24; --ac-soft:#38290E; --ac-ink:#FCD677; }
+:root[data-theme="dark"] [data-c="rose"]  { --ac:#FB7185; --ac-soft:#3B1822; --ac-ink:#FDA4B3; }
+:root[data-theme="dark"] [data-c="teal"]  { --ac:#2DD4BF; --ac-soft:#12302D; --ac-ink:#7FE8D8; }
+:root[data-theme="dark"] [data-c="slate"] { --ac:#94A3B8; --ac-soft:#232A35; --ac-ink:#C3CCD8; }
+
+/* Liste: farbiger Streifen links, Themen-Etikett in der Farbe des Bereichs */
+html:not([data-heft="on"]) .rule-card[data-c]{ border-left:4px solid var(--ac); }
+html:not([data-heft="on"]) .rule-card[data-c] .cat-pill{ color:var(--ac-ink); background:var(--ac-soft); }
+
+/* Kachel-Ansicht: nach Bereichen gegliedert */
+html:not([data-heft="on"]) .list.is-tiles{ display:block; max-width:1080px; padding:6px 18px 40px; }
+.tile-group{ margin:4px 0 26px; }
+.tile-head{ display:flex; align-items:center; gap:10px; margin:0 0 12px; font-size:1.0625rem; font-weight:700; letter-spacing:-.015em; color:var(--ink); }
+.tile-head::before{ content:""; flex:none; width:12px; height:12px; border-radius:4px; background:var(--ac); }
+.tile-head em{ font-style:normal; font-size:.8125rem; font-weight:600; color:var(--ac-ink); background:var(--ac-soft); padding:2px 9px; border-radius:999px; }
+.tile-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+@media (max-width:640px){ .tile-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } }
+.rule-card.rule-tile{ display:flex; flex-direction:column; min-height:118px; padding:12px 14px 14px; background:var(--ac-soft); border:1px solid transparent; border-top:4px solid var(--ac); border-left-width:1px; border-radius:16px; box-shadow:none; }
+.rule-card.rule-tile:hover{ border-color:var(--ac); box-shadow:0 8px 22px rgba(0,0,0,.10); transform:translateY(-2px); }
+.rule-tile .row-top{ margin-bottom:6px; min-height:22px; }
+html:not([data-heft="on"]) .rule-tile .cat-pill{ background:transparent; padding:0; font-size:.6875rem; color:var(--ac-ink); }
+.rule-tile h3{ font-size:.9375rem; line-height:1.25; margin:0 0 6px; }
+.rule-tile p{ margin:0; font-size:.8125rem; line-height:1.4; color:var(--ink-soft); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.rule-tile .card-note{ display:none; }
+
+/* Ansicht-Knopf (Liste / Kacheln) */
+.layout-btn{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:44px; min-height:44px; padding:0; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer; }
+.layout-btn[aria-pressed="true"]{ background:var(--bg-soft); }
+.layout-btn[aria-pressed="true"] .ic-tiles, .layout-btn[aria-pressed="false"] .ic-list{ display:none; }
+html[data-heft="on"] .layout-btn{ display:none; }
+
+/* Fach-Umschalter (Mathematik, Physik, Chemie, Biologie) */
+.fach-switch{ display:flex; gap:6px; padding:10px 18px 0; overflow-x:auto; scrollbar-width:none; }
+.fach-switch::-webkit-scrollbar{ display:none; }
+.fach-switch:empty{ display:none; }
+.fach-switch button{ flex:none; min-height:36px; padding:0 14px; border-radius:999px; border:1.5px solid var(--border); background:var(--surface); color:var(--ink-soft); font:inherit; font-size:.875rem; font-weight:600; cursor:pointer; }
+.fach-switch button.on{ background:var(--ink); border-color:var(--ink); color:var(--bg); }
+html[data-heft="on"] .fach-switch button{ background:transparent; border-color:var(--pen-soft); color:var(--pen); font-weight:400; }
+html[data-heft="on"] .fach-switch button.on{ background:var(--pen); border-color:var(--pen); color:var(--paper); }
+.page .fach-switch{ padding-left:0; padding-right:0; margin-bottom:6px; }
+
+/* Hinweis unter der Liste und Hinweis bei Community-Einträgen */
+.submit-hint{ max-width:720px; margin:6px auto 36px; padding:0 18px; text-align:center; font-size:.875rem; color:var(--muted); }
+.submit-hint a{ color:var(--accent-fg); font-weight:600; }
+.community-note{ margin:16px 0 0; padding:10px 12px; border-radius:var(--radius-sm); background:var(--bg-soft); box-shadow:inset 3px 0 0 var(--border); font-size:.8125rem; color:var(--ink-soft); }
+.community-note a{ color:var(--accent-fg); }
