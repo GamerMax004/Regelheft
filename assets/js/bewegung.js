@@ -56,6 +56,64 @@
     if(startOn) ui.classList.add('mv-on'); else ui.classList.remove('mv-on');
   });
 
+
+  /* ---------- Menüs allgemein (z. B. Konto-Menü): drücken, wischen, loslassen ----------
+     Auf dem Auslöser drücken öffnet das Menü sofort; über die Einträge wischen markiert sie, Loslassen wählt den Eintrag unter dem Finger.
+     Das geöffnete Menü lässt sich genauso bedienen. Einfaches Antippen verhält sich wie bisher. Das Fach-Menü hat seine eigene Steuerung. */
+  var MI = '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]';
+  var mg = null;
+  function menuItemAt(menu, x, y){
+    var el = document.elementFromPoint(x, y), it = el && el.closest ? el.closest(MI) : null;
+    return it && menu.contains(it) ? it : null;
+  }
+  function mHl(it){
+    if(!mg || mg.hl === it) return;
+    if(mg.hl) mg.hl.classList.remove('mv-hl');
+    mg.hl = it; if(it){ it.classList.add('mv-hl'); buzz(5); }
+  }
+  function swallowClick(target, ms){
+    var f = function(c){ c.preventDefault(); c.stopPropagation(); target.removeEventListener('click', f, true); };
+    target.addEventListener('click', f, true);
+    setTimeout(function(){ target.removeEventListener('click', f, true); }, ms);
+  }
+  function mMove(e){
+    if(!mg || e.pointerId !== mg.id) return;
+    if(!mg.moved){ if(Math.hypot(e.clientX - mg.x, e.clientY - mg.y) < 8) return; mg.moved = true; }
+    mHl(menuItemAt(mg.menu, e.clientX, e.clientY));
+  }
+  function mEnd(e){
+    if(!mg || e.pointerId !== mg.id) return;
+    var g = mg, cancel = e.type === 'pointercancel';
+    document.removeEventListener('pointermove', mMove, true);
+    document.removeEventListener('pointerup', mEnd, true);
+    document.removeEventListener('pointercancel', mEnd, true);
+    if(g.hl) g.hl.classList.remove('mv-hl');
+    mg = null;
+    var it = !cancel && g.moved ? menuItemAt(g.menu, e.clientX, e.clientY) : null;
+    if(g.trig && g.fresh) swallowClick(g.trig, 700);               // der Klick nach dem Öffnen soll das Menü nicht gleich wieder schließen
+    if(g.moved && g.start) swallowClick(g.start, 200);              // Klick auf den Start-Eintrag nach dem Wischen unterdrücken
+    if(it && !it.disabled){ it.click(); }
+  }
+  document.addEventListener('pointerdown', function(e){
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    var start = null, menu = null, trig = null, it = e.target.closest ? e.target.closest(MI) : null;
+    if(it){ var m = it.closest('[role="menu"]'); if(m && !m.classList.contains('fach-menu')){ menu = m; start = it; } }
+    if(!menu){
+      var t = e.target.closest ? e.target.closest('button[aria-haspopup]') : null;
+      if(t && !t.classList.contains('fach-pill') && t.getAttribute('aria-expanded') === 'false'){
+        var mm = t.parentElement && t.parentElement.querySelector('[role="menu"]');
+        if(mm){ menu = mm; trig = t; }
+      }
+    }
+    if(!menu) return;
+    mg = { id: e.pointerId, menu: menu, trig: trig, start: start, x: e.clientX, y: e.clientY, moved: false, hl: null, fresh: false };
+    if(trig){ mg.fresh = true; trig.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })); }
+    else mHl(start);
+    document.addEventListener('pointermove', mMove, true);
+    document.addEventListener('pointerup', mEnd, true);
+    document.addEventListener('pointercancel', mEnd, true);
+  }, true);
+
   /* ---------- Tab-Leisten ---------- */
   var POS = {};   // letzte Lage je Leiste: auch neu gezeichnete Leisten gleiten von der alten Stelle zur neuen
   var SEL = ':scope > [aria-selected="true"], :scope > .on, :scope > [aria-pressed="true"]';

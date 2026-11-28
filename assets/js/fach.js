@@ -100,7 +100,8 @@ const FACH = (function(){
     const setHl = it => { if(it === hl) return; if(hl) hl.classList.remove('hl'); hl = it; if(hl){ hl.classList.add('hl'); buzz(5); } };
     const open = () => { if(isOpen) return; isOpen = true; wrap.classList.add('open'); pill.setAttribute('aria-expanded', 'true'); };
     const close = () => { if(!isOpen) return; isOpen = false; wrap.classList.remove('open'); pill.setAttribute('aria-expanded', 'false'); setHl(null); };
-    const choose = k => { close(); if(k !== id){ buzz(10); goSoft(k); } };
+    let going = false;
+    const choose = k => { close(); if(k !== id && !going){ going = true; buzz(10); goSoft(k); } };
     const itemAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('.fach-item') : null; };
     pill.addEventListener('pointerdown', e => {
       if(e.pointerType === 'mouse' && e.button !== 0) return;
@@ -125,7 +126,25 @@ const FACH = (function(){
     };
     pill.addEventListener('pointerup', up); pill.addEventListener('pointercancel', e => { drag = null; if(isOpen && fresh) close(); });
     pill.addEventListener('click', () => { if(fresh){ fresh = false; return; } isOpen ? close() : open(); });
-    items.forEach(it => it.addEventListener('click', () => choose(it.dataset.fach)));
+    items.forEach(it => it.addEventListener('click', () => choose(it.dataset.fach)));   // Tastatur (Enter/Leertaste)
+    // Auf dem geöffneten Menü drücken, wischen und loslassen: gewählt wird der Eintrag unter dem Finger
+    let mdrag = null;
+    menu.addEventListener('pointerdown', e => {
+      if(e.pointerType === 'mouse' && e.button !== 0) return;
+      mdrag = { id: e.pointerId };
+      try{ menu.setPointerCapture(e.pointerId); }catch(_){}
+      setHl(itemAt(e.clientX, e.clientY));
+    });
+    menu.addEventListener('pointermove', e => { if(mdrag && e.pointerId === mdrag.id) setHl(itemAt(e.clientX, e.clientY)); });
+    menu.addEventListener('pointerup', e => {
+      if(!mdrag || e.pointerId !== mdrag.id) return;
+      mdrag = null;
+      const it = itemAt(e.clientX, e.clientY);
+      const swallow = c => { c.preventDefault(); c.stopPropagation(); };
+      menu.addEventListener('click', swallow, { capture: true, once: true }); setTimeout(() => menu.removeEventListener('click', swallow, true), 150);
+      if(it) choose(it.dataset.fach); else setHl(null);
+    });
+    menu.addEventListener('pointercancel', () => { mdrag = null; setHl(null); });
     document.addEventListener('pointerdown', e => { if(isOpen && !wrap.contains(e.target)) close(); });
     wrap.addEventListener('keydown', e => {
       if(e.key === 'Escape'){ close(); pill.focus(); }
