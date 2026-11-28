@@ -250,7 +250,11 @@ function syncLayoutBtn(){
   layoutBtn.title = t ? 'Liste' : 'Kacheln';
 }
 if(layoutBtn){
-  layoutBtn.addEventListener('click', () => { layout = layout === 'tiles' ? 'list' : 'tiles'; try{ localStorage.setItem('regelheft-layout', layout); }catch(e){} syncLayoutBtn(); renderList(false); });
+  layoutBtn.addEventListener('click', () => {
+    layout = layout === 'tiles' ? 'list' : 'tiles'; try{ localStorage.setItem('regelheft-layout', layout); }catch(e){} syncLayoutBtn();
+    if(document.startViewTransition && !still()) document.startViewTransition(() => renderList(false));   // weicher Übergang zwischen Liste und Kacheln
+    else renderList(false);
+  });
   syncLayoutBtn();
 }
 new MutationObserver(() => { if(typeof filtered !== 'undefined') renderList(false); }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-heft']});

@@ -25,7 +25,7 @@
   }
   function fachChips(){
     var bar = $('eFachBar'), cur = $('eFach').value;
-    bar.innerHTML = Object.keys(FACH_NAMEN).map(function(k){ return '<button type="button" data-v="' + k + '" aria-pressed="' + (k === cur) + '">' + FACH_NAMEN[k] + '</button>'; }).join('');
+    bar.innerHTML = Object.keys(FACH_NAMEN).map(function(k){ return '<button type="button" class="mv-chip" data-v="' + k + '" aria-pressed="' + (k === cur) + '">' + FACH_NAMEN[k] + '</button>'; }).join('');
   }
   $('eFachBar').addEventListener('click', function(e){
     var b = e.target.closest('button[data-v]'); if (!b) return;
