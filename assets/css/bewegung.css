@@ -182,3 +182,34 @@ html[data-heft="on"] .fach-item{ color:var(--pen); font-weight:400; }
 html[data-heft="on"] .fach-item:hover, html[data-heft="on"] .fach-item.hl{ background:var(--marker, var(--bg-soft)); }
 html[data-heft="on"] .fach-check{ color:var(--pen-green); }
 @media (prefers-reduced-motion:reduce){ .fach-menu, .fach-chev, .fach-item, .fach-check, .fach-pill{ transition:none; animation:none !important; } }
+
+/* ---------- 10. Karten komplett in der Bereichsfarbe (nicht nur der Rand) ---------- */
+html:not([data-heft="on"]) .rule-card[data-c]{ background:var(--ac-soft); border-color:color-mix(in srgb, var(--ac) 28%, transparent); border-left-color:var(--ac); }
+html:not([data-heft="on"]) .rule-card[data-c] .cat-pill{ background:color-mix(in srgb, var(--ac) 18%, transparent); color:var(--ac-ink); }
+html:not([data-heft="on"]) .rule-card[data-c]:hover{ background:color-mix(in srgb, var(--ac) 14%, var(--ac-soft)); }
+html:not([data-heft="on"]) .rule-card[data-c] p{ color:var(--ink-soft); }
+html[data-heft="on"] .rule-card[data-c]{ background:color-mix(in srgb, var(--ac) 15%, var(--paper-glass, var(--surface))); border-color:color-mix(in srgb, var(--ac) 45%, var(--pen-soft)); }
+html[data-heft="on"] .rule-card[data-c]:hover{ background:color-mix(in srgb, var(--ac) 26%, var(--paper-glass, var(--surface))); }
+html[data-heft="on"] .rule-card.rule-tile[data-c]{ border-top:4px solid var(--ac); }
+html[data-heft="on"] .rule-card[data-c] .cat-pill{ background:transparent; }
+
+/* Menü: Eintrag unter dem Finger deutlich hervorheben */
+.fach-menu{ touch-action:none; -webkit-user-select:none; user-select:none; }
+.fach-item.hl{ background:var(--accent); color:var(--mv-on-acc); }
+.fach-item.hl .fach-check{ color:inherit; }
+html[data-heft="on"] .fach-item.hl{ background:var(--pen); color:var(--paper, #fff); }
+
+/* ---------- 11. Menüs allgemein (Konto-Menü u. a.) ---------- */
+[role="menu"]:not(.fach-menu), button[aria-haspopup="true"], button[aria-haspopup="menu"]:not(.fach-pill){ touch-action:none; -webkit-user-select:none; user-select:none; }
+.acct-menu{ transform-origin:top right; }
+@media (prefers-reduced-motion:no-preference){
+  .acct-menu.open{ animation:mv-menu-in .4s var(--mv-spring) both; }
+  .acct-menu.open > *{ animation:mv-item .36s var(--mv-out) both; }
+  .acct-menu.open > *:nth-child(2){ animation-delay:.03s; } .acct-menu.open > *:nth-child(3){ animation-delay:.06s; }
+  .acct-menu.open > *:nth-child(4){ animation-delay:.09s; } .acct-menu.open > *:nth-child(n+5){ animation-delay:.12s; }
+  @keyframes mv-menu-in{ from{ opacity:0; transform:scale(.86) translateY(-8px); } }
+}
+[role="menu"] [role^="menuitem"]{ transition:background-color .12s, color .12s, transform .15s var(--mv-out); }
+[role="menu"] [role^="menuitem"].mv-hl, .acct-menu [role="menuitem"].mv-hl{ background:var(--accent) !important; color:var(--mv-on-acc) !important; }
+[role="menu"] [role^="menuitem"].mv-hl svg{ color:inherit; }
+html[data-heft="on"] [role="menu"] [role^="menuitem"].mv-hl{ background:var(--pen) !important; color:var(--paper, #fff) !important; }
