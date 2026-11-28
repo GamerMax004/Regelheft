@@ -66,6 +66,7 @@ html[data-heft="on"] .rule-card{
   background:transparent; border:none; border-bottom:2px solid var(--grid-strong); border-radius:0; box-shadow:none; padding:14px 6px 12px;
   transition:background .15s;
 }
+html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ background:var(--marker); border-color:var(--pen); transform:none; box-shadow:none; }
 html[data-heft="on"] .cat-pill{ background:transparent; color:var(--pen-red); border:1.5px solid var(--pen-red); border-radius:255px 14px 225px 14px/14px 225px 14px 255px; font-size:0.875rem; font-weight:400; padding:1px 10px; }
 html[data-heft="on"] .chip{ background:transparent; color:var(--pen); border:1.5px dashed var(--pen-soft); font-size:1rem; font-weight:400; box-shadow:none; border-radius:255px 14px 225px 14px/14px 225px 14px 255px; }
 html[data-heft="on"] .chip.active{ background:var(--marker); color:var(--pen); border:1.5px solid var(--pen); box-shadow:none; }
@@ -181,6 +182,7 @@ html[data-heft="on"] .cat-pill{ height:var(--cell); box-sizing:border-box; displ
 html[data-heft="on"] .rule-card h3{ margin:0; font-size:1.375rem; line-height:var(--cell); }
 html[data-heft="on"] .rule-card p{ margin:0; font-size:1.1875rem; line-height:var(--cell); }
 html[data-heft="on"] .rule-card .fav-star{ margin:0 -6px 0 0; }
+html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ border-color:transparent; }
 
 html[data-heft="on"] .overlay-body h2{ position:relative; top:8px; }
 html[data-heft="on"] .formula-block, html[data-heft="on"] .callout{ display:flex; flex-direction:column; justify-content:center; }
@@ -210,6 +212,7 @@ html[data-heft="on"] .meta-row{ padding:12px 22px 4px; }
 /* Ränder und Breite wie in der normalen Ansicht: die Liste bleibt mittig (Regel weiter oben), hier nur der Abstand zwischen den Karten */
 html[data-heft="on"] .list{ gap:8px; }
 html[data-heft="on"] .rule-card{ background:var(--paper-glass); border:1px solid var(--grid-strong); border-bottom-width:2px; border-radius:10px; padding:12px 14px 12px; }
+html[data-heft="on"] .rule-card:hover, html[data-heft="on"] .rule-card:active{ background:var(--marker); border-color:var(--pen-soft); }
 html[data-heft="on"] .rule-card h3{ font-size:1.25rem; text-decoration:none; background:linear-gradient(transparent 88%, var(--pen-green) 88%, var(--pen-green) 94%, transparent 94%) 0 0/100% 100% no-repeat; display:inline; }
 html[data-heft="on"] .rule-card .row-top{ margin-bottom:6px; }
 html[data-heft="on"] .cat-pill{ border:none; padding:0; color:var(--pen-red); font-size:0.875rem; text-transform:none; background:none; border-radius:0; }

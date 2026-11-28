@@ -17,6 +17,7 @@
 }
 :root[data-theme="dark"] .rule-card,
 :root[data-theme="dark"] .auth-card{ box-shadow:none; }
+:root[data-theme="dark"] .rule-card:hover{ box-shadow:0 14px 30px rgba(0,0,0,.35); }
 :root[data-theme="dark"] .news-overlay{ background:rgba(0,0,0,.62); }
 :root[data-theme="dark"] .legal mark{ background:#4A3F0A; color:#FFD9D9; }
 :root[data-theme="dark"] .ai-btn.ghost{ background:var(--accent-soft); }

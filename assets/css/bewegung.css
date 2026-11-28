@@ -1,0 +1,144 @@
+/* ==========================================================================
+   Bewegung & Gefühl – wird auf jeder Seite ZULETZT geladen (zusammen mit bewegung.js).
+   • weiche Seitenübergänge (Überblendung statt hartem Neuladen)
+   • Schalter: es bewegt sich nur der Schalter, kein grauer Tipp-Kasten, ziehbar
+   • Tab-Leisten (Kurse, Fach-Wahl): gleitende Markierung, zentriert, wie im Dashboard
+   • Kachelansicht auch im Heft-Look
+   • Wisch-Hinweise beim Weiterblättern, Rückmeldung beim Tippen
+   Es ändert Aufbau und Bewegung, nicht die Farben des Designs.
+   ========================================================================== */
+
+:root{
+  --mv-spring:cubic-bezier(.3,1.35,.5,1);
+  --mv-out:cubic-bezier(.22,1,.36,1);
+  --mv-sw-on:#34C759;
+  --mv-on-acc:#fff;
+}
+html[data-heft="on"]{ --mv-sw-on:var(--pen-green, #2E7D4F); --mv-on-acc:var(--paper, #fff); }
+
+/* ---------- 1. Keine grauen Tipp-Kästen ---------- */
+*{ -webkit-tap-highlight-color:transparent; }
+.u-sw, .sw-row, .k-check, .auth-chk, .e-check{ -webkit-user-select:none; user-select:none; }
+
+/* ---------- 2. Weiche Seitenübergänge (Chrome, Edge, Safari 18+) ---------- */
+@media (prefers-reduced-motion:no-preference){
+  @view-transition{ navigation:auto; }
+  ::view-transition-old(root){ animation:mv-page-out .16s ease-in both; }
+  ::view-transition-new(root){ animation:mv-page-in .34s var(--mv-out) both; }
+  @keyframes mv-page-out{ to{ opacity:0; transform:scale(.992); } }
+  @keyframes mv-page-in{ from{ opacity:0; transform:translateY(8px); } }
+
+  /* Karten, Kurse und Bereiche gleiten sanft herein */
+  .k-card, .k-unit, .tile-group, .u-card, .set-card, .e-item{ animation:mv-rise .46s var(--mv-out) both; }
+  .tile-group:nth-child(2){ animation-delay:.04s; } .tile-group:nth-child(3){ animation-delay:.08s; }
+  .tile-group:nth-child(4){ animation-delay:.12s; } .tile-group:nth-child(n+5){ animation-delay:.16s; }
+  @keyframes mv-rise{ from{ opacity:0; transform:translateY(10px); } }
+
+  /* Rückmeldung beim Tippen (Dashboard-Zeilen, Karten, Tabs) */
+  .mv-tap{ animation:mv-tap .42s var(--mv-out); }
+  @keyframes mv-tap{ 0%{ transform:scale(.97); filter:brightness(.93); } 45%{ transform:scale(1.008); } 100%{ transform:none; filter:none; } }
+}
+html{ scroll-behavior:smooth; }
+@media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } }
+
+/* ---------- 3. Schalter ---------- */
+.sw-ui, .u-sw .u-sw-ui{ touch-action:pan-y; transition:background-color .3s var(--mv-out); }
+.sw-ui::after, .u-sw .u-sw-ui::after{ transition:transform .38s var(--mv-spring), width .22s var(--mv-out); will-change:transform; }
+/* Der Daumen wird nur gedehnt, wenn man den Schalter selbst drückt – nicht die ganze Zeile */
+.u-sw:active .u-sw-ui::after{ width:27px; }
+.u-sw:active input:checked + .u-sw-ui::after{ transform:translateX(20px); }
+.u-sw .u-sw-ui:active::after{ width:33px; }
+.u-sw .u-sw-ui:active{ cursor:grabbing; }
+.u-sw input:checked + .u-sw-ui:active::after{ transform:translateX(14px); }
+.sw-ui:active::after{ width:30px; }
+.sw:checked + .sw-ui:active::after{ transform:translateX(14px); }
+/* beim Ziehen folgt der Daumen dem Finger */
+.sw-ui.mv-drag::after, .u-sw .u-sw-ui.mv-drag::after{ transition:none; transform:translateX(var(--mv-x, 0px)) !important; width:27px; }
+.sw-ui.mv-drag.mv-on, .u-sw .u-sw-ui.mv-drag.mv-on{ background:var(--mv-sw-on) !important; }
+.sw-ui.mv-drag:not(.mv-on), .u-sw .u-sw-ui.mv-drag:not(.mv-on){ background:var(--control-line, #8E8E93) !important; }
+
+/* ---------- 4. Tab-Leisten mit gleitender Markierung ---------- */
+.mv-bar{ position:relative; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
+.mv-ind{ position:absolute; left:0; top:0; width:0; height:0; border-radius:14px; background:var(--accent); pointer-events:none; z-index:0;
+  transition:transform .46s var(--mv-spring), width .34s var(--mv-out), height .34s var(--mv-out); will-change:transform; }
+.mv-ind.mv-nofx{ transition:none; }
+.mv-bar > button{ position:relative; z-index:1; background:transparent !important; box-shadow:none !important; border-color:transparent !important; transition:color .25s, transform .16s var(--mv-out); }
+.mv-bar > button:is(.on,[aria-selected="true"],[aria-pressed="true"]){ color:var(--mv-on-acc) !important; }
+.mv-bar > button:is(.on,[aria-selected="true"]) .k-tl{ font-weight:700; }
+html[data-heft="on"] .mv-ind{ background:var(--pen); }
+
+/* Kurse + Fach-Wahl: zentrierte Leiste wie im Dashboard */
+.k-tabs.mv-bar, .fach-switch.mv-bar{
+  display:flex; gap:4px; padding:4px; width:fit-content; max-width:100%; margin:0 auto 18px; overflow-x:auto; scrollbar-width:none;
+  border:1.5px solid var(--border); border-radius:18px; background:var(--bg-soft); box-sizing:border-box;
+}
+.k-tabs.mv-bar::-webkit-scrollbar, .fach-switch.mv-bar::-webkit-scrollbar{ display:none; }
+.k-tabs.mv-bar > button{ flex:1 1 0; min-width:0; min-height:44px; padding:6px 14px; border-radius:14px; color:var(--ink-soft); white-space:nowrap; }
+.fach-switch.mv-bar{ margin:12px auto 6px; padding:4px; }
+.page .fach-switch.mv-bar{ padding:4px; }
+.fach-switch.mv-bar > button{ flex:1 1 auto; min-height:40px; padding:0 16px; border-radius:14px; border:0; color:var(--ink-soft); font-weight:600; }
+html[data-heft="on"] .k-tabs.mv-bar, html[data-heft="on"] .fach-switch.mv-bar{ background:var(--paper-glass, var(--bg-soft)); border-color:var(--grid-strong, var(--border)); }
+html[data-heft="on"] .k-tabs.mv-bar > button, html[data-heft="on"] .fach-switch.mv-bar > button{ color:var(--pen-soft, var(--ink-soft)); font-weight:400; }
+html[data-heft="on"] .mv-bar > button:is(.on,[aria-selected="true"],[aria-pressed="true"]){ color:var(--mv-on-acc) !important; }
+
+/* Handy: Kurs-Tabs schweben unten als zentrierte Kapsel */
+@media (max-width:700px){
+  #pcSec .k-tabs.mv-bar{
+    position:fixed; left:50%; right:auto; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); z-index:30; width:min(460px, calc(100% - 20px)); margin:0;
+    transform:translateX(-50%); padding:4px; gap:2px; border-radius:24px; overflow:visible;
+    border:1.5px solid var(--border); background:color-mix(in srgb, var(--surface) 84%, transparent);
+    -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5); box-shadow:0 8px 28px rgba(0,0,0,.14);
+  }
+  #pcSec .k-tabs.mv-bar > button{ flex:1 1 0; flex-direction:column; gap:2px; min-height:54px; padding:5px 2px; border-radius:20px; font-size:.6875rem; }
+  #pcSec .k-tabs.mv-bar > button:is(.on,[aria-selected="true"]){ background:transparent !important; box-shadow:none !important; color:var(--mv-on-acc) !important; }
+  #pcSec .k-tabs.mv-bar .mv-ind{ border-radius:20px; }
+  #pcSec.has-tabbar{ padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (prefers-reduced-motion:reduce){ .mv-ind, .sw-ui::after, .u-sw .u-sw-ui::after{ transition:none; } }
+
+/* ---------- 5. Kachelansicht auch im Heft-Look ---------- */
+html[data-heft="on"] .layout-btn{ display:inline-flex; background:transparent; border-color:var(--pen-soft); color:var(--pen); }
+html[data-heft="on"] .layout-btn[aria-pressed="true"]{ background:var(--marker, transparent); }
+html[data-heft="on"] .list.is-tiles{ display:block; max-width:1080px; padding:6px 18px 40px; background:none; }
+html[data-heft="on"] .list.is-tiles .tile-group{ margin:6px 0 30px; }
+html[data-heft="on"] .tile-head{ color:var(--pen); font-weight:400; font-size:1.375rem; line-height:1.3; letter-spacing:0;
+  text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:5px; }
+html[data-heft="on"] .tile-head::before{ border-radius:2px; transform:rotate(-8deg); }
+html[data-heft="on"] .tile-head em{ background:var(--marker, transparent); color:var(--pen); font-size:1rem; font-weight:400; padding:0 8px; border:1px solid var(--pen-soft); }
+html[data-heft="on"] .rule-card.rule-tile{
+  display:flex; flex-direction:column; min-height:118px; padding:12px 14px 14px; margin:0; border:1.5px solid var(--pen-soft);
+  border-top:4px solid var(--ac, var(--pen)); border-bottom-width:3px; border-radius:10px; background:var(--paper-glass, var(--surface)); box-shadow:none;
+  transform:rotate(var(--tilt, 0deg)); transition:transform .3s var(--mv-spring), background-color .2s, border-color .2s;
+}
+html[data-heft="on"] .tile-grid > .rule-tile:nth-child(3n+1){ --tilt:-.4deg; }
+html[data-heft="on"] .tile-grid > .rule-tile:nth-child(3n+2){ --tilt:.3deg; }
+html[data-heft="on"] .tile-grid > .rule-tile:nth-child(3n){ --tilt:-.15deg; }
+html[data-heft="on"] .rule-card.rule-tile:hover{ background:var(--marker, var(--paper-glass)); border-color:var(--pen); transform:rotate(0deg) translateY(-2px); }
+html[data-heft="on"] .rule-card.rule-tile:active{ transform:rotate(0deg) scale(.97); }
+html[data-heft="on"] .rule-tile .row-top{ height:auto; min-height:22px; margin:0 0 6px; }
+html[data-heft="on"] .rule-tile h3{ display:block; background:none; font-size:1.125rem; line-height:1.25; margin:0 0 6px; text-decoration:underline double var(--pen-green); text-decoration-thickness:1.5px; text-underline-offset:3px; }
+html[data-heft="on"] .rule-tile p{ margin:0; font-size:1rem; line-height:1.35; color:var(--pen-soft); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+html[data-heft="on"] .rule-tile .cat-pill{ background:transparent; padding:0; font-size:.8125rem; color:var(--pen-soft); border:0; }
+html[data-heft="on"] .rule-tile .card-note{ display:none; }
+
+/* ---------- 6. Wisch-Hinweise beim Weiterblättern ---------- */
+.swipe-hint{ position:fixed; top:50%; z-index:760; width:54px; height:54px; margin-top:-27px; border-radius:50%; display:grid; place-items:center;
+  background:var(--accent); color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.22); opacity:0; pointer-events:none; will-change:transform, opacity; }
+html[data-heft="on"] .swipe-hint{ background:var(--pen); color:var(--paper, #fff); }
+.swipe-hint.l{ left:12px; } .swipe-hint.r{ right:12px; }
+.swipe-hint svg{ width:26px; height:26px; }
+.swipe-hint.r svg{ transform:scaleX(-1); }
+.swipe-hint.go{ background:var(--mv-sw-on); }
+@keyframes mv-bump-l{ 30%{ transform:translateX(18px); } 60%{ transform:translateX(-5px); } }
+@keyframes mv-bump-r{ 30%{ transform:translateX(-18px); } 60%{ transform:translateX(5px); } }
+.mv-bump-l{ animation:mv-bump-l .38s var(--mv-out); }
+.mv-bump-r{ animation:mv-bump-r .38s var(--mv-out); }
+
+/* ---------- 7. Auswahl-Chips (Einreichen) ---------- */
+.mv-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.mv-chip{ min-height:40px; padding:0 16px; border:1.5px solid var(--border); border-radius:999px; background:var(--surface); color:var(--ink); font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer;
+  transition:transform .2s var(--mv-spring), background-color .2s, color .2s, border-color .2s; }
+.mv-chip:active{ transform:scale(.94); }
+.mv-chip[aria-pressed="true"], .mv-chip.on{ background:var(--accent); border-color:var(--accent); color:var(--mv-on-acc); }
+html[data-heft="on"] .mv-chip{ background:transparent; border-color:var(--pen-soft); color:var(--pen); font-weight:400; }
+html[data-heft="on"] .mv-chip[aria-pressed="true"]{ background:var(--pen); border-color:var(--pen); color:var(--paper, #fff); }

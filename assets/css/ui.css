@@ -97,10 +97,7 @@ html[data-heft="on"] .u-acc-h{ font-weight:400; font-size:1.12em; }
 @media (prefers-reduced-motion:reduce){ .u-chev{ transition:none; } }
 
 /* ---------- Schalter ---------- */
-.u-sw{ display:flex; align-items:center; gap:14px; padding:11px 0; border-top:1px solid var(--u-line); cursor:default; }
-.u-sw-hit{ position:relative; flex:none; display:flex; align-items:center; min-height:44px; cursor:pointer; }
-.u-row .row-btn{ flex:none; margin-left:auto; min-height:40px; padding:0 12px 0 14px; font-size:.875rem; }
-.u-row .row-btn svg{ margin-left:2px; }
+.u-sw{ display:flex; align-items:center; gap:14px; padding:11px 0; border-top:1px solid var(--u-line); cursor:pointer; }
 .u-sw:first-child{ border-top:none; }
 .u-sw-tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
 .u-sw-tx b{ font-size:1em; color:var(--u-ink); }

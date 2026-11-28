@@ -128,6 +128,7 @@
   display:flex; flex-direction:column; gap:4px; text-align:left; padding:16px; border:1px solid var(--border); border-radius:18px;
   background:var(--surface); color:var(--ink); font:inherit; cursor:pointer; box-shadow:0 6px 18px rgba(20,40,120,.06);
 }
+.k-card:hover{ border-color:var(--accent); }
 .k-card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .k-card-em{ font-size:1.875rem; }
 .k-card small{ color:var(--muted); font-size:0.8125rem; }
@@ -235,14 +236,13 @@ body.k-noscroll{ overflow:hidden; }
 .k-courses{ display:flex; flex-direction:column; border-radius:16px; overflow:hidden; background:var(--surface); border:1px solid var(--border); }
 .k-courses .k-card{ flex-direction:row; align-items:center; gap:14px; width:100%; padding:14px 16px; border:0; border-radius:0; box-shadow:none !important; background:transparent; }
 .k-courses .k-card + .k-card{ box-shadow:inset 0 .5px 0 var(--border) !important; }
-.k-courses .k-card{ cursor:default; }
-.k-courses .k-card:active{ transform:none; }
-.k-courses .k-open{ flex:none; padding:0 8px 0 14px; }
+.k-courses .k-card:hover{ background:var(--bg-soft); }
+.k-courses .k-card:active{ transform:none; background:var(--bg-soft); }
 .k-card-em{ flex:none; width:46px; height:46px; display:grid; place-items:center; border-radius:12px; background:var(--bg-soft); font-size:1.5rem; }
 .k-card-tx{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .k-card-tx b{ font-size:1rem; font-weight:600; letter-spacing:-.015em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .k-card-tx .k-bar{ height:4px; margin-top:7px; border:0; }
-.k-chev{ flex:none; font-size:1.375rem; line-height:1; margin-left:2px; }
+.k-chev{ flex:none; color:var(--muted); font-size:1.5rem; line-height:1; }
 
 .k-nav{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0 6px; }
 .k-back{ display:inline-flex; align-items:center; gap:4px; min-height:44px; padding:0 8px 0 0; border:0; background:none; color:var(--accent-fg); font:inherit; font-size:1.0625rem; font-weight:500; cursor:pointer; }
