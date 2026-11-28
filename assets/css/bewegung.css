@@ -23,10 +23,10 @@ html[data-heft="on"]{ --mv-sw-on:var(--pen-green, #2E7D4F); --mv-on-acc:var(--pa
 /* ---------- 2. Weiche Seitenübergänge (Chrome, Edge, Safari 18+) ---------- */
 @media (prefers-reduced-motion:no-preference){
   @view-transition{ navigation:auto; }
-  ::view-transition-old(root){ animation:mv-page-out .16s ease-in both; }
-  ::view-transition-new(root){ animation:mv-page-in .34s var(--mv-out) both; }
-  @keyframes mv-page-out{ to{ opacity:0; transform:scale(.992); } }
-  @keyframes mv-page-in{ from{ opacity:0; transform:translateY(8px); } }
+  ::view-transition-old(root){ animation:mv-page-out .14s ease-in both; }
+  ::view-transition-new(root){ animation:mv-page-in .26s ease-out both; }
+  @keyframes mv-page-out{ to{ opacity:0; } }
+  @keyframes mv-page-in{ from{ opacity:0; } }
 
   /* Karten, Kurse und Bereiche gleiten sanft herein */
   .k-card, .k-unit, .tile-group, .u-card, .set-card, .e-item{ animation:mv-rise .46s var(--mv-out) both; }
@@ -36,10 +36,8 @@ html[data-heft="on"]{ --mv-sw-on:var(--pen-green, #2E7D4F); --mv-on-acc:var(--pa
 
   /* Rückmeldung beim Tippen (Dashboard-Zeilen, Karten, Tabs) */
   .mv-tap{ animation:mv-tap .42s var(--mv-out); }
-  @keyframes mv-tap{ 0%{ transform:scale(.97); filter:brightness(.93); } 45%{ transform:scale(1.008); } 100%{ transform:none; filter:none; } }
+  @keyframes mv-tap{ 0%{ transform:scale(.97); } 45%{ transform:scale(1.008); } 100%{ transform:none; } }
 }
-html{ scroll-behavior:smooth; }
-@media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } }
 
 /* ---------- 3. Schalter ---------- */
 .sw-ui, .u-sw .u-sw-ui{ touch-action:pan-y; transition:background-color .3s var(--mv-out); }
@@ -142,3 +140,45 @@ html[data-heft="on"] .swipe-hint{ background:var(--pen); color:var(--paper, #fff
 .mv-chip[aria-pressed="true"], .mv-chip.on{ background:var(--accent); border-color:var(--accent); color:var(--mv-on-acc); }
 html[data-heft="on"] .mv-chip{ background:transparent; border-color:var(--pen-soft); color:var(--pen); font-weight:400; }
 html[data-heft="on"] .mv-chip[aria-pressed="true"]{ background:var(--pen); border-color:var(--pen); color:var(--paper, #fff); }
+
+/* ---------- 8. Flüssiger: nur Transform/Transparenz animieren, lange Listen schneller zeichnen ---------- */
+.rule-card, .chip, .u-btn, .ai-btn, .p-btn, .fav-star, .icon-btn, button.u-row, .k-card, .mv-chip{
+  transition:transform .22s var(--mv-out), background-color .18s, border-color .18s, opacity .18s;
+}
+html:not([data-heft="on"]) .list:not(.is-tiles) > .rule-card{ content-visibility:auto; contain-intrinsic-size:auto 124px; }
+.overlay-body, .overlay{ backface-visibility:hidden; }
+html.mv-leave body{ opacity:0; transition:opacity .15s ease-in; }
+@media (prefers-reduced-motion:reduce){ html.mv-leave body{ opacity:1; transition:none; } }
+::view-transition-group(*){ animation-duration:.38s; animation-timing-function:var(--mv-out); }
+
+/* ---------- 9. Fach-Menü am Namen ---------- */
+.toprow .brand.has-fach-menu{ flex:0 1 auto; }
+.brand.has-fach-menu h1 span{ display:none; }
+.fach-wrap{ flex:1 1 auto; min-width:0; display:flex; align-items:center; }
+.fach-anchor{ position:relative; }
+.fach-pill{ display:inline-flex; align-items:center; gap:4px; min-height:36px; margin-left:6px; padding:0 10px 0 14px; border:1.5px solid var(--border); border-radius:999px; background:var(--bg-soft); color:var(--ink);
+  font:inherit; font-size:.9375rem; font-weight:600; white-space:nowrap; cursor:pointer; touch-action:none; -webkit-user-select:none; user-select:none; transition:transform .24s var(--mv-spring), background-color .2s; }
+.fach-pill:active{ transform:scale(.94); }
+.fach-chev{ flex:none; transition:transform .4s var(--mv-spring); }
+.fach-wrap.open .fach-chev{ transform:rotate(180deg); }
+.fach-menu{ position:absolute; left:6px; top:calc(100% + 8px); z-index:900; min-width:210px; padding:6px; border:.5px solid var(--border); border-radius:18px;
+  background:color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter:blur(22px) saturate(1.5); backdrop-filter:blur(22px) saturate(1.5); box-shadow:0 14px 40px rgba(0,0,0,.18);
+  transform-origin:top left; opacity:0; visibility:hidden; pointer-events:none; transform:scale(.86) translateY(-8px);
+  transition:opacity .16s ease-out, transform .4s var(--mv-spring), visibility 0s linear .4s; }
+.fach-wrap.open .fach-menu{ opacity:1; visibility:visible; pointer-events:auto; transform:none; transition-delay:0s; }
+.fach-item{ display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; min-height:46px; padding:0 12px; border:0; border-radius:12px; background:transparent; color:var(--ink);
+  font:inherit; font-size:1rem; text-align:left; cursor:pointer; transition:background-color .12s, transform .15s var(--mv-out); }
+.fach-item:active{ transform:scale(.97); }
+.fach-item:hover, .fach-item.hl, .fach-item:focus-visible{ background:var(--bg-soft); outline:none; }
+.fach-item[aria-checked="true"]{ font-weight:700; }
+.fach-check{ flex:none; opacity:0; transform:scale(.4); color:var(--accent); transition:opacity .2s, transform .4s var(--mv-spring); }
+.fach-item[aria-checked="true"] .fach-check{ opacity:1; transform:none; }
+.fach-wrap.open .fach-item{ animation:mv-item .38s var(--mv-out) both; }
+.fach-wrap.open .fach-item:nth-child(2){ animation-delay:.03s; } .fach-wrap.open .fach-item:nth-child(3){ animation-delay:.06s; } .fach-wrap.open .fach-item:nth-child(4){ animation-delay:.09s; }
+@keyframes mv-item{ from{ opacity:0; transform:translateY(-6px); } }
+html[data-heft="on"] .fach-pill{ background:transparent; border-color:var(--pen-soft); color:var(--pen); font-weight:400; }
+html[data-heft="on"] .fach-menu{ background:var(--paper-glass, var(--surface)); border:1.5px solid var(--pen-soft); border-radius:12px; }
+html[data-heft="on"] .fach-item{ color:var(--pen); font-weight:400; }
+html[data-heft="on"] .fach-item:hover, html[data-heft="on"] .fach-item.hl{ background:var(--marker, var(--bg-soft)); }
+html[data-heft="on"] .fach-check{ color:var(--pen-green); }
+@media (prefers-reduced-motion:reduce){ .fach-menu, .fach-chev, .fach-item, .fach-check, .fach-pill{ transition:none; animation:none !important; } }
