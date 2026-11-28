@@ -16,7 +16,7 @@
 
   /* ---------- Bausteine ---------- */
   const acc = (title, iconName, body, open) => '<div class="u-acc' + (open ? ' open' : '') + '"><button type="button" class="u-acc-h" aria-expanded="' + !!open + '">' + ic(iconName) + '<span class="u-grow">' + esc(title) + '</span><span class="u-chev">' + ic('chevron-down') + '</span></button><div class="u-acc-b"><div class="u-acc-in">' + body + '</div></div></div>';
-  const sw = (id, on, label, sub) => '<div class="u-sw"><span class="u-sw-tx"><b>' + esc(label) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><label class="u-sw-hit"><input type="checkbox" id="' + id + '" aria-label="' + esc(label) + '"' + (on ? ' checked' : '') + '><span class="u-sw-ui" aria-hidden="true"></span></label></div>';
+  const sw = (id, on, label, sub) => '<label class="u-sw"><span class="u-sw-tx"><b>' + esc(label) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span class="u-sw-ui" aria-hidden="true"></span></label>';
   const fld = (id, label, val, ph, type) => '<label class="u-field"><span>' + esc(label) + '</span><input class="u-in" id="' + id + '" type="' + (type || 'text') + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + esc(ph || '') + '"' + (type === 'number' ? ' inputmode="numeric" min="0"' : '') + '></label>';
   const area = (id, label, val, ph, rows) => '<label class="u-field"><span>' + esc(label) + '</span><textarea class="u-in" id="' + id + '" rows="' + (rows || 3) + '" placeholder="' + esc(ph || '') + '">' + esc(val || '') + '</textarea></label>';
   const tier = u => u.tier === 'pro' ? '<span class="u-badge pro">' + ic('crown', 12) + 'Pro</span>' : u.tier === 'plus' ? '<span class="u-badge plus">Plus</span>' : '';
@@ -85,9 +85,9 @@
   function userRow(u){
     const open = uOpen === u.username;
     const sub = (u.grant && u.until ? 'Geschenk bis ' + D(u.until) : (u.email || 'Seit ' + D(u.created_at))) + (u.last_login ? ' · zuletzt ' + T(u.last_login) : '');
-    let h = '<div class="u-item"><div class="u-row"><span class="u-av ' + u.tier + '">' + esc(u.username.charAt(0).toUpperCase()) + '</span>'
+    let h = '<div class="u-item"><button type="button" class="u-row" data-u="' + esc(u.username) + '" aria-expanded="' + open + '"><span class="u-av ' + u.tier + '">' + esc(u.username.charAt(0).toUpperCase()) + '</span>'
       + '<span class="u-row-tx"><b>' + esc(u.username) + '</b><small>' + esc(sub) + '</small></span>' + (u.banned ? '<span class="u-badge bad">Gesperrt</span>' : '') + (u.email && !u.verified ? '<span class="u-badge warn">E-Mail offen</span>' : '')
-      + (u.owner ? '<span class="u-badge ok">Besitzer</span>' : u.staff ? '<span class="u-badge ok">Team</span>' : '') + tier(u) + '<button type="button" class="row-btn u-open" data-u="' + esc(u.username) + '" aria-expanded="' + open + '" aria-label="Details zu ' + esc(u.username) + '">' + (open ? 'Schließen' : 'Details') + '</button></div>';
+      + (u.owner ? '<span class="u-badge ok">Besitzer</span>' : u.staff ? '<span class="u-badge ok">Team</span>' : '') + tier(u) + '</button>';
     if(open) h += '<div class="u-panel" id="uPanel"><div class="u-empty">Lade …</div></div>';
     return h + '</div>';
   }
@@ -141,7 +141,7 @@
     document.querySelector('.u-filters').onclick = e => { const b = e.target.closest('[data-f]'); if(!b) return; uF = b.dataset.f; document.querySelectorAll('.u-filters .u-chip').forEach(x => x.setAttribute('aria-pressed', x.dataset.f === uF)); loadUsers(); };
     const msg = (t, ok) => { const m = $('uMsg'); if(m){ m.className = 'u-msg' + (ok === true ? ' ok' : ok === false ? ' err' : ''); m.textContent = t; } };
     $('uList').onclick = async e => {
-      const row = e.target.closest('[data-u]'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]'), tkn = e.target.closest('[data-tok]'), ac = e.target.closest('[data-act]');
+      const row = e.target.closest('.u-row'), pl = e.target.closest('[data-plan]'), dy = e.target.closest('[data-days]'), gv = e.target.closest('[data-give]'), tk = e.target.closest('[data-take]'), tkn = e.target.closest('[data-tok]'), ac = e.target.closest('[data-act]');
       if(row){ uOpen = uOpen === row.dataset.u ? null : row.dataset.u; uMail = false; return loadUsers(); }
       if(pl){ uPlan = pl.dataset.plan; return loadDetail(); }
       if(dy){ uDays = +dy.dataset.days; return loadDetail(); }
@@ -192,7 +192,7 @@
     loading();
     try{
       const j = await RH.api('/api/admin/chats');
-      $('dashBody').innerHTML = '<div class="u-card"><div class="u-list">' + (j.chats.map(c => '<div class="u-row"><span class="u-av">' + esc((c.username || '?').charAt(0).toUpperCase()) + '</span><span class="u-row-tx"><b>' + esc(c.title || 'Ohne Titel') + '</b><small>' + esc(c.username) + ' · ' + T(c.updated_at) + '</small></span><button type="button" class="row-btn u-open" data-c="' + esc(c.id) + '" aria-label="Chat ansehen: ' + esc(c.title || 'Ohne Titel') + '">Ansehen' + ic('chevron-right', 16) + '</button></div>').join('') || '<div class="u-empty">Noch keine Chats.</div>') + '</div></div>';
+      $('dashBody').innerHTML = '<div class="u-card"><div class="u-list">' + (j.chats.map(c => '<button type="button" class="u-row" data-c="' + esc(c.id) + '"><span class="u-av">' + esc((c.username || '?').charAt(0).toUpperCase()) + '</span><span class="u-row-tx"><b>' + esc(c.title || 'Ohne Titel') + '</b><small>' + esc(c.username) + ' · ' + T(c.updated_at) + '</small></span><span class="u-chev">' + ic('chevron-right', 16) + '</span></button>').join('') || '<div class="u-empty">Noch keine Chats.</div>') + '</div></div>';
       $('dashBody').querySelectorAll('[data-c]').forEach(b => b.onclick = () => viewChat(b.dataset.c));
     }catch(e){ $('dashBody').innerHTML = err(e); }
   }

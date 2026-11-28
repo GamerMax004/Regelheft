@@ -226,9 +226,9 @@
     const showForm = !list.length || formOpen || pending.length || custom || topic || msg;
     const courses = list.length ? '<div class="k-courses">' + list.map(k => {
         const due = dueOf(k);
-        return '<div class="k-card" data-id="' + esc(k.id) + '"><span class="k-card-em" aria-hidden="true">' + icon('book', 26) + '</span>' +
+        return '<button type="button" class="k-card" data-id="' + esc(k.id) + '"><span class="k-card-em" aria-hidden="true">' + icon('book', 26) + '</span>' +
           '<span class="k-card-tx"><b>' + esc(k.title) + '</b><small>' + plural(lessonsOf(k).length, 'Lektion', 'Lektionen') + ' · ' + plural(k.flashcards.length, 'Karte', 'Karten') + ' · ' + plural((k.rules || []).length, 'Regel', 'Regeln') + (due ? ' · <strong>' + due + ' fällig</strong>' : '') + '</small>' +
-          '<span class="k-bar"><i style="width:' + Math.round(progressOf(k) * 100) + '%"></i></span></span><button type="button" class="row-btn k-open" data-id="' + esc(k.id) + '" aria-label="Kurs öffnen: ' + esc(k.title) + '">Öffnen<span class="k-chev" aria-hidden="true">›</span></button></div>';
+          '<span class="k-bar"><i style="width:' + Math.round(progressOf(k) * 100) + '%"></i></span></span><span class="k-chev" aria-hidden="true">›</span></button>';
       }).join('') + '</div>' : '';
     const today =
       '<section class="k-today" aria-label="Heute">' +
@@ -276,7 +276,7 @@
       }})), 'Alle Kurse');
     };
     if($('kNext')) $('kNext').onclick = async () => { const k = list.find(x => x.id === $('kNext').dataset.id); if(k){ renderKurs(k, 'pfad'); lesson(k, lessonsOf(k).find(l => !(l.key in (k.done || {})))); } };
-    sec.querySelectorAll('.k-open').forEach(b => b.onclick = () => { view = {name:'kurs', id:b.dataset.id, tab:'pfad'}; route(); });
+    sec.querySelectorAll('.k-card').forEach(b => b.onclick = () => { view = {name:'kurs', id:b.dataset.id, tab:'pfad'}; route(); });
   }
 
   // Passende Regeln: ganzes Kapitel oder die Regeln mit den meisten Treffern zum eigenen Thema

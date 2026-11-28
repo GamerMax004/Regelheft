@@ -118,11 +118,11 @@ function buildPanel(){
   const views = viewList(); panelSig = views.join('|');
   filterPanel.innerHTML = '<div class="fp-head"><b>Filter</b><span class="fp-act"><button type="button" class="fp-reset" id="fpReset">Zurücksetzen</button><button type="button" class="fp-done" id="fpDone">Fertig</button></span></div>'
     + (views.length ? '<div class="fp-sec">Ansicht</div><div class="fp-views" role="group" aria-label="Ansicht">' + views.map(v => '<button type="button" class="fp-view" role="checkbox" aria-checked="false" data-kind="view" data-key="' + escapeAttr(v) + '">' + viewIcon(v) + escapeHtml(viewLabel(v)) + '</button>').join('') + '</div>' : '')
-    + '<div class="fp-sec">Themen</div><div class="fp-list" role="group" aria-label="Themen">' + categories.map(c => '<div class="fp-row"><span class="fp-label">' + escapeHtml(c) + '</span><button type="button" class="fp-check-btn" role="checkbox" aria-checked="false" aria-label="' + escapeAttr(c) + '" data-kind="cat" data-key="' + escapeAttr(c) + '"><span class="fp-check" aria-hidden="true">' + icon('check', 18) + '</span></button></div>').join('') + '</div>';
+    + '<div class="fp-sec">Themen</div><div class="fp-list" role="group" aria-label="Themen">' + categories.map(c => '<button type="button" class="fp-row" role="checkbox" aria-checked="false" data-kind="cat" data-key="' + escapeAttr(c) + '"><span>' + escapeHtml(c) + '</span><span class="fp-check" aria-hidden="true">' + icon('check', 18) + '</span></button>').join('') + '</div>';
 }
 function syncPanel(){
   if(panelSig !== viewList().join('|')) buildPanel();
-  filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); const row = b.closest('.fp-row'); if(row) row.classList.toggle('on', on); });
+  filterPanel.querySelectorAll('[data-kind]').forEach(b => { const on = b.dataset.kind === 'view' ? activeView === b.dataset.key : activeCats.has(b.dataset.key); b.setAttribute('aria-checked', on ? 'true' : 'false'); b.classList.toggle('on', on); });
 }
 /* Gewählte Filter bleiben in EINER Zeile: Was nicht mehr passt, wird zu „+N“ (öffnet das Filterfenster). Keine abgeschnittene Wand, kein Umbruch. */
 function fitChips(){
@@ -179,7 +179,7 @@ if('ResizeObserver' in window) new ResizeObserver(() => fitChips()).observe(chip
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitChips);
 function openFilter(){
   syncPanel(); filterPanel.hidden = false; filterBackdrop.hidden = false; filterBtn.setAttribute('aria-expanded', 'true');
-  const first = filterPanel.querySelector('.fp-view, .fp-check-btn'); if(first) first.focus({preventScroll:true});
+  const first = filterPanel.querySelector('.fp-view, .fp-row'); if(first) first.focus({preventScroll:true});
 }
 function closeFilter(back){
   if(filterPanel.hidden) return;
@@ -240,7 +240,7 @@ function applyFilter(opts){
 
 /* Ansicht: Liste oder Kacheln (im Heft-Look immer Liste) */
 let layout = 'list'; try{ layout = localStorage.getItem('regelheft-layout') === 'tiles' ? 'tiles' : 'list'; }catch(e){}
-const tilesOn = () => layout === 'tiles' && !!window.BEREICHE && document.documentElement.getAttribute('data-heft') !== 'on';
+const tilesOn = () => layout === 'tiles' && !!window.BEREICHE;
 const layoutBtn = document.getElementById('layoutBtn');
 function syncLayoutBtn(){
   if(!layoutBtn) return;
@@ -277,10 +277,9 @@ function renderList(animate){
         <span class="cat-pill">${escapeHtml(r.category)}</span>
         ${canFav() ? '<button class="fav-star' + (favs.has(r.id) ? ' on' : '') + '" data-id="' + r.id + '" aria-pressed="' + favs.has(r.id) + '" aria-label="' + (favs.has(r.id) ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '">' + icon('star', 22, favs.has(r.id)) + '</button>' : ''}
       </div>
-      <h3>${highlight(r.title, q)}</h3>
+      <h3><a class="rule-link" href="index.html#${encodeURIComponent(r.id)}">${highlight(r.title, q)}</a></h3>
       <p>${highlight(r.excerpt, q)}</p>
       ${notes[r.id] ? '<div class="card-note">' + icon('pencil', 14) + '<span>' + escapeHtml(notes[r.id].replace(/\s+/g, ' ').slice(0, 90)) + '</span></div>' : ''}
-      <div class="card-foot"><a class="row-btn rule-open" href="index.html#${encodeURIComponent(r.id)}" aria-label="Regel öffnen: ${RH.esc(r.title)}">Öffnen${icon('chevron-right', 18)}</a></div>
     </div>
   `;
   listEl.classList.toggle('is-tiles', tiles);
@@ -289,15 +288,13 @@ function renderList(animate){
     let n = 0;
     listEl.innerHTML = BEREICHE.groups(filtered).map(g => '<section class="tile-group" data-c="' + g.c + '"><h2 class="tile-head"><span>' + escapeHtml(g.l) + '</span><em>' + g.items.length + '</em></h2><div class="tile-grid" role="list">' + g.items.map(r => card(r, n++)).join('') + '</div></section>').join('');
   } else listEl.innerHTML = filtered.map(card).join('');
-  // Nur der Stern und der „Öffnen“-Button reagieren auf Klicks, nicht die ganze Karte
   listEl.querySelectorAll('.rule-card').forEach(el=>{
     el.addEventListener('click', (e)=>{
       const star = e.target.closest('.fav-star');
       if(star){ e.stopPropagation(); toggleFav(star.dataset.id); return; }
-      const open = e.target.closest('.rule-open'); if(!open) return;
       if(e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;      // „In neuem Tab öffnen“ bleibt möglich
       e.preventDefault();
-      openDetail(el.getAttribute('data-id'), {log:true, from:open});
+      openDetail(el.getAttribute('data-id'), {log:true, from:el});
     });
   });
 }
@@ -396,7 +393,7 @@ function hideOverlay(){
     overlayEl.classList.add('closing'); closeTimer = setTimeout(finish, 230);
   }
   if(lastFocus && document.contains(lastFocus)) lastFocus.focus({preventScroll:true});
-  else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-open'); if(c) c.focus({preventScroll:true}); }
+  else { const c = document.querySelector('.rule-card[data-id="' + (filtered[currentIndex] ? filtered[currentIndex].id : '') + '"] .rule-link'); if(c) c.focus({preventScroll:true}); }
   lastFocus = null;
 }
 function closeDetail(instant){
@@ -422,8 +419,17 @@ function stepRule(delta){
   overlayEl.scrollTop = 0; RH.haptic(6);
   if(!still()) overlayBody.animate([{transform:'translateX(' + (delta > 0 ? 56 : -56) + 'px)', opacity:0}, {transform:'none', opacity:1}], {duration:300, easing:'cubic-bezier(.2,.9,.25,1)'});
 }
-document.getElementById('prevBtn').addEventListener('click', () => stepRule(-1));
-document.getElementById('nextBtn').addEventListener('click', () => stepRule(1));
+// Am Anfang/Ende der Liste wackelt die Regel kurz und vibriert leicht, statt nichts zu tun
+function edgeBump(delta){
+  RH.haptic(10);
+  if(still()) return;
+  const cls = delta > 0 ? 'mv-bump-r' : 'mv-bump-l';
+  overlayBody.classList.remove('mv-bump-l', 'mv-bump-r'); void overlayBody.offsetWidth; overlayBody.classList.add(cls);
+  setTimeout(() => overlayBody.classList.remove(cls), 400);
+}
+function stepOrBump(delta){ const n = currentIndex + delta; if(n < 0 || n >= filtered.length) edgeBump(delta); else stepRule(delta); }
+document.getElementById('prevBtn').addEventListener('click', () => stepOrBump(-1));
+document.getElementById('nextBtn').addEventListener('click', () => stepOrBump(1));
 
 const searchInput = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
@@ -568,6 +574,18 @@ document.addEventListener('keydown', e => {
     overlayEl.classList.remove('dragging-down');
     if(spring) setTimeout(() => { overlayBody.style.transition = ''; overlayEl.style.transition = ''; }, 420);
   };
+  const hintSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+  const hintL = document.createElement('div'), hintR = document.createElement('div');
+  hintL.className = 'swipe-hint l'; hintR.className = 'swipe-hint r'; hintL.innerHTML = hintR.innerHTML = hintSvg;
+  document.body.append(hintL, hintR);
+  const hideHints = () => { [hintL, hintR].forEach(h => { h.style.transition = 'opacity .2s, transform .3s cubic-bezier(.3,1.35,.5,1)'; h.style.opacity = '0'; h.style.transform = ''; h.classList.remove('go'); }); };
+  const showHint = (dx, atEdge) => {
+    const h = dx > 0 ? hintL : hintR, o = dx > 0 ? hintR : hintL, k = Math.min(1, Math.abs(dx) / 90), go = !atEdge && Math.abs(dx) > 90;
+    o.style.opacity = '0'; h.style.transition = 'none';
+    h.style.opacity = String(atEdge ? Math.min(.45, k * .45) : k);
+    h.style.transform = 'translateX(' + (dx > 0 ? 1 : -1) * Math.min(26, Math.abs(dx) * .3) + 'px) scale(' + (.55 + k * .45 + (go ? .12 : 0)).toFixed(3) + ')';
+    if(go !== h.classList.contains('go')){ h.classList.toggle('go', go); if(go) RH.haptic(8); }
+  };
   overlayEl.addEventListener('touchstart', e => {
     if(e.touches.length !== 1){ t = null; return; }
     const p = e.touches[0];
@@ -586,8 +604,9 @@ document.addEventListener('keydown', e => {
     if(t.mode === 'h'){
       const atEdge = (dx < 0 && currentIndex >= filtered.length - 1) || (dx > 0 && currentIndex <= 0);
       overlayBody.style.transition = 'none';
-      overlayBody.style.transform = 'translateX(' + (dx * (atEdge ? .22 : 1)) + 'px)';                  // am Ende der Liste zieht es gummiartig zurück
+      overlayBody.style.transform = 'translateX(' + (dx * (atEdge ? .22 : 1)) + 'px) rotate(' + ((atEdge ? .22 : 1) * dx / 90).toFixed(2) + 'deg) scale(' + (1 - Math.min(.04, Math.abs(dx) / 3000)).toFixed(4) + ')';   // am Ende der Liste zieht es gummiartig zurück
       overlayBody.style.opacity = String(1 - Math.min(.55, Math.abs(dx) / 480));
+      showHint(dx, atEdge);
     }else if(t.mode === 'v'){
       overlayEl.classList.add('dragging-down'); overlayEl.style.transition = 'none';
       overlayEl.style.transform = 'translateY(' + dy + 'px) scale(' + (1 - Math.min(.07, dy / 2800)).toFixed(4) + ')';
@@ -597,6 +616,7 @@ document.addEventListener('keydown', e => {
   overlayEl.addEventListener('touchend', e => {
     if(!t || !t.ok){ t = null; return; }
     const p = e.changedTouches[0], dx = p.clientX - t.x, dy = p.clientY - t.y, dt = Math.max(1, Date.now() - t.at), m = t.mode; t = null;
+    hideHints();
     if(m === 'h'){
       const go = Math.abs(dx) > 90 || (Math.abs(dx) > 40 && Math.abs(dx) / dt > .5);
       const delta = dx < 0 ? 1 : -1, ok = currentIndex + delta >= 0 && currentIndex + delta < filtered.length;
@@ -604,7 +624,7 @@ document.addEventListener('keydown', e => {
         if(still()){ reset(false); stepRule(delta); return; }
         overlayBody.style.transition = 'transform .14s ease-in, opacity .14s'; overlayBody.style.transform = 'translateX(' + (delta > 0 ? -70 : 70) + 'px)'; overlayBody.style.opacity = '0';
         setTimeout(() => { reset(false); stepRule(delta); }, 130);
-      }else reset(!still());
+      }else{ reset(!still()); if(Math.abs(dx) > 30 && !ok) RH.haptic(10); }
     }else if(m === 'v'){
       if(dy > 130 || (dy > 50 && dy / dt > .6)){
         if(still()){ reset(false); closeDetail(true); return; }
@@ -613,7 +633,7 @@ document.addEventListener('keydown', e => {
       }else reset(!still());
     }
   }, {passive:true});
-  overlayEl.addEventListener('touchcancel', () => { t = null; reset(!still()); }, {passive:true});
+  overlayEl.addEventListener('touchcancel', () => { t = null; hideHints(); reset(!still()); }, {passive:true});
 })();
 
 // ---- Start ----
